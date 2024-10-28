@@ -3,6 +3,8 @@ package web
 import (
 	"net/http"
 
+	"github.com/chenmuyao/go-bootcamp/internal/domain"
+	"github.com/chenmuyao/go-bootcamp/internal/service"
 	"github.com/dlclark/regexp2"
 	"github.com/gin-gonic/gin"
 )
@@ -15,12 +17,14 @@ const (
 type UserHandler struct {
 	emailRegex    *regexp2.Regexp
 	passwordRegex *regexp2.Regexp
+	svc           *service.UserService
 }
 
-func NewUserHandler() *UserHandler {
+func NewUserHandler(svc *service.UserService) *UserHandler {
 	return &UserHandler{
 		emailRegex:    regexp2.MustCompile(emailRegexPattern, regexp2.None),
 		passwordRegex: regexp2.MustCompile(passwordRegexPattern, regexp2.None),
+		svc:           svc,
 	}
 }
 
@@ -68,8 +72,15 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	}
 
 	if req.Password != req.ConfirmPassword {
-		ctx.String(http.StatusBadRequest, "2 passwords don't match")
+		ctx.String(http.StatusOK, "2 passwords don't match")
 		return
+	}
+	err = h.svc.SignUp(ctx, domain.User{
+		Email:    req.Email,
+		Password: req.Password,
+	})
+	if err != nil {
+		ctx.String(http.StatusInternalServerError, "system error")
 	}
 }
 

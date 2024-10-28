@@ -1,0 +1,2 @@
+// Domain object
+package domain
