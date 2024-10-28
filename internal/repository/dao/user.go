@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -30,5 +31,8 @@ type User struct {
 }
 
 func (dao *UserDAO) Insert(ctx context.Context, u User) error {
+	now := time.Now().UnixMilli()
+	u.Ctime = now
+	u.Utime = now
 	return dao.db.WithContext(ctx).Create(&u).Error
 }
