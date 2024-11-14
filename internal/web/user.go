@@ -90,7 +90,29 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 }
 
 func (h *UserHandler) Login(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, "User Login")
+	type Req struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	var req Req
+
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+
+	_, err := h.svc.Login(ctx, req.Email, req.Password)
+	switch err {
+	case nil:
+		ctx.String(http.StatusOK, "successful login")
+	case service.ErrInvalidUserOrPassword:
+		ctx.String(http.StatusOK, "wrong login or password")
+	default:
+		ctx.String(http.StatusInternalServerError, "system error")
+	}
+
+	// NOTE: No need to check, because if it's not valid, we won't get
+	// anything from the DB anyway.
 }
 
 func (h *UserHandler) Profile(ctx *gin.Context) {
