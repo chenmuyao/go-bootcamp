@@ -7,6 +7,8 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
 )
 
+var ErrDuplicatedEmail = dao.ErrDuplicatedEmail
+
 type UserRepository struct {
 	dao *dao.UserDAO
 }

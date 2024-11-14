@@ -79,7 +79,12 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 		Email:    req.Email,
 		Password: req.Password,
 	})
-	if err != nil {
+	switch err {
+	case nil:
+		ctx.String(http.StatusOK, "signup success")
+	case service.ErrDuplicatedEmail:
+		ctx.String(http.StatusBadRequest, err.Error())
+	default:
 		ctx.String(http.StatusInternalServerError, "system error")
 	}
 }
