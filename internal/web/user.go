@@ -1,6 +1,8 @@
 package web
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
@@ -34,7 +36,7 @@ func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 	user.POST("/signup", h.SignUp)
 	user.POST("/login", h.Login)
 	user.GET("/profile", h.Profile)
-	user.POST("/profile", h.Edit)
+	user.POST("/edit", h.Edit)
 }
 
 func (h *UserHandler) SignUp(ctx *gin.Context) {
@@ -118,7 +120,7 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 		}
 		ctx.String(http.StatusOK, "successful login")
 	case service.ErrInvalidUserOrPassword:
-		ctx.String(http.StatusOK, "wrong login or password")
+		ctx.String(http.StatusBadRequest, "wrong login or password")
 	default:
 		ctx.String(http.StatusInternalServerError, "system error")
 	}
@@ -132,5 +134,18 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 }
 
 func (h *UserHandler) Edit(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, "Edit User profile")
+	type Req struct {
+		Name     string `json:"name"`
+		Birthday string `json:"birthday" binding:"date"`
+		Profile  string `json:"profile"  binding:"max=2000"`
+	}
+
+	var req Req
+
+	if err := ctx.Bind(&req); err != nil {
+		log.Printf("Binding error: %s\n", err)
+		return
+	}
+
+	ctx.String(http.StatusOK, fmt.Sprintf("%v", req))
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/service"
 	"github.com/chenmuyao/go-bootcamp/internal/web"
 	"github.com/chenmuyao/go-bootcamp/internal/web/middleware"
+	"github.com/chenmuyao/go-bootcamp/internal/web/validate"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -47,6 +48,8 @@ func initDB() *gorm.DB {
 
 func initWebServer() *gin.Engine {
 	server := gin.Default()
+
+	validate.UseValidators("date")
 
 	server.Use(cors.New(cors.Config{
 		AllowCredentials: true,
