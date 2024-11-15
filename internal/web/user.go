@@ -6,6 +6,7 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"github.com/chenmuyao/go-bootcamp/internal/service"
 	"github.com/dlclark/regexp2"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -101,9 +102,20 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 		return
 	}
 
-	_, err := h.svc.Login(ctx, req.Email, req.Password)
+	u, err := h.svc.Login(ctx, req.Email, req.Password)
 	switch err {
 	case nil:
+		sess := sessions.Default(ctx)
+		sess.Set("userID", u.ID)
+		sess.Options(sessions.Options{
+			MaxAge:   900, // 15min
+			HttpOnly: true,
+		})
+		err = sess.Save()
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, "system error")
+			return
+		}
 		ctx.String(http.StatusOK, "successful login")
 	case service.ErrInvalidUserOrPassword:
 		ctx.String(http.StatusOK, "wrong login or password")

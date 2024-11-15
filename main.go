@@ -8,7 +8,10 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
 	"github.com/chenmuyao/go-bootcamp/internal/service"
 	"github.com/chenmuyao/go-bootcamp/internal/web"
+	"github.com/chenmuyao/go-bootcamp/internal/web/middleware"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -56,6 +59,18 @@ func initWebServer() *gin.Engine {
 		},
 		MaxAge: 12 * time.Hour,
 	}))
+
+	login := middleware.LoginMiddleware([]string{
+		"/user/signup",
+		"/user/login",
+	})
+
+	// create store to hold sessions in Cookies
+	store := cookie.NewStore([]byte("secret"))
+
+	// Use the store to hold session ssid
+	server.Use(sessions.Sessions("ssid", store), login.CheckLogin())
+
 	return server
 }
 
