@@ -36,9 +36,9 @@ type User struct {
 	Ctime int64
 	Utime int64
 
-	Name     string `gorm:"size:50"`
+	Name     string `gorm:"size:128"`
 	Birthday int64
-	Profile  string `gorm:"size:2000"`
+	Profile  string `gorm:"size:2048"`
 }
 
 func (dao *UserDAO) Insert(ctx context.Context, u User) error {

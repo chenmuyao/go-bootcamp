@@ -28,6 +28,7 @@ func (repo *UserRepository) Create(ctx context.Context, u domain.User) error {
 	return repo.dao.Insert(ctx, dao.User{
 		Email:    u.Email,
 		Password: u.Password,
+		Birthday: u.Birthday.UnixMilli(), // NOTE: the zero value of time.Time is not that of int64
 	})
 }
 
