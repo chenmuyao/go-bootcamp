@@ -1,9 +1,9 @@
 package web
 
 import (
-	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"github.com/chenmuyao/go-bootcamp/internal/service"
@@ -104,6 +104,9 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 		return
 	}
 
+	// NOTE: No need to check, because if it's not valid, we won't get
+	// anything from the DB anyway.
+
 	u, err := h.svc.Login(ctx, req.Email, req.Password)
 	switch err {
 	case nil:
@@ -124,9 +127,6 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 	default:
 		ctx.String(http.StatusInternalServerError, "system error")
 	}
-
-	// NOTE: No need to check, because if it's not valid, we won't get
-	// anything from the DB anyway.
 }
 
 func (h *UserHandler) Profile(ctx *gin.Context) {
@@ -135,9 +135,9 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 
 func (h *UserHandler) Edit(ctx *gin.Context) {
 	type Req struct {
-		Name     string `json:"name"`
-		Birthday string `json:"birthday" binding:"date"`
-		Profile  string `json:"profile"  binding:"max=2000"`
+		Name     string `json:"name"     binding:"max=50,omitempty"`
+		Birthday string `json:"birthday" binding:"date,omitempty"`
+		Profile  string `json:"profile"  binding:"max=2000,omitempty"`
 	}
 
 	var req Req
@@ -147,5 +147,30 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 		return
 	}
 
-	ctx.String(http.StatusOK, fmt.Sprintf("%v", req))
+	// Get the userID from session
+	sess := sessions.Default(ctx)
+	userID, ok := sess.Get("userID").(int64)
+	if !ok {
+		log.Printf("failed to get userID from session")
+		ctx.String(http.StatusInternalServerError, "system error")
+	}
+
+	// Update user profile
+	// Ignore error because it is already checked.
+	birthday, _ := time.Parse("2006-01-02", req.Birthday)
+	err := h.svc.EditProfile(ctx, &domain.User{
+		ID:       userID,
+		Name:     req.Name,
+		Birthday: birthday,
+		Profile:  req.Profile,
+	})
+	switch err {
+	case nil:
+		ctx.String(http.StatusOK, "user profile update success")
+	case service.ErrInvalidUserID:
+		ctx.String(http.StatusBadRequest, "unknown userID")
+	default:
+		log.Printf("failed to update user profile: %s\n", err.Error())
+		ctx.String(http.StatusInternalServerError, "system error")
+	}
 }

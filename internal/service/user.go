@@ -9,10 +9,15 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// {{{ Errors
+
 var (
 	ErrDuplicatedEmail       = repository.ErrDuplicatedEmail
 	ErrInvalidUserOrPassword = errors.New("wrong email or password")
+	ErrInvalidUserID         = errors.New("unknown userID")
 )
+
+// }}}
 
 type UserService struct {
 	repo *repository.UserRepository
@@ -52,4 +57,19 @@ func (svc *UserService) Login(
 		return domain.User{}, ErrInvalidUserOrPassword
 	}
 	return u, nil
+}
+
+func (svc *UserService) EditProfile(
+	ctx context.Context,
+	user *domain.User,
+) error {
+	err := svc.repo.UpdateProfile(ctx, user)
+	if err == repository.ErrUserNotFound {
+		return ErrInvalidUserID
+	}
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

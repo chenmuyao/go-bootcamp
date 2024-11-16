@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
@@ -35,13 +36,36 @@ func (repo *UserRepository) FindByEmail(ctx context.Context, email string) (doma
 	if err != nil {
 		return domain.User{}, err
 	}
-	return repo.userDAOToDomain(u), nil
+	return repo.userDAOToDomain(&u), nil
 }
 
-func (repo *UserRepository) userDAOToDomain(u dao.User) domain.User {
+func (repo *UserRepository) UpdateProfile(
+	ctx context.Context,
+	user *domain.User,
+) error {
+	err := repo.dao.UpdateProfile(ctx, repo.userDomainToDAO(user))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repo *UserRepository) userDAOToDomain(u *dao.User) domain.User {
 	return domain.User{
 		ID:       u.ID,
 		Password: u.Password,
 		Email:    u.Email,
+		Name:     u.Name,
+		Birthday: time.Unix(u.Birthday/1000, u.Birthday%1000*10e6),
+		Profile:  u.Profile,
+	}
+}
+
+func (repo *UserRepository) userDomainToDAO(u *domain.User) dao.User {
+	return dao.User{
+		ID:       u.ID,
+		Name:     u.Name,
+		Birthday: u.Birthday.UnixMilli(),
+		Profile:  u.Profile,
 	}
 }

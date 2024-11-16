@@ -35,6 +35,10 @@ type User struct {
 	// NOTE: UTC-0
 	Ctime int64
 	Utime int64
+
+	Name     string `gorm:"size:50"`
+	Birthday int64
+	Profile  string `gorm:"size:2000"`
 }
 
 func (dao *UserDAO) Insert(ctx context.Context, u User) error {
@@ -56,4 +60,10 @@ func (dao *UserDAO) FindByEmail(ctx context.Context, email string) (User, error)
 	var u User
 	err := dao.db.WithContext(ctx).Where("email=?", email).First(&u).Error
 	return u, err
+}
+
+func (dao *UserDAO) UpdateProfile(ctx context.Context, user User) error {
+	err := dao.db.WithContext(ctx).Where("id=?", user.ID).Updates(user).Error
+
+	return err
 }
