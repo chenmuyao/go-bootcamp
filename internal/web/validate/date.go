@@ -23,6 +23,9 @@ func UseValidators(validators ...string) {
 
 func DateValidate(fl validator.FieldLevel) bool {
 	dateStr := fl.Field().String()
+	if len(dateStr) == 0 {
+		return true
+	}
 	_, err := time.Parse("2006-01-02", dateStr)
 	return err == nil
 }

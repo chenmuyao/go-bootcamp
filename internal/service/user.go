@@ -73,3 +73,14 @@ func (svc *UserService) EditProfile(
 
 	return nil
 }
+
+func (svc *UserService) GetProfile(ctx context.Context, userID int64) (domain.User, error) {
+	u, err := svc.repo.GetProfile(ctx, userID)
+	if err == repository.ErrUserNotFound {
+		return domain.User{}, ErrInvalidUserID
+	}
+	if err != nil {
+		return domain.User{}, err
+	}
+	return u, nil
+}

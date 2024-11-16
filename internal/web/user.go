@@ -1,8 +1,10 @@
 package web
 
 import (
+	"errors"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
@@ -36,6 +38,7 @@ func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 	user.POST("/signup", h.SignUp)
 	user.POST("/login", h.Login)
 	user.GET("/profile", h.Profile)
+	user.GET("/profile/:id", h.Profile)
 	user.POST("/edit", h.Edit)
 }
 
@@ -130,7 +133,56 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 }
 
 func (h *UserHandler) Profile(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, "Get User profile")
+	var userID int64
+	var err error
+	id := ctx.Param("id")
+	if id == "" {
+		// get userID from session
+		userID, err = getUserIDFromSession(ctx)
+		if err != nil {
+			log.Println(err)
+			ctx.String(http.StatusInternalServerError, "system error")
+			return
+		}
+	} else {
+		if userID, err = strconv.ParseInt(id, 10, 64); err != nil {
+			log.Println(err)
+			ctx.String(http.StatusBadRequest, "unknown userID: %s", id)
+			return
+		}
+	}
+
+	u, err := h.svc.GetProfile(ctx, userID)
+	switch err {
+	case nil:
+		break
+	case service.ErrInvalidUserID:
+		ctx.String(http.StatusNotFound, "unknown userID")
+		return
+	default:
+		log.Printf("failed to get user profile: %s\n", err.Error())
+		ctx.String(http.StatusInternalServerError, "system error")
+		return
+	}
+
+	var birthday string
+	if !u.Birthday.IsZero() {
+		birthday = u.Birthday.Format("2006-01-02")
+	}
+
+	resp := struct {
+		Email    string `json:"email"`
+		Name     string `json:"name"`
+		Birthday string `json:"birthday"`
+		Profile  string `json:"profile"`
+	}{
+		Email:    u.Email,
+		Name:     u.Name,
+		Birthday: birthday,
+		Profile:  u.Profile,
+	}
+
+	ctx.JSON(http.StatusOK, resp)
 }
 
 func (h *UserHandler) Edit(ctx *gin.Context) {
@@ -148,17 +200,21 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 	}
 
 	// Get the userID from session
-	sess := sessions.Default(ctx)
-	userID, ok := sess.Get("userID").(int64)
-	if !ok {
-		log.Printf("failed to get userID from session")
+	userID, err := getUserIDFromSession(ctx)
+	if err != nil {
+		log.Println(err)
 		ctx.String(http.StatusInternalServerError, "system error")
+		return
 	}
 
 	// Update user profile
-	// Ignore error because it is already checked.
-	birthday, _ := time.Parse("2006-01-02", req.Birthday)
-	err := h.svc.EditProfile(ctx, &domain.User{
+	// NOTE: if birthday is not set, set it to zero value. And it will be
+	// ignored when getting the profile
+	var birthday time.Time
+	if len(req.Birthday) != 0 {
+		birthday, _ = time.Parse("2006-01-02", req.Birthday)
+	}
+	err = h.svc.EditProfile(ctx, &domain.User{
 		ID:       userID,
 		Name:     req.Name,
 		Birthday: birthday,
@@ -173,4 +229,13 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 		log.Printf("failed to update user profile: %s\n", err.Error())
 		ctx.String(http.StatusInternalServerError, "system error")
 	}
+}
+
+func getUserIDFromSession(ctx *gin.Context) (int64, error) {
+	sess := sessions.Default(ctx)
+	userID, ok := sess.Get("userID").(int64)
+	if !ok {
+		return 0, errors.New("failed to get userID from session")
+	}
+	return userID, nil
 }

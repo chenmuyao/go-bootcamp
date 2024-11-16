@@ -39,15 +39,20 @@ func (repo *UserRepository) FindByEmail(ctx context.Context, email string) (doma
 	return repo.userDAOToDomain(&u), nil
 }
 
-func (repo *UserRepository) UpdateProfile(
-	ctx context.Context,
-	user *domain.User,
-) error {
+func (repo *UserRepository) UpdateProfile(ctx context.Context, user *domain.User) error {
 	err := repo.dao.UpdateProfile(ctx, repo.userDomainToDAO(user))
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (repo *UserRepository) GetProfile(ctx context.Context, userID int64) (domain.User, error) {
+	u, err := repo.dao.FindByID(ctx, userID)
+	if err != nil {
+		return domain.User{}, err
+	}
+	return repo.userDAOToDomain(&u), nil
 }
 
 func (repo *UserRepository) userDAOToDomain(u *dao.User) domain.User {
