@@ -187,9 +187,9 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 
 func (h *UserHandler) Edit(ctx *gin.Context) {
 	type Req struct {
-		Name     string `json:"name"     binding:"max=50,omitempty"`
-		Birthday string `json:"birthday" binding:"date,omitempty"`
-		Profile  string `json:"profile"  binding:"max=2000,omitempty"`
+		Name     string `json:"name"`
+		Birthday string `json:"birthday"`
+		Profile  string `json:"profile"`
 	}
 
 	var req Req
@@ -212,7 +212,14 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 	// ignored when getting the profile
 	var birthday time.Time
 	if len(req.Birthday) != 0 {
-		birthday, _ = time.Parse("2006-01-02", req.Birthday)
+		birthday, err = time.Parse("2006-01-02", req.Birthday)
+		if err != nil {
+			// NOTE: check should be done on the frontend. If we bypass the
+			// frontend check, it must not be a normal user, and we don't care
+			// about the error message.
+			ctx.String(http.StatusInternalServerError, "system error")
+			return
+		}
 	}
 	err = h.svc.EditProfile(ctx, &domain.User{
 		ID:       userID,
