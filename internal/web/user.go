@@ -12,6 +12,7 @@ import (
 	"github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 const (
@@ -19,10 +20,17 @@ const (
 	passwordRegexPattern = `^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,}$`
 )
 
+var JWTKey = []byte("xQUPmbb2TP9CUyFZkgOnV3JQdr22ZNBx")
+
 type UserHandler struct {
 	emailRegex    *regexp2.Regexp
 	passwordRegex *regexp2.Regexp
 	svc           *service.UserService
+}
+
+type UserClaims struct {
+	jwt.RegisteredClaims
+	UID int64
 }
 
 func NewUserHandler(svc *service.UserService) *UserHandler {
@@ -36,7 +44,8 @@ func NewUserHandler(svc *service.UserService) *UserHandler {
 func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 	user := server.Group("/user/")
 	user.POST("/signup", h.SignUp)
-	user.POST("/login", h.Login)
+	// user.POST("/login", h.Login)
+	user.POST("/login", h.LoginJWT)
 	user.GET("/profile", h.Profile)
 	user.GET("/profile/:id", h.Profile)
 	user.POST("/edit", h.Edit)
@@ -132,18 +141,58 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 	}
 }
 
+func (h *UserHandler) LoginJWT(ctx *gin.Context) {
+	type Req struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	var req Req
+
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+
+	// NOTE: No need to check, because if it's not valid, we won't get
+	// anything from the DB anyway.
+
+	u, err := h.svc.Login(ctx, req.Email, req.Password)
+	switch err {
+	case nil:
+		uc := UserClaims{
+			UID: u.ID,
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),
+			},
+		}
+
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, uc)
+		tokenStr, err := token.SignedString(JWTKey)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, "system error")
+		}
+		ctx.Header("x-jwt-token", tokenStr)
+		ctx.String(http.StatusOK, "successful login")
+	case service.ErrInvalidUserOrPassword:
+		ctx.String(http.StatusBadRequest, "wrong login or password")
+	default:
+		ctx.String(http.StatusInternalServerError, "system error")
+	}
+}
+
 func (h *UserHandler) Profile(ctx *gin.Context) {
 	var userID int64
 	var err error
 	id := ctx.Param("id")
 	if id == "" {
 		// get userID from session
-		userID, err = getUserIDFromSession(ctx)
-		if err != nil {
-			log.Println(err)
-			ctx.String(http.StatusInternalServerError, "system error")
-			return
-		}
+		// userID, err = getUserIDFromSession(ctx)
+		// if err != nil {
+		// 	log.Println(err)
+		// 	ctx.String(http.StatusInternalServerError, "system error")
+		// 	return
+		// }
+		userID = getUserIDFromJWT(ctx)
 	} else {
 		if userID, err = strconv.ParseInt(id, 10, 64); err != nil {
 			log.Println(err)
@@ -200,17 +249,19 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 	}
 
 	// Get the userID from session
-	userID, err := getUserIDFromSession(ctx)
-	if err != nil {
-		log.Println(err)
-		ctx.String(http.StatusInternalServerError, "system error")
-		return
-	}
+	// userID, err := getUserIDFromSession(ctx)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	ctx.String(http.StatusInternalServerError, "system error")
+	// 	return
+	// }
+	userID := getUserIDFromJWT(ctx)
 
 	// Update user profile
 	// NOTE: if birthday is not set, set it to zero value. And it will be
 	// ignored when getting the profile
 	var birthday time.Time
+	var err error
 	if len(req.Birthday) != 0 {
 		birthday, err = time.Parse("2006-01-02", req.Birthday)
 		if err != nil {
@@ -245,4 +296,10 @@ func getUserIDFromSession(ctx *gin.Context) (int64, error) {
 		return 0, errors.New("failed to get userID from session")
 	}
 	return userID, nil
+}
+
+func getUserIDFromJWT(ctx *gin.Context) int64 {
+	uc := ctx.MustGet("user").(UserClaims)
+
+	return uc.UID
 }

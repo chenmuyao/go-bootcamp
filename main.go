@@ -51,6 +51,8 @@ func initWebServer() *gin.Engine {
 	server.Use(cors.New(cors.Config{
 		AllowCredentials: true,
 		AllowHeaders:     []string{"Content-Type", "Authorization"},
+		// Allow frontend to access headers sent back from the backend
+		ExposeHeaders: []string{"x-jwt-token"},
 		AllowOriginFunc: func(origin string) bool {
 			if strings.HasPrefix(origin, "http://localhost") {
 				return true
@@ -60,6 +62,28 @@ func initWebServer() *gin.Engine {
 		MaxAge: 12 * time.Hour,
 	}))
 
+	useJWT(server)
+
+	return server
+}
+
+func initUserHandlers(db *gorm.DB, server *gin.Engine) {
+	userDAO := dao.NewUserDAO(db)
+	userRepo := repository.NewUserRepository(userDAO)
+	userService := service.NewUserService(userRepo)
+	userHandlers := web.NewUserHandler(userService)
+	userHandlers.RegisterRoutes(server)
+}
+
+func useJWT(server *gin.Engine) {
+	loginJWT := middleware.LoginJWTMiddleware([]string{
+		"/user/signup",
+		"/user/login",
+	})
+	server.Use(loginJWT.CheckLogin())
+}
+
+func useSession(server *gin.Engine) {
 	login := middleware.LoginMiddleware([]string{
 		"/user/signup",
 		"/user/login",
@@ -89,14 +113,4 @@ func initWebServer() *gin.Engine {
 
 	// Use the store to hold session ssid
 	server.Use(sessions.Sessions("ssid", store), login.CheckLogin())
-
-	return server
-}
-
-func initUserHandlers(db *gorm.DB, server *gin.Engine) {
-	userDAO := dao.NewUserDAO(db)
-	userRepo := repository.NewUserRepository(userDAO)
-	userService := service.NewUserService(userRepo)
-	userHandlers := web.NewUserHandler(userService)
-	userHandlers.RegisterRoutes(server)
 }
