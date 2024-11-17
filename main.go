@@ -11,7 +11,7 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/web/middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -65,8 +65,27 @@ func initWebServer() *gin.Engine {
 		"/user/login",
 	})
 
-	// create store to hold sessions in Cookies
-	store := cookie.NewStore([]byte("secret"))
+	// create store to hold session data in Cookies
+	// store := cookie.NewStore([]byte("secret"))
+
+	// create store to hold session data in memstore
+	// store := memstore.NewStore(
+	// 	[]byte("QbYQn3ZyECBq3fQwWFj84ccoqipj70oJ"),
+	// 	[]byte("kpqqi5guoJGKCmsgN7a5jwgd2nvpC2P3"),
+	// )
+
+	// NOTE: Use redis for distributed storage of session info
+	store, err := redis.NewStore(
+		16,
+		"tcp",
+		"localhost:6379",
+		"",
+		[]byte("QbYQn3ZyECBq3fQwWFj84ccoqipj70oJ"), // authentication
+		[]byte("kpqqi5guoJGKCmsgN7a5jwgd2nvpC2P3"), // encryption
+	)
+	if err != nil {
+		panic(err)
+	}
 
 	// Use the store to hold session ssid
 	server.Use(sessions.Sessions("ssid", store), login.CheckLogin())
