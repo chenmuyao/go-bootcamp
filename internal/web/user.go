@@ -116,7 +116,7 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 		sess := sessions.Default(ctx)
 		sess.Set("userID", u.ID)
 		sess.Options(sessions.Options{
-			MaxAge:   900, // 15min
+			MaxAge:   900, // 15min - expire time of the session (+ expire time of the userID entry in redis.)
 			HttpOnly: true,
 		})
 		err = sess.Save()
