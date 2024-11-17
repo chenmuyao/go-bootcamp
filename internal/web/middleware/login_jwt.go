@@ -65,6 +65,13 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			return
 		}
 
+		if uc.UserAgent != ctx.GetHeader("User-Agent") {
+			// NOTE: Instrument here. Might be attackers.
+			// A better option is to use the browser's fingerprint.
+			ctx.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
 		expireTime := uc.ExpiresAt.Time
 		if time.Until(expireTime) < 29*time.Minute {
 			// refresh every minute
