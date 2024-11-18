@@ -10,10 +10,12 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/service"
 	"github.com/chenmuyao/go-bootcamp/internal/web"
 	"github.com/chenmuyao/go-bootcamp/internal/web/middleware"
+	"github.com/chenmuyao/go-bootcamp/pkg/ginx/middleware/ratelimit"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	redisStore "github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -61,11 +63,11 @@ func initWebServer() *gin.Engine {
 		MaxAge: 12 * time.Hour,
 	}))
 
-	// redisClient := redis.NewClient(&redis.Options{
-	// 	Addr: config.Config.Redis.Addr,
-	// })
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: config.Config.Redis.Addr,
+	})
 
-	// server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build())
+	server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build())
 
 	useJWT(server)
 
@@ -81,7 +83,7 @@ func initUserHandlers(db *gorm.DB, server *gin.Engine) {
 }
 
 func useJWT(server *gin.Engine) {
-	loginJWT := middleware.LoginJWTMiddleware([]string{
+	loginJWT := middleware.NewLoginJWT([]string{
 		"/user/signup",
 		"/user/login",
 	})

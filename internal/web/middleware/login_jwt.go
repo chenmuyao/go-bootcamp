@@ -11,21 +11,21 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type LoginJWTMiddlewareBuilder struct {
+type LoginJWT struct {
 	ignorePaths map[string]struct{}
 }
 
-func LoginJWTMiddleware(ignorePaths []string) *LoginJWTMiddlewareBuilder {
+func NewLoginJWT(ignorePaths []string) *LoginJWT {
 	ignorePathsMap := make(map[string]struct{}, len(ignorePaths))
 	for _, path := range ignorePaths {
 		ignorePathsMap[path] = struct{}{}
 	}
-	return &LoginJWTMiddlewareBuilder{
+	return &LoginJWT{
 		ignorePaths: ignorePathsMap,
 	}
 }
 
-func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
+func (m *LoginJWT) CheckLogin() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		path := ctx.Request.URL.Path
 		if _, ok := m.ignorePaths[path]; ok {
