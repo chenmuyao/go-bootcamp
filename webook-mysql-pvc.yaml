@@ -1,0 +1,17 @@
+# https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: webook-mysql-pvc
+  labels:
+    app: webook-mysql-pvc
+spec:
+  storageClassName: webook
+  # Read write by one Pod (the pod of mysql)
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+

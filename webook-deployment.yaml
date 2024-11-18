@@ -1,0 +1,31 @@
+# https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webook
+spec:
+  replicas: 3
+  # Which pods to deploy?
+  selector:
+    # find the labels
+    matchLabels:
+      app: webook
+  # template in Deployment means the template for pods
+  template:
+    metadata:
+      # lables will be matched
+      labels:
+        # Must be the same as matchLabels
+        app: webook
+    # Pod spec
+    spec:
+      # Containers in Pods (Normally one container in one pod)
+      containers:
+      - name: webook
+        image: vinchent123/webook:v0.0.1
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 7779

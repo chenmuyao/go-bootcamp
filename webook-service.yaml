@@ -1,0 +1,18 @@
+# https://kubernetes.io/docs/concepts/services-networking/service/
+apiVersion: v1
+kind: Service
+metadata:
+  name: webook
+spec:
+  selector:
+    app: webook
+  type: LoadBalancer
+  ports:
+  - name: webook
+    protocol: TCP
+    # kube service
+    port: 7779
+    # Inside
+    targetPort: 8081
+---
+

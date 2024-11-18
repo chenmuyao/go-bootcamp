@@ -1,0 +1,17 @@
+# https://kubernetes.io/docs/concepts/services-networking/service/
+apiVersion: v1
+kind: Service
+metadata:
+  name: webook-mysql
+  namespace: default
+spec:
+  selector:
+    app: webook-mysql
+  type: LoadBalancer
+  ports:
+  - name: webook-mysql
+    protocol: TCP
+    port: 3308
+    targetPort: 3306
+---
+
