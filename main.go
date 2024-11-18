@@ -67,7 +67,11 @@ func initWebServer() *gin.Engine {
 		Addr: config.Config.Redis.Addr,
 	})
 
-	server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build())
+	server.Use(ratelimit.NewBuilder(&ratelimit.Options{
+		RedisClient: redisClient,
+		Interval:    time.Second,
+		Limit:       100,
+	}).Build())
 
 	useJWT(server)
 
