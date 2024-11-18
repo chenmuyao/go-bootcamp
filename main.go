@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/chenmuyao/go-bootcamp/config"
 	"github.com/chenmuyao/go-bootcamp/internal/repository"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
 	"github.com/chenmuyao/go-bootcamp/internal/service"
@@ -24,14 +25,12 @@ func main() {
 
 	initUserHandlers(db, server)
 
-	server.Run(":7779")
+	server.Run(":8081")
 }
 
 func initDB() *gorm.DB {
 	db, err := gorm.Open(
-		mysql.Open(
-			"root:root@tcp(127.0.0.1:13316)/webook?charset=utf8mb4&parseTime=True&loc=Local",
-		),
+		mysql.Open(config.Config.DB.DSN),
 		&gorm.Config{},
 	)
 	if err != nil {
@@ -63,7 +62,7 @@ func initWebServer() *gin.Engine {
 	}))
 
 	// redisClient := redis.NewClient(&redis.Options{
-	// 	Addr: "localhost:6379",
+	// 	Addr: config.Config.Redis.Addr,
 	// })
 
 	// server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build())
