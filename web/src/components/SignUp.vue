@@ -1,0 +1,81 @@
+<template>
+  <div class="signup-page">
+    <h3>Sign Up</h3>
+    <form @submit.prevent="handleSignup">
+      <div>
+        <label for="email">Email:</label>
+        <input type="email" id="email" v-model="form.email" required>
+      </div>
+      <div>
+        <label for="password">Password:</label>
+        <input type="password" id="password" v-model="form.password" required>
+      </div>
+      <div>
+        <label for="confirm-password">Confirm password:</label>
+        <input type="password" id="confirm-password" v-model="form.confirmPassword" required>
+      </div>
+      <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+      <div>
+        <button type="submit" :disabled="!isFormValid">Sign Up</button>
+      </div>
+    </form>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { reactive, computed } from 'vue';
+
+const emailRegexPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/
+const passwordRegexPattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,}$/
+
+const emit = defineEmits([ 'signup' ]);
+
+const form = reactive({
+  email: '',
+  password: '',
+  confirmPassword: '',
+});
+
+const errorMessage = computed(() => {
+  return validateForm();
+});
+
+const isFormValid = computed(() => {
+  return '' === validateForm();
+});
+
+const validateForm = () => {
+  if (form.email && !validateEmail(form.email)) {
+    return 'Please enter a valid email';
+  }
+
+  if (form.password && !validatePassword(form.password)) {
+    return 'Password should at least have letters, numbers and at least one special characters';
+  }
+
+  if (form.password && form.confirmPassword && form.password != form.confirmPassword) {
+    return 'Passwords do not match';
+  }
+
+  return '';
+}
+
+const validateEmail = (val: string) => {
+  return val.match(emailRegexPattern) != null;
+}
+
+const validatePassword = (val: string) => {
+  return val.match(passwordRegexPattern) != null;
+}
+
+const handleSignup = () => {
+  if (!isFormValid.value) return;
+
+  // Emit an event
+  emit('signup', {
+    email: form.email,
+    password: form.password,
+    confirmPassword: form.confirmPassword,
+  });
+};
+</script>

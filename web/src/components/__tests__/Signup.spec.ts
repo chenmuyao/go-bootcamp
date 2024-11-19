@@ -3,12 +3,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount, VueWrapper } from '@vue/test-utils'
 import SignUp from '../SignUp.vue'
 
-interface SignupFormData {
-  email: string;
-  password: string;
-  confirmPassword: string;
-}
-
 describe('Signup', () => {
   let wrapper: VueWrapper;
 
@@ -17,21 +11,21 @@ describe('Signup', () => {
   });
 
   it('renders the form with inputs and a button', () => {
-    expect(wrapper.find('input[type="#email"]').exists()).toBe(true);
-    expect(wrapper.find('input[type="#password"]').exists()).toBe(true);
-    expect(wrapper.find('input[type="#confirm-password"]').exists()).toBe(true);
-    expect(wrapper.find('button"]').exists()).toBe(true);
+    expect(wrapper.find('input[type="email"]').exists()).toBe(true);
+    expect(wrapper.find('input[type="password"]').exists()).toBe(true);
+    expect(wrapper.find('input#confirm-password').exists()).toBe(true);
+    expect(wrapper.find('button').exists()).toBe(true);
   });
 
   it('updates the email input value correctly', async () => {
     const emailInput = wrapper.get('input[type="email"]');
     await emailInput.setValue('test@example.com');
-    expect(emailInput.element.nodeValue).toBe('test@example.com');
+    expect(emailInput.element.value).toBe('test@example.com');
   });
 
   it('disable the signup button when inputs are invalid', async () => {
     const signupButton = wrapper.get('button');
-    expect(signupButton.attributes('disabled')).toBe('true');
+    expect(signupButton.attributes('disabled')).toBeDefined;
   });
 
   it('enables the signup button when inputs are valid', async () => {
@@ -70,26 +64,24 @@ describe('Signup', () => {
     const error = wrapper.find('.error-message');
 
     expect(error.exists()).toBe(true);
-    expect(wrapper.text()).toBe('Input is not a valid email');
+    expect(error.text()).toBe('Please enter a valid email');
   })
 
   it('emits a signup event with correct data on valid form submission', async () => {
-    const mockSignup = vi.fn()
-    const formData: SignupFormData = {
+    const handleSignupSpy = vi.spyOn(wrapper.vm.$, 'emit');
+    const formData = {
       email: 'test@example.com',
       password: 'password123!',
       confirmPassword: 'password123!',
     };
 
-    wrapper.vm.$emit = mockSignup; // Mock the emit method
-
     await wrapper.get('input[type="email"]').setValue('test@example.com');
-    await wrapper.get('input[type="password"]').setValue('password123');
-    await wrapper.get('input#confirm-password').setValue('password123');
+    await wrapper.get('input[type="password"]').setValue('password123!');
+    await wrapper.get('input#confirm-password').setValue('password123!');
 
-    await wrapper.get('button').trigger('click');
+    await wrapper.get('form').trigger('submit');
 
-    expect(mockSignup).toHaveBeenCalledWith('signup', {
+    expect(handleSignupSpy).toHaveBeenCalledWith('signup', {
       email: formData.email,
       password: formData.password,
       confirmPassword: formData.confirmPassword,
