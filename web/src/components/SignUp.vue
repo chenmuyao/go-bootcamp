@@ -1,22 +1,22 @@
 <template>
   <div class="signup-page">
     <h3>Sign Up</h3>
-    <form @submit.prevent="handleSignup">
+    <form class="w3-container" @submit.prevent="handleSignup">
       <div>
         <label for="email">Email:</label>
-        <input type="email" id="email" v-model="form.email" required>
+        <input class="w3-input" type="email" id="email" v-model="form.email" required>
       </div>
       <div>
         <label for="password">Password:</label>
-        <input type="password" id="password" v-model="form.password" required>
+        <input class="w3-input" type="password" id="password" v-model="form.password" required>
       </div>
       <div>
         <label for="confirm-password">Confirm password:</label>
-        <input type="password" id="confirm-password" v-model="form.confirmPassword" required>
+        <input class="w3-input" type="password" id="confirm-password" v-model="form.confirmPassword" required>
       </div>
-      <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+      <div v-if="errorMessage" class="w3-panel w3-red">{{ errorMessage }}</div>
       <div>
-        <button type="submit" :disabled="!isFormValid">Sign Up</button>
+        <button class="w3-margin-top w3-btn w3-ripple w3-green" type="submit" :disabled="!isFormValid">Sign Up</button>
       </div>
     </form>
   </div>
@@ -24,6 +24,7 @@
 
 <script setup lang="ts">
 import { reactive, computed } from 'vue';
+import axios from 'axios';
 
 const emailRegexPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/
 const passwordRegexPattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,}$/
@@ -77,5 +78,17 @@ const handleSignup = () => {
     password: form.password,
     confirmPassword: form.confirmPassword,
   });
+
+  axios.post('http://localhost:7779/user/signup', {
+    'email': form.email,
+    'password': form.password,
+    'confirm_password': form.confirmPassword,
+  })
+    .then((response) => {
+      console.log(response)
+    })
+    .catch((error) => {
+      console.error(error)
+    });
 };
 </script>
