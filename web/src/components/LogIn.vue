@@ -20,10 +20,11 @@
 
 <script setup lang="ts">
 import { reactive, computed } from 'vue';
-import axios from 'axios';
+import { useAuthStore } from '@/stores/auth'
 
 const emailRegexPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/
 
+const authStore = useAuthStore();
 const emit = defineEmits([ 'login' ]);
 
 const form = reactive({
@@ -64,18 +65,12 @@ const handleLogin = () => {
     password: form.password,
   });
 
-  axios.post('http://localhost:7779/user/login', {
-    email: form.email,
-    password: form.password,
-  })
-    .then((response) => {
-      // get the jwt token from header (x-jwt-token)
-      // store it somewhere for further usage
-      // and redirect to user/profile page
-    })
-    .catch((error) => {
-      console.error(error)
-    });
+  try {
+    authStore.login(form.email, form.password)
+  } catch (err) {
+    errorMessage.value = err.value
+  }
+
 };
 </script>
 
