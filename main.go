@@ -6,6 +6,7 @@ import (
 
 	"github.com/chenmuyao/go-bootcamp/config"
 	"github.com/chenmuyao/go-bootcamp/internal/repository"
+	"github.com/chenmuyao/go-bootcamp/internal/repository/cache"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
 	"github.com/chenmuyao/go-bootcamp/internal/service"
 	"github.com/chenmuyao/go-bootcamp/internal/web"
@@ -15,6 +16,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	redisStore "github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -23,10 +25,17 @@ func main() {
 	server := initWebServer()
 
 	db := initDB()
+	cache := initCache()
 
-	initUserHandlers(db, server)
+	initUserHandlers(db, cache, server)
 
 	server.Run(":8081")
+}
+
+func initCache() *redis.Client {
+	return redis.NewClient(&redis.Options{
+		Addr: config.Config.Redis.Addr,
+	})
 }
 
 func initDB() *gorm.DB {
@@ -62,10 +71,6 @@ func initWebServer() *gin.Engine {
 		MaxAge: 12 * time.Hour,
 	}))
 
-	// redisClient := redis.NewClient(&redis.Options{
-	// 	Addr: config.Config.Redis.Addr,
-	// })
-
 	// server.Use(ratelimit.NewFixedWindowLimiterBuilder(&ratelimit.FixedWindowOptions{
 	// 	Interval: time.Second,
 	// 	Limit:    100,
@@ -80,9 +85,10 @@ func initWebServer() *gin.Engine {
 	return server
 }
 
-func initUserHandlers(db *gorm.DB, server *gin.Engine) {
+func initUserHandlers(db *gorm.DB, cc redis.Cmdable, server *gin.Engine) {
 	userDAO := dao.NewUserDAO(db)
-	userRepo := repository.NewUserRepository(userDAO)
+	userCache := cache.NewUserCache(cc)
+	userRepo := repository.NewUserRepository(userDAO, userCache)
 	userService := service.NewUserService(userRepo)
 	userHandlers := web.NewUserHandler(userService)
 	userHandlers.RegisterRoutes(server)

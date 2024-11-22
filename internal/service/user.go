@@ -78,7 +78,7 @@ func (svc *UserService) EditProfile(
 }
 
 func (svc *UserService) GetProfile(ctx context.Context, userID int64) (domain.User, error) {
-	u, err := svc.repo.GetProfile(ctx, userID)
+	u, err := svc.repo.FindById(ctx, userID)
 	if err == repository.ErrUserNotFound {
 		return domain.User{}, ErrInvalidUserID
 	}
