@@ -6,32 +6,56 @@ import (
 
 	"github.com/chenmuyao/go-bootcamp/pkg/limiter"
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 )
 
-type Options struct {
-	RedisClient *redis.Client
-	Interval    time.Duration
-	Limit       int
-}
-
 type RateLimiter struct {
-	FixedWindowLimiter limiter.FixedWindowLimiter
+	FixedWindowLimiter   limiter.FixedWindowLimiter
+	SlidingWindowLimiter limiter.SlidingWindowLimiter
+	limiterType          int
 }
 
-func NewBuilder(options *Options) *RateLimiter {
+type FixedWindowOptions struct {
+	Limit    int
+	Interval time.Duration
+}
+
+func NewFixedWindowLimiterBuilder(options *FixedWindowOptions) *RateLimiter {
 	return &RateLimiter{
-		FixedWindowLimiter: *limiter.NewFixedWindowLimiter(&limiter.Options{
+		FixedWindowLimiter: *limiter.NewFixedWindowLimiter(&limiter.FixedWindowOptions{
 			Interval: options.Interval,
 			Limit:    options.Limit,
 		}),
+		limiterType: limiter.FixedWindow,
+	}
+}
+
+type SlidingWindowOptions struct {
+	Limit      int
+	WindowSize time.Duration
+}
+
+func NewSlidingWindowLimiterBuilder(options *SlidingWindowOptions) *RateLimiter {
+	return &RateLimiter{
+		SlidingWindowLimiter: *limiter.NewSlidingWindowLimiter(&limiter.SlidingWindowOptions{
+			WindowSize: options.WindowSize,
+			Limit:      options.Limit,
+		}),
+		limiterType: limiter.SlidingWindow,
 	}
 }
 
 func (rl *RateLimiter) Build() gin.HandlerFunc {
+	var acceptConnection func(string) bool
+	switch rl.limiterType {
+	case limiter.FixedWindow:
+		acceptConnection = rl.FixedWindowLimiter.AcceptConnection
+	case limiter.SlidingWindow:
+		acceptConnection = rl.SlidingWindowLimiter.AcceptConnection
+	}
+
 	return func(ctx *gin.Context) {
 		ip := ctx.ClientIP()
-		if !rl.FixedWindowLimiter.AcceptConnection(ip) {
+		if !acceptConnection(ip) {
 			ctx.AbortWithStatus(http.StatusTooManyRequests)
 			return
 		}

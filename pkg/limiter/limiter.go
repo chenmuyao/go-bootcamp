@@ -2,17 +2,20 @@ package limiter
 
 import (
 	"fmt"
+	"sync"
 	"time"
 )
 
-// const (
-// 	FixedWindow = iota
-// 	SlidingWindow
-// 	TokenBucket
-// 	LeakyBucket
-// )
+const (
+	FixedWindow = iota
+	SlidingWindow
+	TokenBucket
+	LeakyBucket
+)
 
-type Options struct {
+// {{{ FixedWindowLimiter
+
+type FixedWindowOptions struct {
 	Interval time.Duration
 	Limit    int
 
@@ -20,68 +23,141 @@ type Options struct {
 	Prefix string
 }
 
+type fixedWindowRateInfo struct {
+	count     int
+	timeBegin time.Time
+}
+
 type FixedWindowLimiter struct {
-	Prefix   string
-	Interval time.Duration
-	Limit    int
+	prefix   string
+	interval time.Duration
+	limit    int
 
-	Cache map[string]rateInfo
+	cache map[string]fixedWindowRateInfo
+
+	mutex sync.Mutex
 }
 
-type rateInfo struct {
-	Count     int
-	TimeBegin time.Time
-}
-
-func NewFixedWindowLimiter(options *Options) *FixedWindowLimiter {
+func NewFixedWindowLimiter(options *FixedWindowOptions) *FixedWindowLimiter {
 	prefix := options.Prefix
 	if len(prefix) == 0 {
 		prefix = "IP-limit"
 	}
 	return &FixedWindowLimiter{
-		Prefix:   prefix,
-		Interval: options.Interval,
-		Limit:    options.Limit,
-		Cache:    map[string]rateInfo{},
+		prefix:   prefix,
+		interval: options.Interval,
+		limit:    options.Limit,
+		cache:    map[string]fixedWindowRateInfo{},
 	}
 }
 
-func (fw *FixedWindowLimiter) KeyPrefix(prefix string) *FixedWindowLimiter {
-	fw.Prefix = prefix
-	return fw
-}
-
 func (fw *FixedWindowLimiter) AcceptConnection(IP string) bool {
-	key := fw.generateKey(IP)
-	res, ok := fw.Cache[key]
+	fw.mutex.Lock()
+	defer fw.mutex.Unlock()
+
+	now := time.Now()
+
+	key := fmt.Sprintf("%s-%s", fw.prefix, IP)
+	res, ok := fw.cache[key]
 	if !ok {
 		// Not found
-		fw.Cache[key] = rateInfo{
-			Count:     1,
-			TimeBegin: time.Now(),
+		fw.cache[key] = fixedWindowRateInfo{
+			count:     1,
+			timeBegin: now,
 		}
 		return true
 	}
 
-	now := time.Now()
-	if now.Sub(res.TimeBegin) <= fw.Interval {
-		res.Count++
-		// compare
-		if res.Count <= fw.Limit {
-			fw.Cache[key] = res
-			return true
-		} else {
-			// Reached the limit
-			return false
-		}
-	} else {
+	if now.Sub(res.timeBegin) > fw.interval {
 		// reset
-		res.Count = 1
-		res.TimeBegin = time.Now()
+		res.count = 1
+		res.timeBegin = time.Now()
+		return true
 	}
+
+	res.count++
+	// compare
+	if res.count > fw.limit {
+		// Reached the limit
+		return false
+	}
+	fw.cache[key] = res
+
 	return true
 }
 
-func (fw *FixedWindowLimiter) generateKey(IP string) string {
-	return fmt.Sprintf("%s-%s", fw.Prefix, IP)
+// }}}
+// {{{ SlidingWindowLimiter
+
+type slidingWindowRateInfo struct {
+	requests []time.Time
 }
+
+type SlidingWindowOptions struct {
+	WindowSize time.Duration
+	Limit      int
+
+	// Optional
+	Prefix string
+}
+
+type SlidingWindowLimiter struct {
+	prefix     string
+	windowSize time.Duration
+	limit      int
+
+	cache map[string]slidingWindowRateInfo
+
+	mutex sync.Mutex
+}
+
+func NewSlidingWindowLimiter(options *SlidingWindowOptions) *SlidingWindowLimiter {
+	prefix := options.Prefix
+	if len(prefix) == 0 {
+		prefix = "IP-limit"
+	}
+	return &SlidingWindowLimiter{
+		prefix:     prefix,
+		windowSize: options.WindowSize,
+		limit:      options.Limit,
+		cache:      map[string]slidingWindowRateInfo{},
+	}
+}
+
+func (fw *SlidingWindowLimiter) AcceptConnection(IP string) bool {
+	fw.mutex.Lock()
+	defer fw.mutex.Unlock()
+
+	now := time.Now()
+
+	key := fmt.Sprintf("%s-%s", fw.prefix, IP)
+	res, ok := fw.cache[key]
+	if !ok {
+		// Not found
+		fw.cache[key] = slidingWindowRateInfo{
+			requests: []time.Time{now},
+		}
+		return true
+	}
+
+	// remofe old requests
+	cutTime := now.Add(-fw.windowSize)
+
+	for len(res.requests) > 0 && res.requests[0].Before(cutTime) {
+		res.requests = res.requests[1:]
+	}
+
+	// check len
+	if len(res.requests) >= fw.limit {
+		// reached the limit
+		return false
+	}
+
+	res.requests = append(res.requests, now)
+
+	fw.cache[key] = res
+
+	return true
+}
+
+// }}}

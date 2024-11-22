@@ -15,7 +15,6 @@ import (
 	"github.com/gin-contrib/sessions"
 	redisStore "github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -63,14 +62,17 @@ func initWebServer() *gin.Engine {
 		MaxAge: 12 * time.Hour,
 	}))
 
-	redisClient := redis.NewClient(&redis.Options{
-		Addr: config.Config.Redis.Addr,
-	})
+	// redisClient := redis.NewClient(&redis.Options{
+	// 	Addr: config.Config.Redis.Addr,
+	// })
 
-	server.Use(ratelimit.NewBuilder(&ratelimit.Options{
-		RedisClient: redisClient,
-		Interval:    time.Second,
-		Limit:       100,
+	// server.Use(ratelimit.NewFixedWindowLimiterBuilder(&ratelimit.FixedWindowOptions{
+	// 	Interval: time.Second,
+	// 	Limit:    100,
+	// }).Build())
+	server.Use(ratelimit.NewSlidingWindowLimiterBuilder(&ratelimit.SlidingWindowOptions{
+		WindowSize: time.Second,
+		Limit:      100,
 	}).Build())
 
 	useJWT(server)
