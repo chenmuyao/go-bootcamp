@@ -88,7 +88,7 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	}
 
 	if req.Password != req.ConfirmPassword {
-		ctx.String(http.StatusOK, "2 passwords don't match")
+		ctx.String(http.StatusBadRequest, "2 passwords don't match")
 		return
 	}
 	err = h.svc.SignUp(ctx, domain.User{
