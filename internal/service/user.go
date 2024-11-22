@@ -30,6 +30,9 @@ func NewUserService(repo *repository.UserRepository) *UserService {
 }
 
 func (svc *UserService) SignUp(ctx context.Context, u domain.User) error {
+	// default cost perf test 13.28 req/s
+	// Mincost 127.40 req/s
+	// cost 12 perf test 3.60 req/s
 	hash, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
