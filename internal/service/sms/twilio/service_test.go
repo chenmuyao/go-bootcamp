@@ -18,7 +18,7 @@ func TestService(t *testing.T) {
 	err := service.Send(
 		context.Background(),
 		"",
-		fmt.Sprintf("Verification code: %d", rand.Int()%1000000))
+		fmt.Sprintf("Verification code: %06d", rand.Intn(1000000)))
 	// assert.NoError(t, err)
 	assert.ErrorContains(t, err, "credentials")
 }
