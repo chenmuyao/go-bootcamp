@@ -9,6 +9,7 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/repository/cache"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
 	"github.com/chenmuyao/go-bootcamp/internal/service"
+	"github.com/chenmuyao/go-bootcamp/internal/service/sms/localsms"
 	"github.com/chenmuyao/go-bootcamp/internal/web"
 	"github.com/chenmuyao/go-bootcamp/internal/web/middleware"
 	"github.com/chenmuyao/go-bootcamp/pkg/ginx/middleware/ratelimit"
@@ -101,15 +102,18 @@ func initUserHandlers(
 }
 
 func initCodeSvc(redisClient redis.Cmdable) *service.CodeService {
+	sms := localsms.NewService()
 	cc := cache.NewCodeCache(redisClient)
 	crepo := repository.NewCodeRepository(cc)
-	return service.NewCodeService(crepo, nil)
+	return service.NewCodeService(crepo, sms)
 }
 
 func useJWT(server *gin.Engine) {
 	loginJWT := middleware.NewLoginJWT([]string{
 		"/user/signup",
 		"/user/login",
+		"/user/login_sms/code/send",
+		"/user/login_sms",
 	})
 	server.Use(loginJWT.CheckLogin())
 }
@@ -118,6 +122,8 @@ func useSession(server *gin.Engine) {
 	login := middleware.LoginMiddleware([]string{
 		"/user/signup",
 		"/user/login",
+		"/user/login_sms/code/send",
+		"/user/login_sms",
 	})
 
 	// create store to hold session data in Cookies
