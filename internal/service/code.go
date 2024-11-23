@@ -13,9 +13,21 @@ import (
 
 // TODO: Implement Email and Voice Code service
 
+var (
+	ErrCodeSendTooMany   = repository.ErrCodeSendTooMany
+	ErrCodeVerifyTooMany = repository.ErrCodeVerifyTooMany
+)
+
 type CodeService struct {
-	repo repository.CodeRepository
+	repo *repository.CodeRepository
 	sms  sms.Service
+}
+
+func NewCodeService(repo *repository.CodeRepository, sms sms.Service) *CodeService {
+	return &CodeService{
+		repo: repo,
+		sms:  sms,
+	}
 }
 
 // NOTE: check -> do: racing condition
@@ -26,7 +38,7 @@ func (svc *CodeService) Send(
 	ctx context.Context,
 	biz string,
 	phone string,
-	tpl template.Template,
+	tpl *template.Template,
 ) error {
 	code := svc.generateCode()
 
@@ -72,8 +84,4 @@ func (svc *CodeService) Verify(
 func (svc *CodeService) generateCode() string {
 	code := rand.Intn(1000000)
 	return fmt.Sprintf("%06d", code)
-}
-
-func (svc *CodeService) generateBody(code int) string {
-	return fmt.Sprintf("Verification code for webook: %06d\nExpires in 10 min.\n[webook]", code)
 }

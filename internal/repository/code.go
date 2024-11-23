@@ -6,10 +6,19 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/repository/cache"
 )
 
-var ErrCodeVerifyTooMany = cache.ErrCodeVerifyTooMany
+var (
+	ErrCodeVerifyTooMany = cache.ErrCodeVerifyTooMany
+	ErrCodeSendTooMany   = cache.ErrCodeSendTooMany
+)
 
 type CodeRepository struct {
-	cache cache.CodeCache
+	cache *cache.CodeCache
+}
+
+func NewCodeRepository(cc *cache.CodeCache) *CodeRepository {
+	return &CodeRepository{
+		cache: cc,
+	}
 }
 
 func (c *CodeRepository) Set(ctx context.Context, biz, phone, code string) error {

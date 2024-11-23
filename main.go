@@ -27,7 +27,8 @@ func main() {
 	db := initDB()
 	cache := initCache()
 
-	initUserHandlers(db, cache, server)
+	codeService := initCodeSvc(cache)
+	initUserHandlers(db, cache, codeService, server)
 
 	server.Run(":8081")
 }
@@ -85,13 +86,24 @@ func initWebServer() *gin.Engine {
 	return server
 }
 
-func initUserHandlers(db *gorm.DB, cc redis.Cmdable, server *gin.Engine) {
+func initUserHandlers(
+	db *gorm.DB,
+	redisClient redis.Cmdable,
+	codeService *service.CodeService,
+	server *gin.Engine,
+) {
 	userDAO := dao.NewUserDAO(db)
-	userCache := cache.NewUserCache(cc)
+	userCache := cache.NewUserCache(redisClient)
 	userRepo := repository.NewUserRepository(userDAO, userCache)
 	userService := service.NewUserService(userRepo)
-	userHandlers := web.NewUserHandler(userService)
+	userHandlers := web.NewUserHandler(userService, codeService)
 	userHandlers.RegisterRoutes(server)
+}
+
+func initCodeSvc(redisClient redis.Cmdable) *service.CodeService {
+	cc := cache.NewCodeCache(redisClient)
+	crepo := repository.NewCodeRepository(cc)
+	return service.NewCodeService(crepo, nil)
 }
 
 func useJWT(server *gin.Engine) {

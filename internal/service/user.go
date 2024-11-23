@@ -12,7 +12,7 @@ import (
 // {{{ Errors
 
 var (
-	ErrDuplicatedEmail       = repository.ErrDuplicatedEmail
+	ErrDuplicatedUser        = repository.ErrDuplicatedUser
 	ErrInvalidUserOrPassword = errors.New("wrong email or password")
 	ErrInvalidUserID         = errors.New("unknown userID")
 )
@@ -29,13 +29,13 @@ func NewUserService(repo *repository.UserRepository) *UserService {
 	}
 }
 
-func (svc *UserService) SignUp(ctx context.Context, u domain.User) error {
+func (svc *UserService) SignUp(ctx context.Context, u domain.User) (domain.User, error) {
 	// default cost perf test 13.28 req/s
 	// Mincost 127.40 req/s
 	// cost 12 perf test 3.60 req/s
 	hash, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return domain.User{}, err
 	}
 
 	u.Password = string(hash)
@@ -85,5 +85,26 @@ func (svc *UserService) GetProfile(ctx context.Context, userID int64) (domain.Us
 	if err != nil {
 		return domain.User{}, err
 	}
+	return u, nil
+}
+
+func (svc *UserService) FindOrCreate(ctx context.Context, phone string) (domain.User, error) {
+	u, err := svc.repo.FindByPhone(ctx, phone)
+	if err != repository.ErrUserNotFound {
+		return u, err
+	}
+	// Create a new user
+	u, err = svc.repo.Create(ctx, domain.User{
+		Phone: phone,
+	})
+	// system error
+	if err != nil && err != repository.ErrDuplicatedUser {
+		return domain.User{}, err
+	}
+	if err == repository.ErrDuplicatedUser {
+		// TODO: should query the master database
+		return svc.repo.FindByPhone(ctx, phone)
+	}
+	// err == nil
 	return u, nil
 }

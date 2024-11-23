@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"time"
 
@@ -10,8 +11,8 @@ import (
 )
 
 var (
-	ErrDuplicatedEmail = errors.New("email already exists")
-	ErrRecordNotFound  = gorm.ErrRecordNotFound
+	ErrDuplicatedUser = errors.New("email already exists")
+	ErrRecordNotFound = gorm.ErrRecordNotFound
 )
 
 type UserDAO struct {
@@ -28,37 +29,49 @@ type User struct {
 	// NOTE: autoIncrement for performance:
 	// 1. rows physically stored in key order
 	// 2. Read-ahead
-	ID       int64  `gorm:"primaryKey,autoIncrement"`
-	Email    string `gorm:"unique"`
+	ID       int64          `gorm:"primaryKey,autoIncrement"`
+	Email    sql.NullString `gorm:"unique"`
 	Password string
+
+	Phone sql.NullString `gorm:"unique"`
 
 	// NOTE: UTC-0
 	Ctime int64
 	Utime int64
 
-	Name     string `gorm:"size:128"`
+	Name     string `gorm:"type=varchar(128)"`
 	Birthday int64
-	Profile  string `gorm:"size:2048"`
+	Profile  string `gorm:"type=varchar(4096)"`
 }
 
-func (dao *UserDAO) Insert(ctx context.Context, u User) error {
+func (dao *UserDAO) Insert(ctx context.Context, u User) (User, error) {
 	now := time.Now().UnixMilli()
 	u.Ctime = now
 	u.Utime = now
-	err := dao.db.WithContext(ctx).Create(&u).Error
+	res := dao.db.WithContext(ctx).Create(&u)
+	err := res.Error
 	if me, ok := err.(*mysql.MySQLError); ok {
 		const duplicateErr = 1062
 		if me.Number == duplicateErr {
 			// email conflict
-			return ErrDuplicatedEmail
+			return User{}, ErrDuplicatedUser
 		}
 	}
-	return err
+	if err != nil {
+		return User{}, err
+	}
+	return u, nil
 }
 
 func (dao *UserDAO) FindByEmail(ctx context.Context, email string) (User, error) {
 	var u User
 	err := dao.db.WithContext(ctx).Where("email=?", email).First(&u).Error
+	return u, err
+}
+
+func (dao *UserDAO) FindByPhone(ctx context.Context, phone string) (User, error) {
+	var u User
+	err := dao.db.WithContext(ctx).Where("phone=?", phone).First(&u).Error
 	return u, err
 }
 

@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	ErrCodeSentTooMany   = errors.New("too frequent send requests")
+	ErrCodeSendTooMany   = errors.New("too frequent send requests")
 	ErrCodeVerifyTooMany = errors.New("too frequent verify requests")
 
 	//go:embed lua/set_code.lua
@@ -40,7 +40,7 @@ func (c *CodeCache) Set(ctx context.Context, biz, phone, code string) error {
 	case -2:
 		return errors.New("verification code exists but has no expiration date")
 	case -1:
-		return ErrCodeSentTooMany
+		return ErrCodeSendTooMany
 	default:
 		return nil
 	}

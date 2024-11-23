@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 )
 
 var (
-	ErrDuplicatedEmail = dao.ErrDuplicatedEmail
+	ErrDuplicatedUser = dao.ErrDuplicatedUser
 	// NOTE: Strongly related to the service
 	ErrUserNotFound = dao.ErrRecordNotFound
 )
@@ -28,16 +29,24 @@ func NewUserRepository(dao *dao.UserDAO, cache *cache.UserCache) *UserRepository
 	}
 }
 
-func (repo *UserRepository) Create(ctx context.Context, u domain.User) error {
-	return repo.dao.Insert(ctx, dao.User{
-		Email:    u.Email,
-		Password: u.Password,
-		Birthday: u.Birthday.UnixMilli(), // NOTE: the zero value of time.Time is not that of int64
-	})
+func (repo *UserRepository) Create(ctx context.Context, u domain.User) (domain.User, error) {
+	daoUser, err := repo.dao.Insert(ctx, repo.userDomainToDAO(&u))
+	if err != nil {
+		return domain.User{}, err
+	}
+	return repo.userDAOToDomain(&daoUser), nil
 }
 
 func (repo *UserRepository) FindByEmail(ctx context.Context, email string) (domain.User, error) {
 	u, err := repo.dao.FindByEmail(ctx, email)
+	if err != nil {
+		return domain.User{}, err
+	}
+	return repo.userDAOToDomain(&u), nil
+}
+
+func (repo *UserRepository) FindByPhone(ctx context.Context, phone string) (domain.User, error) {
+	u, err := repo.dao.FindByPhone(ctx, phone)
 	if err != nil {
 		return domain.User{}, err
 	}
@@ -120,7 +129,8 @@ func (repo *UserRepository) userDAOToDomain(u *dao.User) domain.User {
 	return domain.User{
 		ID:       u.ID,
 		Password: u.Password,
-		Email:    u.Email,
+		Email:    u.Email.String,
+		Phone:    u.Phone.String,
 		Name:     u.Name,
 		Birthday: time.Unix(u.Birthday/1000, u.Birthday%1000*10e6),
 		Profile:  u.Profile,
@@ -130,6 +140,9 @@ func (repo *UserRepository) userDAOToDomain(u *dao.User) domain.User {
 func (repo *UserRepository) userDomainToDAO(u *domain.User) dao.User {
 	return dao.User{
 		ID:       u.ID,
+		Password: u.Password,
+		Email:    sql.NullString{String: u.Email, Valid: u.Email != ""},
+		Phone:    sql.NullString{String: u.Phone, Valid: u.Phone != ""},
 		Name:     u.Name,
 		Birthday: u.Birthday.UnixMilli(),
 		Profile:  u.Profile,
