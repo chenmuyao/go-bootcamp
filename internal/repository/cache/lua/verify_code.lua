@@ -7,7 +7,7 @@ local expectedCode = ARGV[1]
 local cnt = redis.call("get", cntKey)
 local code = redis.call("get", key)
 
-if cnt == nil or cnt <= 0 then
+if cnt == nil or tonumber(cnt) <= 0 then
 	-- no more reries
 	return -1
 end

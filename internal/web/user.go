@@ -58,8 +58,8 @@ func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 	user.POST("/edit", h.Edit)
 
 	// SMS code login
-	user.POST("/login/sms/send", h.SendSMSLoginCode)
-	user.POST("/login/sms", h.LoginSMS)
+	user.POST("/login_sms/code/send", h.SendSMSLoginCode)
+	user.POST("/login_sms", h.LoginSMS)
 }
 
 func (h *UserHandler) SendSMSLoginCode(ctx *gin.Context) {
@@ -69,6 +69,7 @@ func (h *UserHandler) SendSMSLoginCode(ctx *gin.Context) {
 
 	var req Req
 	if err := ctx.Bind(&req); err != nil {
+		slog.Error("bind error", "msg", err)
 		return
 	}
 
@@ -131,6 +132,7 @@ func (h *UserHandler) LoginSMS(ctx *gin.Context) {
 
 	ok, err := h.codeSvc.Verify(ctx, bizLogin, req.Phone, req.Code)
 	if err != nil {
+		slog.Error("verify", "msg", err)
 		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
 		return
 	}
@@ -144,6 +146,7 @@ func (h *UserHandler) LoginSMS(ctx *gin.Context) {
 
 	u, err := h.svc.FindOrCreate(ctx, req.Phone)
 	if err != nil {
+		slog.Error("find or create", "msg", err)
 		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
 		return
 	}
@@ -349,11 +352,13 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 
 	resp := struct {
 		Email    string `json:"email"`
+		Phone    string `json:"phone"`
 		Name     string `json:"name"`
 		Birthday string `json:"birthday"`
 		Profile  string `json:"profile"`
 	}{
 		Email:    u.Email,
+		Phone:    u.Phone,
 		Name:     u.Name,
 		Birthday: birthday,
 		Profile:  u.Profile,

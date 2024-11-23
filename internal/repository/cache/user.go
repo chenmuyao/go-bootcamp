@@ -44,12 +44,12 @@ func (c *UserCache) Get(ctx context.Context, uid int64) (domain.User, error) {
 func (c *UserCache) Set(ctx context.Context, user domain.User) error {
 	key := c.Key(user.ID)
 
-	data, err := json.Marshal(&user)
+	data, err := json.Marshal(user)
 	if err != nil {
 		return err
 	}
 
-	return c.cmd.Set(ctx, key, &data, c.expiration).Err()
+	return c.cmd.Set(ctx, key, data, c.expiration).Err()
 }
 
 func (c *UserCache) Key(uid int64) string {

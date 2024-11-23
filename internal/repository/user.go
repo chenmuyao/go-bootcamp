@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"log/slog"
 	"time"
 
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
@@ -69,6 +70,7 @@ func (repo *UserRepository) FindById(ctx context.Context, userID int64) (domain.
 	if err == nil {
 		return du, nil
 	}
+	slog.Error("redis get", "err", err)
 
 	// err != nil
 	// 1. key inexistant: Redis ok
@@ -85,7 +87,7 @@ func (repo *UserRepository) FindById(ctx context.Context, userID int64) (domain.
 		err = repo.cache.Set(ctx, du)
 		if err != nil {
 			// Network, or redis crash
-			log.Println(err)
+			slog.Error("redis set", "err", err)
 		}
 	}()
 
