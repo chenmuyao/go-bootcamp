@@ -23,7 +23,7 @@ func NewCodeLocalCache(
 	code *ttlcache.Cache[string, string],
 	cnt *ttlcache.Cache[string, int],
 	expiration time.Duration,
-) *CodeLocalCache {
+) cache.CodeCache {
 	return &CodeLocalCache{
 		code:       code,
 		cnt:        cnt,

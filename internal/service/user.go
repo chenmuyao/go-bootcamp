@@ -19,17 +19,29 @@ var (
 
 // }}}
 
-type UserService struct {
-	repo *repository.UserRepository
+// NOTE:
+// 1. For test purpose
+// 2. UserServiceV1 V2, etc
+// 3. UserServiceVIP ...
+type UserService interface {
+	SignUp(ctx context.Context, u domain.User) (domain.User, error)
+	Login(ctx context.Context, email string, password string) (domain.User, error)
+	EditProfile(ctx context.Context, user *domain.User) error
+	GetProfile(ctx context.Context, userID int64) (domain.User, error)
+	FindOrCreate(ctx context.Context, phone string) (domain.User, error)
 }
 
-func NewUserService(repo *repository.UserRepository) *UserService {
-	return &UserService{
+type userService struct {
+	repo repository.UserRepository
+}
+
+func NewUserService(repo repository.UserRepository) UserService {
+	return &userService{
 		repo: repo,
 	}
 }
 
-func (svc *UserService) SignUp(ctx context.Context, u domain.User) (domain.User, error) {
+func (svc *userService) SignUp(ctx context.Context, u domain.User) (domain.User, error) {
 	// default cost perf test 13.28 req/s
 	// Mincost 127.40 req/s
 	// cost 12 perf test 3.60 req/s
@@ -42,7 +54,7 @@ func (svc *UserService) SignUp(ctx context.Context, u domain.User) (domain.User,
 	return svc.repo.Create(ctx, u)
 }
 
-func (svc *UserService) Login(
+func (svc *userService) Login(
 	ctx context.Context,
 	email string,
 	password string,
@@ -62,7 +74,7 @@ func (svc *UserService) Login(
 	return u, nil
 }
 
-func (svc *UserService) EditProfile(
+func (svc *userService) EditProfile(
 	ctx context.Context,
 	user *domain.User,
 ) error {
@@ -77,7 +89,7 @@ func (svc *UserService) EditProfile(
 	return nil
 }
 
-func (svc *UserService) GetProfile(ctx context.Context, userID int64) (domain.User, error) {
+func (svc *userService) GetProfile(ctx context.Context, userID int64) (domain.User, error) {
 	u, err := svc.repo.FindById(ctx, userID)
 	if err == repository.ErrUserNotFound {
 		return domain.User{}, ErrInvalidUserID
@@ -88,7 +100,7 @@ func (svc *UserService) GetProfile(ctx context.Context, userID int64) (domain.Us
 	return u, nil
 }
 
-func (svc *UserService) FindOrCreate(ctx context.Context, phone string) (domain.User, error) {
+func (svc *userService) FindOrCreate(ctx context.Context, phone string) (domain.User, error) {
 	u, err := svc.repo.FindByPhone(ctx, phone)
 	if err != repository.ErrUserNotFound {
 		return u, err

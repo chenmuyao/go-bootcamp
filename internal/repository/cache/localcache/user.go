@@ -14,7 +14,7 @@ type UserLocalCache struct {
 	cc *ttlcache.Cache[string, domain.User]
 }
 
-func NewUserLocalCache(cc *ttlcache.Cache[string, domain.User]) *UserLocalCache {
+func NewUserLocalCache(cc *ttlcache.Cache[string, domain.User]) cache.UserCache {
 	return &UserLocalCache{
 		cc: cc,
 	}

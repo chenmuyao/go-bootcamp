@@ -18,13 +18,18 @@ var (
 	ErrCodeVerifyTooMany = repository.ErrCodeVerifyTooMany
 )
 
-type CodeService struct {
-	repo *repository.CodeRepository
+type CodeService interface {
+	Send(ctx context.Context, biz string, phone string, tpl *template.Template) error
+	Verify(ctx context.Context, biz string, phone string, inputCode string) (bool, error)
+}
+
+type codeService struct {
+	repo repository.CodeRepository
 	sms  sms.Service
 }
 
-func NewCodeService(repo *repository.CodeRepository, sms sms.Service) *CodeService {
-	return &CodeService{
+func NewCodeService(repo repository.CodeRepository, sms sms.Service) CodeService {
+	return &codeService{
 		repo: repo,
 		sms:  sms,
 	}
@@ -34,7 +39,7 @@ func NewCodeService(repo *repository.CodeRepository, sms sms.Service) *CodeServi
 // Redis single thread, use lua for atomic operations
 
 // NOTE: template example: "Verification code for webook: {{.Code}}\nExpires in 10 min.\n[webook]"
-func (svc *CodeService) Send(
+func (svc *codeService) Send(
 	ctx context.Context,
 	biz string,
 	phone string,
@@ -67,7 +72,7 @@ func (svc *CodeService) Send(
 	return svc.sms.Send(ctx, phone, buff.String())
 }
 
-func (svc *CodeService) Verify(
+func (svc *codeService) Verify(
 	ctx context.Context,
 	biz string,
 	phone string,
@@ -81,7 +86,7 @@ func (svc *CodeService) Verify(
 	return ok, err
 }
 
-func (svc *CodeService) generateCode() string {
+func (svc *codeService) generateCode() string {
 	code := rand.Intn(1000000)
 	return fmt.Sprintf("%06d", code)
 }

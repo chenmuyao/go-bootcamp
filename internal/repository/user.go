@@ -18,19 +18,27 @@ var (
 	ErrUserNotFound = dao.ErrRecordNotFound
 )
 
-type UserRepository struct {
-	cache cache.UserCache
-	dao   *dao.UserDAO
+type UserRepository interface {
+	Create(ctx context.Context, u domain.User) (domain.User, error)
+	FindByEmail(ctx context.Context, email string) (domain.User, error)
+	FindByPhone(ctx context.Context, phone string) (domain.User, error)
+	UpdateProfile(ctx context.Context, user *domain.User) error
+	FindById(ctx context.Context, userID int64) (domain.User, error)
 }
 
-func NewUserRepository(dao *dao.UserDAO, cache cache.UserCache) *UserRepository {
-	return &UserRepository{
+type CachedUserRepository struct {
+	cache cache.UserCache
+	dao   dao.UserDAO
+}
+
+func NewUserRepository(dao dao.UserDAO, cache cache.UserCache) UserRepository {
+	return &CachedUserRepository{
 		dao:   dao,
 		cache: cache,
 	}
 }
 
-func (repo *UserRepository) Create(ctx context.Context, u domain.User) (domain.User, error) {
+func (repo *CachedUserRepository) Create(ctx context.Context, u domain.User) (domain.User, error) {
 	daoUser, err := repo.dao.Insert(ctx, repo.userDomainToDAO(&u))
 	if err != nil {
 		return domain.User{}, err
@@ -38,7 +46,10 @@ func (repo *UserRepository) Create(ctx context.Context, u domain.User) (domain.U
 	return repo.userDAOToDomain(&daoUser), nil
 }
 
-func (repo *UserRepository) FindByEmail(ctx context.Context, email string) (domain.User, error) {
+func (repo *CachedUserRepository) FindByEmail(
+	ctx context.Context,
+	email string,
+) (domain.User, error) {
 	u, err := repo.dao.FindByEmail(ctx, email)
 	if err != nil {
 		return domain.User{}, err
@@ -46,7 +57,10 @@ func (repo *UserRepository) FindByEmail(ctx context.Context, email string) (doma
 	return repo.userDAOToDomain(&u), nil
 }
 
-func (repo *UserRepository) FindByPhone(ctx context.Context, phone string) (domain.User, error) {
+func (repo *CachedUserRepository) FindByPhone(
+	ctx context.Context,
+	phone string,
+) (domain.User, error) {
 	u, err := repo.dao.FindByPhone(ctx, phone)
 	if err != nil {
 		return domain.User{}, err
@@ -54,7 +68,7 @@ func (repo *UserRepository) FindByPhone(ctx context.Context, phone string) (doma
 	return repo.userDAOToDomain(&u), nil
 }
 
-func (repo *UserRepository) UpdateProfile(ctx context.Context, user *domain.User) error {
+func (repo *CachedUserRepository) UpdateProfile(ctx context.Context, user *domain.User) error {
 	err := repo.dao.UpdateProfile(ctx, repo.userDomainToDAO(user))
 	if err != nil {
 		return err
@@ -64,7 +78,7 @@ func (repo *UserRepository) UpdateProfile(ctx context.Context, user *domain.User
 
 // NOTE: Ok for normal case. But if cache penetration happens, the DB can be crashed
 // by queries
-func (repo *UserRepository) FindById(ctx context.Context, userID int64) (domain.User, error) {
+func (repo *CachedUserRepository) FindById(ctx context.Context, userID int64) (domain.User, error) {
 	du, err := repo.cache.Get(ctx, userID)
 	// found, return
 	if err == nil {
@@ -96,7 +110,10 @@ func (repo *UserRepository) FindById(ctx context.Context, userID int64) (domain.
 
 // NOTE: Conservative method, for tasks with low priority. This helps keep the
 // database working for other services.
-func (repo *UserRepository) FindByIdV1(ctx context.Context, userID int64) (domain.User, error) {
+func (repo *CachedUserRepository) FindByIdV1(
+	ctx context.Context,
+	userID int64,
+) (domain.User, error) {
 	du, err := repo.cache.Get(ctx, userID)
 	// found, return
 	switch err {
@@ -127,7 +144,7 @@ func (repo *UserRepository) FindByIdV1(ctx context.Context, userID int64) (domai
 	}
 }
 
-func (repo *UserRepository) userDAOToDomain(u *dao.User) domain.User {
+func (repo *CachedUserRepository) userDAOToDomain(u *dao.User) domain.User {
 	return domain.User{
 		ID:       u.ID,
 		Password: u.Password,
@@ -139,7 +156,7 @@ func (repo *UserRepository) userDAOToDomain(u *dao.User) domain.User {
 	}
 }
 
-func (repo *UserRepository) userDomainToDAO(u *domain.User) dao.User {
+func (repo *CachedUserRepository) userDomainToDAO(u *domain.User) dao.User {
 	return dao.User{
 		ID:       u.ID,
 		Password: u.Password,

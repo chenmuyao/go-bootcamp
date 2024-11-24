@@ -29,8 +29,8 @@ var JWTKey = []byte("xQUPmbb2TP9CUyFZkgOnV3JQdr22ZNBx")
 type UserHandler struct {
 	emailRegex    *regexp2.Regexp
 	passwordRegex *regexp2.Regexp
-	svc           *service.UserService
-	codeSvc       *service.CodeService
+	svc           service.UserService
+	codeSvc       service.CodeService
 }
 
 type UserClaims struct {
@@ -39,7 +39,7 @@ type UserClaims struct {
 	UserAgent string
 }
 
-func NewUserHandler(svc *service.UserService, codeSvc *service.CodeService) *UserHandler {
+func NewUserHandler(svc service.UserService, codeSvc service.CodeService) *UserHandler {
 	return &UserHandler{
 		emailRegex:    regexp2.MustCompile(emailRegexPattern, regexp2.None),
 		passwordRegex: regexp2.MustCompile(passwordRegexPattern, regexp2.None),
