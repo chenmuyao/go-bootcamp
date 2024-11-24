@@ -21,7 +21,7 @@ type CodeRedisCache struct {
 	cmd redis.Cmdable
 }
 
-func NewCodeRedisCache(cmd redis.Cmdable) *CodeRedisCache {
+func NewCodeRedisCache(cmd redis.Cmdable) cache.CodeCache {
 	return &CodeRedisCache{
 		cmd: cmd,
 	}

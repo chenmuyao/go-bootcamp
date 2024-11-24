@@ -20,7 +20,7 @@ type UserRedisCache struct {
 	// NOTE: keep expiration, key structure and marshal method locally
 }
 
-func NewUserRedisCache(cmd redis.Cmdable) *UserRedisCache {
+func NewUserRedisCache(cmd redis.Cmdable) cache.UserCache {
 	return &UserRedisCache{
 		cmd:        cmd,
 		expiration: time.Minute * 15,

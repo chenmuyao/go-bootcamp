@@ -1,3 +1,14 @@
+all: dev
+
+run: dev
+	@./webook
+
+.PHONY: dev
+dev:
+	@rm -f webook
+	@go mod tidy
+	@go build -o webook .
+
 .PHONY: docker
 docker:
 	@rm -f webook
