@@ -2,7 +2,6 @@ package localcache
 
 import (
 	"context"
-	"errors"
 
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/cache"
@@ -31,9 +30,6 @@ func (c *UserLocalCache) Get(ctx context.Context, uid int64) (domain.User, error
 
 func (c *UserLocalCache) Set(ctx context.Context, user domain.User) error {
 	key := c.Key(user.ID)
-	res := c.cc.Set(key, user, ttlcache.DefaultTTL)
-	if res == nil {
-		return errors.New("cache set error")
-	}
+	c.cc.Set(key, user, ttlcache.DefaultTTL)
 	return nil
 }

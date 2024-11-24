@@ -222,7 +222,7 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	case service.ErrDuplicatedUser:
 		ctx.JSON(http.StatusBadRequest, Result{
 			Code: CodeUserSide,
-			Msg:  err.Error(),
+			Msg:  "user exists",
 		})
 	default:
 		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)

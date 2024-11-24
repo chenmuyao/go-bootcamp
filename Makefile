@@ -3,7 +3,9 @@ all: dev
 run: dev
 	@./webook
 
-test: dev
+test:
+	@mockgen -source=./internal/service/user.go -package=mock -destination=./internal/service/mocks/user.mock.go
+	@mockgen -source=./internal/service/code.go -package=mock -destination=./internal/service/mocks/code.mock.go
 	@go test -v ./...
 
 .PHONY: dev
