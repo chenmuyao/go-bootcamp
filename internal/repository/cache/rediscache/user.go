@@ -1,18 +1,17 @@
-package cache
+package rediscache
 
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
+	"github.com/chenmuyao/go-bootcamp/internal/repository/cache"
 	"github.com/redis/go-redis/v9"
 )
 
-var ErrKeyNotExist = redis.Nil
-
-type UserCache struct {
+type UserRedisCache struct {
+	cache.BaseUserCache
 	// NOTE: Client or ClientCluster
 	cmd redis.Cmdable
 	// NOTE: only for user cache. Can be fixed here.
@@ -21,17 +20,20 @@ type UserCache struct {
 	// NOTE: keep expiration, key structure and marshal method locally
 }
 
-func NewUserCache(cmd redis.Cmdable) *UserCache {
-	return &UserCache{
+func NewUserRedisCache(cmd redis.Cmdable) *UserRedisCache {
+	return &UserRedisCache{
 		cmd:        cmd,
 		expiration: time.Minute * 15,
 	}
 }
 
-func (c *UserCache) Get(ctx context.Context, uid int64) (domain.User, error) {
+func (c *UserRedisCache) Get(ctx context.Context, uid int64) (domain.User, error) {
 	key := c.Key(uid)
 	// NOTE: Suppose using JSON to marshal
 	data, err := c.cmd.Get(ctx, key).Result()
+	if err == redis.Nil {
+		return domain.User{}, cache.ErrKeyNotExist
+	}
 	if err != nil {
 		return domain.User{}, err
 	}
@@ -41,7 +43,7 @@ func (c *UserCache) Get(ctx context.Context, uid int64) (domain.User, error) {
 	return u, err
 }
 
-func (c *UserCache) Set(ctx context.Context, user domain.User) error {
+func (c *UserRedisCache) Set(ctx context.Context, user domain.User) error {
 	key := c.Key(user.ID)
 
 	data, err := json.Marshal(user)
@@ -50,8 +52,4 @@ func (c *UserCache) Set(ctx context.Context, user domain.User) error {
 	}
 
 	return c.cmd.Set(ctx, key, data, c.expiration).Err()
-}
-
-func (c *UserCache) Key(uid int64) string {
-	return fmt.Sprintf("user:info:%d", uid)
 }

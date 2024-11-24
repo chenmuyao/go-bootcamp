@@ -12,10 +12,10 @@ var (
 )
 
 type CodeRepository struct {
-	cache *cache.CodeCache
+	cache cache.CodeCache
 }
 
-func NewCodeRepository(cc *cache.CodeCache) *CodeRepository {
+func NewCodeRepository(cc cache.CodeCache) *CodeRepository {
 	return &CodeRepository{
 		cache: cc,
 	}

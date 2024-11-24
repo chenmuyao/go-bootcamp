@@ -6,7 +6,7 @@ import (
 
 	"github.com/chenmuyao/go-bootcamp/config"
 	"github.com/chenmuyao/go-bootcamp/internal/repository"
-	"github.com/chenmuyao/go-bootcamp/internal/repository/cache"
+	"github.com/chenmuyao/go-bootcamp/internal/repository/cache/rediscache"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
 	"github.com/chenmuyao/go-bootcamp/internal/service"
 	"github.com/chenmuyao/go-bootcamp/internal/service/sms/localsms"
@@ -94,7 +94,7 @@ func initUserHandlers(
 	server *gin.Engine,
 ) {
 	userDAO := dao.NewUserDAO(db)
-	userCache := cache.NewUserCache(redisClient)
+	userCache := rediscache.NewUserRedisCache(redisClient)
 	userRepo := repository.NewUserRepository(userDAO, userCache)
 	userService := service.NewUserService(userRepo)
 	userHandlers := web.NewUserHandler(userService, codeService)
@@ -103,7 +103,7 @@ func initUserHandlers(
 
 func initCodeSvc(redisClient redis.Cmdable) *service.CodeService {
 	sms := localsms.NewService()
-	cc := cache.NewCodeCache(redisClient)
+	cc := rediscache.NewCodeRedisCache(redisClient)
 	crepo := repository.NewCodeRepository(cc)
 	return service.NewCodeService(crepo, sms)
 }
