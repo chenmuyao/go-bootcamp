@@ -1,11 +1,19 @@
 all: dev
 
+.PHONY: run
 run: dev
 	@./webook
 
+.PHONY: cover
+cover:
+	@go test ./... -coverprofile ./tmp/cover.out && go tool cover -html ./tmp/cover.out -o ./tmp/cover.html && firefox ./tmp/cover.html
+
+.PHONY: test
 test:
-	@mockgen -source=./internal/service/user.go -package=mock -destination=./internal/service/mocks/user.mock.go
-	@mockgen -source=./internal/service/code.go -package=mock -destination=./internal/service/mocks/code.mock.go
+	@mockgen -source=./internal/service/user.go -package=svcmocks -destination=./internal/service/mocks/user.mock.go
+	@mockgen -source=./internal/service/code.go -package=svcmocks -destination=./internal/service/mocks/code.mock.go
+	@mockgen -source=./internal/repository/user.go -package=repomocks -destination=./internal/repository/mocks/user.mock.go
+	@mockgen -source=./internal/repository/code.go -package=repomocks -destination=./internal/repository/mocks/code.mock.go
 	@go test -v ./...
 
 .PHONY: dev
