@@ -238,6 +238,69 @@ func TestUserHandler_SignUp(t *testing.T) {
 	}
 }
 
+func TestLoginJWT(t *testing.T) {
+	testCases := []struct {
+		name string
+
+		mock func(*gomock.Controller) (service.UserService, service.CodeService)
+
+		reqBuilder func(*testing.T) *http.Request
+
+		wantCode int
+		wantRes  Result
+	}{
+		{
+			name: "login ok",
+			mock: func(c *gomock.Controller) (service.UserService, service.CodeService) {
+				us := mock.NewMockUserService(c)
+				us.EXPECT().Login(gomock.Any(), "ok@test.com", "password123!").Return(domain.User{
+					ID:       123,
+					Email:    "ok@test.com",
+					Password: "$2a$10$ak/.qMW4bKq3ksEXokuuquyXXNjHAv1t8wqwWvGVbje0rjyrZTqgy",
+				}, nil)
+				return us, nil
+			},
+			reqBuilder: func(t *testing.T) *http.Request {
+				req, err := http.NewRequest("POST", "/user/login", bytes.NewBuffer([]byte(`{
+"email": "ok@test.com",
+"password": "password123!"
+}`)))
+				req.Header.Set("Content-Type", "application/json")
+				assert.NoError(t, err)
+				return req
+			},
+			wantCode: http.StatusOK,
+			wantRes: Result{
+				Code: CodeOK,
+				Msg:  "successful login",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			us, cs := tc.mock(ctrl)
+			hdl := NewUserHandler(us, cs)
+
+			server := gin.Default()
+			hdl.RegisterRoutes(server)
+
+			req := tc.reqBuilder(t)
+			rec := httptest.NewRecorder()
+
+			server.ServeHTTP(rec, req)
+
+			t.Log(rec.Body)
+			assert.Equal(t, tc.wantCode, rec.Code)
+			var res Result
+			err := json.NewDecoder(rec.Body).Decode(&res)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.wantRes, res)
+		})
+	}
+}
+
 func TestUserEmailPattern(t *testing.T) {
 	testCases := []struct {
 		name  string

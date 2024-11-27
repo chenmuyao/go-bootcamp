@@ -152,9 +152,13 @@ func (h *UserHandler) LoginSMS(ctx *gin.Context) {
 	}
 	err = h.setJWTToken(ctx, u.ID)
 	if err != nil {
-		return // error message is set
+		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
+		return
 	}
-	ctx.JSON(http.StatusOK, "successful login")
+	ctx.JSON(http.StatusOK, Result{
+		Code: CodeOK,
+		Msg:  "successful login",
+	})
 }
 
 func (h *UserHandler) SignUp(ctx *gin.Context) {
@@ -229,48 +233,48 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	}
 }
 
-func (h *UserHandler) Login(ctx *gin.Context) {
-	type Req struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
-
-	var req Req
-
-	if err := ctx.Bind(&req); err != nil {
-		return
-	}
-
-	// NOTE: No need to check, because if it's not valid, we won't get
-	// anything from the DB anyway.
-
-	u, err := h.svc.Login(ctx, req.Email, req.Password)
-	switch err {
-	case nil:
-		sess := sessions.Default(ctx)
-		sess.Set("userID", u.ID)
-		sess.Options(sessions.Options{
-			MaxAge:   900, // 15min - expire time of the session (+ expire time of the userID entry in redis.)
-			HttpOnly: true,
-		})
-		err = sess.Save()
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
-			return
-		}
-		ctx.JSON(http.StatusOK, Result{
-			Code: CodeOK,
-			Msg:  "successful login",
-		})
-	case service.ErrInvalidUserOrPassword:
-		ctx.JSON(http.StatusBadRequest, Result{
-			Code: CodeUserSide,
-			Msg:  "wrong login or password",
-		})
-	default:
-		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
-	}
-}
+// func (h *UserHandler) LoginSession(ctx *gin.Context) {
+// 	type Req struct {
+// 		Email    string `json:"email"`
+// 		Password string `json:"password"`
+// 	}
+//
+// 	var req Req
+//
+// 	if err := ctx.Bind(&req); err != nil {
+// 		return
+// 	}
+//
+// 	// NOTE: No need to check, because if it's not valid, we won't get
+// 	// anything from the DB anyway.
+//
+// 	u, err := h.svc.Login(ctx, req.Email, req.Password)
+// 	switch err {
+// 	case nil:
+// 		sess := sessions.Default(ctx)
+// 		sess.Set("userID", u.ID)
+// 		sess.Options(sessions.Options{
+// 			MaxAge:   900, // 15min - expire time of the session (+ expire time of the userID entry in redis.)
+// 			HttpOnly: true,
+// 		})
+// 		err = sess.Save()
+// 		if err != nil {
+// 			ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
+// 			return
+// 		}
+// 		ctx.JSON(http.StatusOK, Result{
+// 			Code: CodeOK,
+// 			Msg:  "successful login",
+// 		})
+// 	case service.ErrInvalidUserOrPassword:
+// 		ctx.JSON(http.StatusBadRequest, Result{
+// 			Code: CodeUserSide,
+// 			Msg:  "wrong login or password",
+// 		})
+// 	default:
+// 		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
+// 	}
+// }
 
 func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 	type Req struct {
@@ -294,7 +298,10 @@ func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 		if err != nil {
 			return // error message is set
 		}
-		ctx.JSON(http.StatusOK, "successful login")
+		ctx.JSON(http.StatusOK, Result{
+			Code: CodeOK,
+			Msg:  "successful login",
+		})
 	case service.ErrInvalidUserOrPassword:
 		ctx.JSON(http.StatusBadRequest, Result{
 			Code: CodeUserSide,
@@ -455,7 +462,7 @@ func (h *UserHandler) setJWTToken(ctx *gin.Context, uid int64) error {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, uc)
 	tokenStr, err := token.SignedString(JWTKey)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
+		slog.Error("token string generate error", "err", err)
 		return err
 	}
 
