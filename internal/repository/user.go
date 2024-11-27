@@ -23,7 +23,7 @@ type UserRepository interface {
 	FindByEmail(ctx context.Context, email string) (domain.User, error)
 	FindByPhone(ctx context.Context, phone string) (domain.User, error)
 	UpdateProfile(ctx context.Context, user *domain.User) error
-	FindById(ctx context.Context, userID int64) (domain.User, error)
+	FindByID(ctx context.Context, userID int64) (domain.User, error)
 }
 
 type CachedUserRepository struct {
@@ -78,7 +78,7 @@ func (repo *CachedUserRepository) UpdateProfile(ctx context.Context, user *domai
 
 // NOTE: Ok for normal case. But if cache penetration happens, the DB can be crashed
 // by queries
-func (repo *CachedUserRepository) FindById(ctx context.Context, userID int64) (domain.User, error) {
+func (repo *CachedUserRepository) FindByID(ctx context.Context, userID int64) (domain.User, error) {
 	du, err := repo.cache.Get(ctx, userID)
 	// found, return
 	if err == nil {
@@ -151,7 +151,7 @@ func (repo *CachedUserRepository) userDAOToDomain(u *dao.User) domain.User {
 		Email:    u.Email.String,
 		Phone:    u.Phone.String,
 		Name:     u.Name,
-		Birthday: time.Unix(u.Birthday/1000, u.Birthday%1000*10e6),
+		Birthday: time.UnixMilli(u.Birthday),
 		Profile:  u.Profile,
 	}
 }
