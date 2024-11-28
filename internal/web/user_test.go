@@ -291,7 +291,6 @@ func TestLoginJWT(t *testing.T) {
 
 			server.ServeHTTP(rec, req)
 
-			t.Log(rec.Body)
 			assert.Equal(t, tc.wantCode, rec.Code)
 			var res Result
 			err := json.NewDecoder(rec.Body).Decode(&res)

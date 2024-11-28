@@ -17,6 +17,7 @@ test:
 	@mockgen -source=./internal/repository/dao/user.go -package=daomocks -destination=./internal/repository/dao/mocks/user.mock.go
 	@mockgen -source=./internal/repository/cache/types.go -package=cachemocks -destination=./internal/repository/cache/mocks/cache.mock.go
 	@mockgen -package=redismock -destination=./internal/repository/cache/rediscache/mocks/redismock.mock.go github.com/redis/go-redis/v9 Cmdable
+	@cd ./internal/integration/startup/ && wire && cd -
 	@go test -v ./...
 
 .PHONY: dev
