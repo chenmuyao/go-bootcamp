@@ -65,10 +65,7 @@ func (dao *GORMUserDAO) Insert(ctx context.Context, u User) (User, error) {
 			return User{}, ErrDuplicatedUser
 		}
 	}
-	if err != nil {
-		return User{}, err
-	}
-	return u, nil
+	return u, err
 }
 
 func (dao *GORMUserDAO) FindByEmail(ctx context.Context, email string) (User, error) {
