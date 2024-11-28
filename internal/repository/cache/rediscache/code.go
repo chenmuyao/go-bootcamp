@@ -16,6 +16,8 @@ var (
 	luaVerifyCode string
 )
 
+var ErrNoCodeExp = errors.New("verification code exists but has no expiration date")
+
 type CodeRedisCache struct {
 	cache.BaseCodeCache
 	cmd redis.Cmdable
@@ -36,7 +38,7 @@ func (c *CodeRedisCache) Set(ctx context.Context, biz, phone, code string) error
 
 	switch res {
 	case -2:
-		return errors.New("verification code exists but has no expiration date")
+		return ErrNoCodeExp
 	case -1:
 		return cache.ErrCodeSendTooMany
 	default:
