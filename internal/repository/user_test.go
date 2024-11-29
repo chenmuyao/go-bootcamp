@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"testing"
 	"time"
 
@@ -100,6 +101,7 @@ func TestFindByID(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 			dao, cache := tc.mock(ctrl)
 			repo := NewUserRepository(dao, cache)
 
@@ -107,7 +109,29 @@ func TestFindByID(t *testing.T) {
 
 			assert.ErrorIs(t, err, tc.wantErr)
 			assert.Equal(t, tc.wantUser, resUser)
-			time.Sleep(100 * time.Millisecond)
+			if err := waitForMocks(context.Background(), ctrl); err != nil {
+				t.Error(err)
+			}
 		})
+	}
+}
+
+func waitForMocks(ctx context.Context, ctrl *gomock.Controller) error {
+	ticker := time.NewTicker(1 * time.Millisecond)
+	defer ticker.Stop()
+
+	timeout := time.After(3 * time.Millisecond)
+
+	for {
+		select {
+		case <-ticker.C:
+			if ctrl.Satisfied() {
+				return nil
+			}
+		case <-timeout:
+			return fmt.Errorf("timeout waiting for mocks to be satisfied")
+		case <-ctx.Done():
+			return fmt.Errorf("context cancelled")
+		}
 	}
 }
