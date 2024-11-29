@@ -29,6 +29,8 @@ spec:
           volumeMounts:
             - mountPath: /var/lib/mysql
               name: mysql-storage
+            - mountPath: /docker-entrypoint-initdb.d/
+              name: mysql-configmap
       restartPolicy: Always
       # The volumes declaration
       volumes:
@@ -36,6 +38,9 @@ spec:
           persistentVolumeClaim:
             # PVC persistent volume claim
             claimName: webook-mysql-pvc
+        - name: mysql-configmap
+          configMap:
+            name: webook-mysql-configmap
 
 ---
 

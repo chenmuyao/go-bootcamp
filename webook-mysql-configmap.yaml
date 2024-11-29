@@ -1,0 +1,11 @@
+apiVersion: v1
+data:
+  init.sql: |
+    CREATE DATABASE webook;
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2024-11-29T22:20:30Z"
+  name: webook-mysql-configmap
+  namespace: default
+  resourceVersion: "841515"
+  uid: c8c943ef-e198-4b5b-9edc-8a29489897e3
