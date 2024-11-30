@@ -14,6 +14,7 @@
         <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
         <div>
           <button class="w3-margin-top w3-button w3-green" type="submit" :disabled="!isFormValid">Login</button>
+          <a class="w3-margin" href="/login_sms">Signup or Login with SMS</a>
         </div>
       </form>
     </div>
@@ -23,11 +24,11 @@
 <script setup lang="ts">
 import { reactive, computed } from 'vue';
 import axios from "@/axios/axios";
-import router from "@/router"
+import { useRouter } from "vue-router"
 
 const emailRegexPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/
 
-const emit = defineEmits([ 'login' ]);
+const router = useRouter()
 
 const form = reactive({
   email: '',
@@ -60,12 +61,6 @@ const validateEmail = (val: string) => {
 
 const handleLogin = () => {
   if (!isFormValid.value) return;
-
-  // Emit an event
-  emit('login', {
-    email: form.email,
-    password: form.password,
-  });
 
   axios.post('/user/login', {
     'email': form.email,

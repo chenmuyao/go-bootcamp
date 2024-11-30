@@ -29,12 +29,12 @@
 <script setup lang="ts">
 import { reactive, computed } from 'vue';
 import axios from "@/axios/axios";
-import router from "@/router"
+import { useRouter } from "vue-router"
 
 const emailRegexPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/
 const passwordRegexPattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,}$/
 
-const emit = defineEmits(['signup']);
+const router = useRouter()
 
 const form = reactive({
   email: '',
@@ -76,13 +76,6 @@ const validatePassword = (val: string) => {
 
 const handleSignup = () => {
   if (!isFormValid.value) return;
-
-  // Emit an event
-  emit('signup', {
-    email: form.email,
-    password: form.password,
-    confirmPassword: form.confirmPassword,
-  });
 
   axios.post('/user/signup', {
     'email': form.email,
