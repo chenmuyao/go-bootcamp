@@ -94,8 +94,9 @@ type slidingWindowRateInfo struct {
 }
 
 type SlidingWindowOptions struct {
-	WindowSize time.Duration
-	Limit      int
+	Interval      time.Duration
+	WindowsAmount int
+	Limit         int
 
 	// Optional
 	Prefix string
@@ -116,10 +117,15 @@ func NewSlidingWindowLimiter(options *SlidingWindowOptions) *SlidingWindowLimite
 	if len(prefix) == 0 {
 		prefix = "IP-limit"
 	}
+	windowsAmount := options.WindowsAmount
+	if options.WindowsAmount == 0 {
+		windowsAmount = 10
+	}
+	windowSize := options.Interval.Nanoseconds() / int64(windowsAmount)
 	return &SlidingWindowLimiter{
 		prefix:     prefix,
-		windowSize: options.WindowSize,
-		limit:      options.Limit,
+		windowSize: time.Duration(windowSize),
+		limit:      options.Limit / windowsAmount,
 		cache:      map[string]slidingWindowRateInfo{},
 	}
 }

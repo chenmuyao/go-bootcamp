@@ -1,3 +1,15 @@
+# Dependencies :
+# wire
+#
+# docker
+# mockgen
+#
+# NOTE: firefox can only be run on local machine. Need other commands to run
+# on a CI pipeline
+# gocov
+# gocov-html
+# firefox
+
 all: dev
 
 .PHONY: run
@@ -6,7 +18,7 @@ run: dev
 
 .PHONY: cover
 cover:
-	@go test ./... -coverprofile ./tmp/cover.out && go tool cover -html ./tmp/cover.out -o ./tmp/cover.html && firefox ./tmp/cover.html
+	@gocov test ./... | gocov-html -t kit > ./tmp/report.html && firefox ./tmp/report.html
 
 .PHONY: test
 test:

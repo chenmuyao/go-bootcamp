@@ -2,7 +2,6 @@ package ratelimit
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/chenmuyao/go-bootcamp/pkg/limiter"
 	"github.com/gin-gonic/gin"
@@ -14,31 +13,28 @@ type RateLimiter struct {
 	limiterType          int
 }
 
-type FixedWindowOptions struct {
-	Limit    int
-	Interval time.Duration
-}
+type FixedWindowOptions limiter.FixedWindowOptions
 
 func NewFixedWindowLimiterBuilder(options *FixedWindowOptions) *RateLimiter {
 	return &RateLimiter{
 		FixedWindowLimiter: *limiter.NewFixedWindowLimiter(&limiter.FixedWindowOptions{
 			Interval: options.Interval,
 			Limit:    options.Limit,
+			Prefix:   options.Prefix,
 		}),
 		limiterType: limiter.FixedWindow,
 	}
 }
 
-type SlidingWindowOptions struct {
-	Limit      int
-	WindowSize time.Duration
-}
+type SlidingWindowOptions limiter.SlidingWindowOptions
 
 func NewSlidingWindowLimiterBuilder(options *SlidingWindowOptions) *RateLimiter {
 	return &RateLimiter{
 		SlidingWindowLimiter: *limiter.NewSlidingWindowLimiter(&limiter.SlidingWindowOptions{
-			WindowSize: options.WindowSize,
-			Limit:      options.Limit,
+			Interval:      options.Interval,
+			WindowsAmount: options.WindowsAmount,
+			Limit:         options.Limit,
+			Prefix:        options.Prefix,
 		}),
 		limiterType: limiter.SlidingWindow,
 	}

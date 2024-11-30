@@ -45,8 +45,9 @@ func InitGinMiddlewares() []gin.HandlerFunc {
 		// 	Limit:    100,
 		// }).Build(),
 		ratelimit.NewSlidingWindowLimiterBuilder(&ratelimit.SlidingWindowOptions{
-			WindowSize: time.Second,
-			Limit:      100,
+			Interval:      time.Second,
+			Limit:         100,
+			WindowsAmount: 10,
 		}).Build(),
 	}
 }
