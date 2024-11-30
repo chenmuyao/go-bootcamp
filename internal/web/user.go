@@ -352,11 +352,6 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 		return
 	}
 
-	var birthday string
-	if !u.Birthday.IsZero() {
-		birthday = u.Birthday.Format("2006-01-02")
-	}
-
 	resp := struct {
 		Email    string `json:"email"`
 		Phone    string `json:"phone"`
@@ -367,7 +362,7 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 		Email:    u.Email,
 		Phone:    u.Phone,
 		Name:     u.Name,
-		Birthday: birthday,
+		Birthday: u.Birthday.Format("2006-01-02"),
 		Profile:  u.Profile,
 	}
 
@@ -397,20 +392,13 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 	// }
 	userID := h.getUserIDFromJWT(ctx)
 
-	// Update user profile
-	// NOTE: if birthday is not set, set it to zero value. And it will be
-	// ignored when getting the profile
-	var birthday time.Time
-	var err error
-	if len(req.Birthday) != 0 {
-		birthday, err = time.Parse("2006-01-02", req.Birthday)
-		if err != nil {
-			// NOTE: check should be done on the frontend. If we bypass the
-			// frontend check, it must not be a normal user, and we don't care
-			// about the error message.
-			ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
-			return
-		}
+	birthday, err := time.Parse("2006-01-02", req.Birthday)
+	if err != nil {
+		// NOTE: check should be done on the frontend. If we bypass the
+		// frontend check, it must not be a normal user, and we don't care
+		// about the error message.
+		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
+		return
 	}
 	err = h.svc.EditProfile(ctx, &domain.User{
 		ID:       userID,

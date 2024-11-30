@@ -73,7 +73,7 @@ const handleLogin = () => {
         return
       }
       console.log(response.data);
-      router.push({path: "/about"});
+      router.push({path: "/user/profile"});
 
     })
     .catch((error) => {

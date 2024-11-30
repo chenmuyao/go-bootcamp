@@ -12,10 +12,16 @@
           <input class="w3-input" type="text" id="code" v-model="form.code" required>
         </div>
         <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-        <div>
-          <button v-if="!smsSent" class="w3-margin-top w3-button w3-green" type="button" :disabled="!isFormValid" @click="sendSMS">Send
+        <div v-if="!smsSent">
+          <button class="w3-margin-top w3-button w3-green" type="button" :disabled="!validatePhone(form.phone)"
+            @click="sendSMS">Send
             SMS</button>
-          <button v-else class="w3-margin-top w3-button w3-green" type="submit" :disabled="!isFormValid">Login</button>
+        </div>
+        <div v-else>
+          <button class="w3-margin w3-button w3-green" type="button"
+            :disabled="!validatePhone(form.phone)" @click="sendSMS">Resend SMS</button>
+          <button class="w3-margin w3-button w3-green" type="submit"
+            :disabled="!validateCode(form.code) || !validatePhone(form.phone)">Login</button>
           <a class="w3-margin" href="/login">Login with password</a>
         </div>
       </form>
@@ -44,9 +50,7 @@ const errorMessage = computed(() => {
   return validateForm();
 });
 
-const isFormValid = computed(() => {
-  return '' === validateForm();
-});
+// TODO: Add a timer to disable resend button for 1 min
 
 const validateForm = () => {
   if (form.phone && !validatePhone(form.phone)) {
@@ -69,7 +73,7 @@ const validatePhone = (val: string) => {
 }
 
 const sendSMS = () => {
-  if (!isFormValid.value) return;
+  if (!validatePhone(form.phone)) return;
 
   axios.post('/user/login_sms/code/send', {
     'phone': form.phone,
@@ -89,7 +93,7 @@ const sendSMS = () => {
 }
 
 const handleLogin = () => {
-  if (!isFormValid.value) return;
+  if (!validateCode(form.code) || !validatePhone(form.phone)) return;
 
   axios.post('/user/login_sms', {
     'phone': form.phone,
@@ -102,7 +106,7 @@ const handleLogin = () => {
         return
       }
       console.log(response.data);
-      router.push({ path: "/about" });
+      router.push({ path: "/user/profile" });
 
     })
     .catch((error) => {
