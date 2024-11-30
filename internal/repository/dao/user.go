@@ -34,22 +34,21 @@ func NewUserDAO(db *gorm.DB) UserDAO {
 }
 
 type User struct {
+	Password string
+	Name     string         `gorm:"type=varchar(128)"`
+	Profile  string         `gorm:"type=varchar(4096)"`
+	Email    sql.NullString `gorm:"unique"`
+	Phone    sql.NullString `gorm:"unique"`
+
 	// NOTE: autoIncrement for performance:
 	// 1. rows physically stored in key order
 	// 2. Read-ahead
-	ID       int64          `gorm:"primaryKey,autoIncrement"`
-	Email    sql.NullString `gorm:"unique"`
-	Password string
-
-	Phone sql.NullString `gorm:"unique"`
+	ID int64 `gorm:"primaryKey,autoIncrement"`
 
 	// NOTE: UTC-0
-	Ctime int64
-	Utime int64
-
-	Name     string `gorm:"type=varchar(128)"`
+	Ctime    int64
+	Utime    int64
 	Birthday int64
-	Profile  string `gorm:"type=varchar(4096)"`
 }
 
 func (dao *GORMUserDAO) Insert(ctx context.Context, u User) (User, error) {

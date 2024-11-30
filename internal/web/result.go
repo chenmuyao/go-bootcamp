@@ -10,9 +10,9 @@ const (
 )
 
 type Result struct {
-	Code int    `json:"code"`
-	Msg  string `json:"message"`
 	Data any    `json:"data"`
+	Msg  string `json:"message"`
+	Code int    `json:"code"`
 }
 
 var InternalServerErrorResult = Result{

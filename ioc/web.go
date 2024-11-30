@@ -8,8 +8,6 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/web/middleware"
 	"github.com/chenmuyao/go-bootcamp/pkg/ginx/middleware/ratelimit"
 	"github.com/gin-contrib/cors"
-	"github.com/gin-contrib/sessions"
-	redisStore "github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
 )
 
@@ -62,38 +60,38 @@ func useJWT() gin.HandlerFunc {
 	return loginJWT.CheckLogin()
 }
 
-func sessionCheckLogin() gin.HandlerFunc {
-	login := middleware.LoginMiddleware([]string{
-		"/user/signup",
-		"/user/login",
-		"/user/login_sms/code/send",
-		"/user/login_sms",
-	})
-	return login.CheckLogin()
-}
+// func sessionCheckLogin() gin.HandlerFunc {
+// 	login := middleware.LoginMiddleware([]string{
+// 		"/user/signup",
+// 		"/user/login",
+// 		"/user/login_sms/code/send",
+// 		"/user/login_sms",
+// 	})
+// 	return login.CheckLogin()
+// }
 
-func useSession() gin.HandlerFunc {
-	// create store to hold session data in Cookies
-	// store := cookie.NewStore([]byte("secret"))
-
-	// create store to hold session data in memstore
-	// store := memstore.NewStore(
-	// 	[]byte("QbYQn3ZyECBq3fQwWFj84ccoqipj70oJ"),
-	// 	[]byte("kpqqi5guoJGKCmsgN7a5jwgd2nvpC2P3"),
-	// )
-
-	// NOTE: Use redis for distributed storage of session info
-	store, err := redisStore.NewStore(
-		16,
-		"tcp",
-		"localhost:6379",
-		"",
-		[]byte("QbYQn3ZyECBq3fQwWFj84ccoqipj70oJ"), // authentication
-		[]byte("kpqqi5guoJGKCmsgN7a5jwgd2nvpC2P3"), // encryption
-	)
-	if err != nil {
-		panic(err)
-	}
-	// Use the store to hold session ssid
-	return sessions.Sessions("ssid", store)
-}
+// func useSession() gin.HandlerFunc {
+// 	// create store to hold session data in Cookies
+// 	// store := cookie.NewStore([]byte("secret"))
+//
+// 	// create store to hold session data in memstore
+// 	// store := memstore.NewStore(
+// 	// 	[]byte("QbYQn3ZyECBq3fQwWFj84ccoqipj70oJ"),
+// 	// 	[]byte("kpqqi5guoJGKCmsgN7a5jwgd2nvpC2P3"),
+// 	// )
+//
+// 	// NOTE: Use redis for distributed storage of session info
+// 	store, err := redisStore.NewStore(
+// 		16,
+// 		"tcp",
+// 		"localhost:6379",
+// 		"",
+// 		[]byte("QbYQn3ZyECBq3fQwWFj84ccoqipj70oJ"), // authentication
+// 		[]byte("kpqqi5guoJGKCmsgN7a5jwgd2nvpC2P3"), // encryption
+// 	)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	// Use the store to hold session ssid
+// 	return sessions.Sessions("ssid", store)
+// }

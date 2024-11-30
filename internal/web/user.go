@@ -1,7 +1,6 @@
 package web
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"log/slog"
@@ -13,7 +12,6 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"github.com/chenmuyao/go-bootcamp/internal/service"
 	"github.com/dlclark/regexp2"
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -35,8 +33,8 @@ type UserHandler struct {
 
 type UserClaims struct {
 	jwt.RegisteredClaims
-	UID       int64
 	UserAgent string
+	UID       int64
 }
 
 func NewUserHandler(svc service.UserService, codeSvc service.CodeService) *UserHandler {
@@ -423,14 +421,14 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 	}
 }
 
-func (h *UserHandler) getUserIDFromSession(ctx *gin.Context) (int64, error) {
-	sess := sessions.Default(ctx)
-	userID, ok := sess.Get("userID").(int64)
-	if !ok {
-		return 0, errors.New("failed to get userID from session")
-	}
-	return userID, nil
-}
+// func (h *UserHandler) getUserIDFromSession(ctx *gin.Context) (int64, error) {
+// 	sess := sessions.Default(ctx)
+// 	userID, ok := sess.Get("userID").(int64)
+// 	if !ok {
+// 		return 0, errors.New("failed to get userID from session")
+// 	}
+// 	return userID, nil
+// }
 
 func (h *UserHandler) getUserIDFromJWT(ctx *gin.Context) int64 {
 	uc := ctx.MustGet("user").(UserClaims)

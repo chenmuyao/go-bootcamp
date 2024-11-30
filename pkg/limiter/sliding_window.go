@@ -6,87 +6,6 @@ import (
 	"time"
 )
 
-const (
-	FixedWindow = iota
-	SlidingWindow
-	TokenBucket
-	LeakyBucket
-)
-
-// {{{ FixedWindowLimiter
-
-type FixedWindowOptions struct {
-	Interval time.Duration
-	Limit    int
-
-	// Optional
-	Prefix string
-}
-
-type fixedWindowRateInfo struct {
-	count     int
-	timeBegin time.Time
-}
-
-type FixedWindowLimiter struct {
-	prefix   string
-	interval time.Duration
-	limit    int
-
-	cache map[string]fixedWindowRateInfo
-
-	mutex sync.Mutex
-}
-
-func NewFixedWindowLimiter(options *FixedWindowOptions) *FixedWindowLimiter {
-	prefix := options.Prefix
-	if len(prefix) == 0 {
-		prefix = "IP-limit"
-	}
-	return &FixedWindowLimiter{
-		prefix:   prefix,
-		interval: options.Interval,
-		limit:    options.Limit,
-		cache:    map[string]fixedWindowRateInfo{},
-	}
-}
-
-func (fw *FixedWindowLimiter) AcceptConnection(IP string) bool {
-	fw.mutex.Lock()
-	defer fw.mutex.Unlock()
-
-	now := time.Now()
-
-	key := fmt.Sprintf("%s-%s", fw.prefix, IP)
-	res, ok := fw.cache[key]
-	if !ok {
-		// Not found
-		fw.cache[key] = fixedWindowRateInfo{
-			count:     1,
-			timeBegin: now,
-		}
-		return true
-	}
-
-	if now.Sub(res.timeBegin) > fw.interval {
-		// reset
-		res.count = 1
-		res.timeBegin = time.Now()
-		return true
-	}
-
-	res.count++
-	// compare
-	if res.count > fw.limit {
-		// Reached the limit
-		return false
-	}
-	fw.cache[key] = res
-
-	return true
-}
-
-// }}}
 // {{{ SlidingWindowLimiter
 
 type slidingWindowRateInfo struct {
@@ -94,22 +13,18 @@ type slidingWindowRateInfo struct {
 }
 
 type SlidingWindowOptions struct {
+	Prefix        string
 	Interval      time.Duration
 	WindowsAmount int
 	Limit         int
-
-	// Optional
-	Prefix string
 }
 
 type SlidingWindowLimiter struct {
+	cache      map[string]slidingWindowRateInfo
 	prefix     string
 	windowSize time.Duration
 	limit      int
-
-	cache map[string]slidingWindowRateInfo
-
-	mutex sync.Mutex
+	mutex      sync.Mutex
 }
 
 func NewSlidingWindowLimiter(options *SlidingWindowOptions) *SlidingWindowLimiter {
