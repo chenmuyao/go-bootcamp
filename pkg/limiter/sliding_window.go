@@ -30,7 +30,7 @@ type SlidingWindowLimiter struct {
 func NewSlidingWindowLimiter(options *SlidingWindowOptions) *SlidingWindowLimiter {
 	prefix := options.Prefix
 	if len(prefix) == 0 {
-		prefix = "IP-limit"
+		prefix = "rate-limit"
 	}
 	windowsAmount := options.WindowsAmount
 	if options.WindowsAmount == 0 {
@@ -42,16 +42,17 @@ func NewSlidingWindowLimiter(options *SlidingWindowOptions) *SlidingWindowLimite
 		windowSize: time.Duration(windowSize),
 		limit:      options.Limit / windowsAmount,
 		cache:      map[string]slidingWindowRateInfo{},
+		mutex:      sync.Mutex{},
 	}
 }
 
-func (fw *SlidingWindowLimiter) AcceptConnection(IP string) bool {
+func (fw *SlidingWindowLimiter) AcceptConnection(biz string) bool {
 	fw.mutex.Lock()
 	defer fw.mutex.Unlock()
 
 	now := time.Now()
 
-	key := fmt.Sprintf("%s-%s", fw.prefix, IP)
+	key := fmt.Sprintf("%s-%s", fw.prefix, biz)
 	res, ok := fw.cache[key]
 	if !ok {
 		// Not found

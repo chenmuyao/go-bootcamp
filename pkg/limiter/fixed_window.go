@@ -30,23 +30,24 @@ type FixedWindowLimiter struct {
 func NewFixedWindowLimiter(options *FixedWindowOptions) *FixedWindowLimiter {
 	prefix := options.Prefix
 	if len(prefix) == 0 {
-		prefix = "IP-limit"
+		prefix = "rate-limit"
 	}
 	return &FixedWindowLimiter{
 		prefix:   prefix,
 		interval: options.Interval,
 		limit:    options.Limit,
 		cache:    map[string]fixedWindowRateInfo{},
+		mutex:    sync.Mutex{},
 	}
 }
 
-func (fw *FixedWindowLimiter) AcceptConnection(IP string) bool {
+func (fw *FixedWindowLimiter) AcceptConnection(biz string) bool {
 	fw.mutex.Lock()
 	defer fw.mutex.Unlock()
 
 	now := time.Now()
 
-	key := fmt.Sprintf("%s-%s", fw.prefix, IP)
+	key := fmt.Sprintf("%s-%s", fw.prefix, biz)
 	res, ok := fw.cache[key]
 	if !ok {
 		// Not found
