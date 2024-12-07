@@ -61,7 +61,7 @@ func (fw *FixedWindowLimiter) AcceptConnection(biz string) bool {
 	if now.Sub(res.timeBegin) > fw.interval {
 		// reset
 		res.count = 1
-		res.timeBegin = time.Now()
+		res.timeBegin = now
 		return true
 	}
 
