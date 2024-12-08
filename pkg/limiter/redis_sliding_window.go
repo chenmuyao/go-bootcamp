@@ -39,7 +39,7 @@ func NewRedisSlidingWindowLimiter(options *RedisSlidingWindowOptions) *RedisSlid
 	if options.WindowsAmount == 0 {
 		windowsAmount = 10
 	}
-	windowSize := options.Interval.Milliseconds() / int64(windowsAmount)
+	windowSize := options.Interval.Nanoseconds() / int64(windowsAmount)
 	return &RedisSlidingWindowLimiter{
 		cmd:        options.RedisClient,
 		prefix:     prefix,
@@ -50,7 +50,8 @@ func NewRedisSlidingWindowLimiter(options *RedisSlidingWindowOptions) *RedisSlid
 
 func (fw *RedisSlidingWindowLimiter) AcceptConnection(ctx context.Context, biz string) bool {
 	key := fmt.Sprintf("%s-%s", fw.prefix, biz)
-	res, err := fw.cmd.Eval(ctx, luaSlidingWindow, []string{key}, fw.limit, fw.windowSize).Int()
+	res, err := fw.cmd.Eval(ctx, luaSlidingWindow, []string{key}, fw.limit, fw.windowSize, time.Now().UnixNano()).
+		Int()
 	if err != nil {
 		// Redis error, limit by default
 		slog.Error("redis error", "err", err)

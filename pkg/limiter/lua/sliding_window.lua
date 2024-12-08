@@ -1,15 +1,9 @@
 local key = KEYS[1]
 local limit = ARGV[1]
 local windowSize = ARGV[2]
-
--- {{{ Get now
-local redis_time = redis.call("TIME")
-
-local seconds = tonumber(redis_time[1])
-local microseconds = tonumber(redis_time[2])
-
-local now = math.floor((seconds * 1000) + (microseconds / 1000))
--- }}}
+-- Pass nanosecond for precision. Otherwise when testing with go routine,
+-- there are chance that some requests arrive at the same time and be counted only once.
+local now = ARGV[3]
 
 local cutTime = now - tonumber(windowSize)
 

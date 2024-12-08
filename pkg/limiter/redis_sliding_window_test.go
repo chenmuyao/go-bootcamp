@@ -49,44 +49,44 @@ func TestRedisSlidingWindowLimiter(t *testing.T) {
 			delayedRequests:         10,
 			expectedLimitedRequests: 0,
 		},
-		// {
-		// 	name: "limit",
-		// 	after: func(t *testing.T) {
-		// 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-		// 		defer cancel()
-		// 		key := "ip-limit-0.0.0.0"
-		// 		err := rdb.Del(ctx, key).Err()
-		// 		assert.NoError(t, err)
-		// 	},
-		// 	ctx:                     context.Background(),
-		// 	prefix:                  "ip-limit",
-		// 	biz:                     "0.0.0.0",
-		// 	interval:                1000 * time.Millisecond,
-		// 	windowsAmount:           10,
-		// 	limit:                   100,
-		// 	requests:                120,
-		// 	delayedRequests:         0,
-		// 	expectedLimitedRequests: 2,
-		// },
-		// {
-		// 	name: "windows amount set to 0, use default value 10",
-		// 	after: func(t *testing.T) {
-		// 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-		// 		defer cancel()
-		// 		key := "ip-limit-0.0.0.0"
-		// 		err := rdb.Del(ctx, key).Err()
-		// 		assert.NoError(t, err)
-		// 	},
-		// 	ctx:                     context.Background(),
-		// 	prefix:                  "ip-limit",
-		// 	biz:                     "0.0.0.0",
-		// 	interval:                100 * time.Millisecond,
-		// 	windowsAmount:           0,
-		// 	limit:                   100,
-		// 	requests:                12,
-		// 	delayedRequests:         10,
-		// 	expectedLimitedRequests: 2,
-		// },
+		{
+			name: "limit",
+			after: func(t *testing.T) {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+				defer cancel()
+				key := "ip-limit-0.0.0.0"
+				err := rdb.Del(ctx, key).Err()
+				assert.NoError(t, err)
+			},
+			ctx:                     context.Background(),
+			prefix:                  "ip-limit",
+			biz:                     "0.0.0.0",
+			interval:                100 * time.Millisecond,
+			windowsAmount:           10,
+			limit:                   100,
+			requests:                12,
+			delayedRequests:         10,
+			expectedLimitedRequests: 2,
+		},
+		{
+			name: "windows amount set to 0, use default value 10",
+			after: func(t *testing.T) {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+				defer cancel()
+				key := "ip-limit-0.0.0.0"
+				err := rdb.Del(ctx, key).Err()
+				assert.NoError(t, err)
+			},
+			ctx:                     context.Background(),
+			prefix:                  "ip-limit",
+			biz:                     "0.0.0.0",
+			interval:                100 * time.Millisecond,
+			windowsAmount:           0,
+			limit:                   100,
+			requests:                12,
+			delayedRequests:         10,
+			expectedLimitedRequests: 2,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
