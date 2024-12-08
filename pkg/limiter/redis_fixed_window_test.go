@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRedisCodeCacheSet(t *testing.T) {
+func TestRedisFixedWindowLimiter(t *testing.T) {
 	rdb := redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 	})
@@ -34,10 +34,10 @@ func TestRedisCodeCacheSet(t *testing.T) {
 			after: func(t *testing.T) {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 				defer cancel()
-				cntKey := "ip-limit:0.0.0.0:cnt"
+				cntKey := "ip-limit-0.0.0.0:cnt"
 				err := rdb.Del(ctx, cntKey).Err()
 				assert.NoError(t, err)
-				timeBeginKey := "ip-limit:0.0.0.0:time"
+				timeBeginKey := "ip-limit-0.0.0.0:time"
 				err = rdb.Del(ctx, timeBeginKey).Err()
 				assert.NoError(t, err)
 			},
@@ -55,10 +55,10 @@ func TestRedisCodeCacheSet(t *testing.T) {
 			after: func(t *testing.T) {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 				defer cancel()
-				cntKey := "ip-limit:0.0.0.0:cnt"
+				cntKey := "ip-limit-0.0.0.0:cnt"
 				err := rdb.Del(ctx, cntKey).Err()
 				assert.NoError(t, err)
-				timeBeginKey := "ip-limit:0.0.0.0:time"
+				timeBeginKey := "ip-limit-0.0.0.0:time"
 				err = rdb.Del(ctx, timeBeginKey).Err()
 				assert.NoError(t, err)
 			},

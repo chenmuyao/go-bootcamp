@@ -62,7 +62,7 @@ func (fw *SlidingWindowLimiter) AcceptConnection(biz string) bool {
 		return true
 	}
 
-	// remofe old requests
+	// remove old requests
 	cutTime := now.Add(-fw.windowSize)
 
 	for len(res.requests) > 0 && res.requests[0].Before(cutTime) {
