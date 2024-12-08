@@ -22,7 +22,7 @@ type RedisLeakyBucketOptions struct {
 	Capacity int
 
 	// to calculate rate
-	limit    int
+	Limit    int
 	Interval time.Duration
 }
 
@@ -44,7 +44,7 @@ func NewRedisLeakyBucketLimiter(options *RedisLeakyBucketOptions) *RedisLeakyBuc
 		prefix:   prefix,
 		interval: options.Interval.Milliseconds(),
 		capacity: options.Capacity,
-		limit:    options.limit,
+		limit:    options.Limit,
 	}
 }
 

@@ -14,11 +14,11 @@ redis.call("ZREMRANGEBYSCORE", key, "-inf", cutTime)
 local count = redis.call("ZCARD", key)
 
 if count >= tonumber(limit) then
-	redis.log(redis.LOG_WARNING, "cutTime:" .. cutTime .. " count:" .. count)
+	-- redis.log(redis.LOG_WARNING, "cutTime:" .. cutTime .. " count:" .. count)
 	return -1
 end
 
-redis.log(redis.LOG_WARNING, "cutTime:" .. cutTime .. " count:" .. count)
+-- redis.log(redis.LOG_WARNING, "cutTime:" .. cutTime .. " count:" .. count)
 
 redis.call("ZADD", key, now, now)
 

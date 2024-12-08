@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRedisLeakyBucketLimiter(t *testing.T) {
+func TestRedisTokenBucketLimiter(t *testing.T) {
 	rdb := redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 	})
@@ -19,12 +19,12 @@ func TestRedisLeakyBucketLimiter(t *testing.T) {
 
 		after func(t *testing.T)
 
-		ctx      context.Context
-		prefix   string
-		biz      string
-		interval time.Duration
-		limit    int
-		capacity int
+		ctx           context.Context
+		prefix        string
+		biz           string
+		interval      time.Duration
+		releaseAmount int
+		capacity      int
 
 		sleep           time.Duration
 		requests        int
@@ -41,12 +41,12 @@ func TestRedisLeakyBucketLimiter(t *testing.T) {
 				err := rdb.Del(ctx, cntKey).Err()
 				assert.NoError(t, err)
 			},
-			ctx:      context.Background(),
-			prefix:   "ip-limit",
-			biz:      "0.0.0.0",
-			interval: 100 * time.Millisecond,
-			capacity: 100,
-			limit:    10,
+			ctx:           context.Background(),
+			prefix:        "ip-limit",
+			biz:           "0.0.0.0",
+			interval:      100 * time.Millisecond,
+			capacity:      100,
+			releaseAmount: 10,
 
 			sleep:                   100 * time.Millisecond,
 			requests:                100,
@@ -62,12 +62,12 @@ func TestRedisLeakyBucketLimiter(t *testing.T) {
 				err := rdb.Del(ctx, cntKey).Err()
 				assert.NoError(t, err)
 			},
-			ctx:      context.Background(),
-			prefix:   "ip-limit",
-			biz:      "0.0.0.0",
-			interval: 100 * time.Millisecond,
-			capacity: 100,
-			limit:    10,
+			ctx:           context.Background(),
+			prefix:        "ip-limit",
+			biz:           "0.0.0.0",
+			interval:      100 * time.Millisecond,
+			capacity:      100,
+			releaseAmount: 10,
 
 			sleep:                   100 * time.Millisecond,
 			requests:                100,
@@ -83,12 +83,12 @@ func TestRedisLeakyBucketLimiter(t *testing.T) {
 				err := rdb.Del(ctx, cntKey).Err()
 				assert.NoError(t, err)
 			},
-			ctx:      context.Background(),
-			prefix:   "ip-limit",
-			biz:      "0.0.0.0",
-			interval: 10 * time.Millisecond,
-			capacity: 100,
-			limit:    10,
+			ctx:           context.Background(),
+			prefix:        "ip-limit",
+			biz:           "0.0.0.0",
+			interval:      10 * time.Millisecond,
+			capacity:      100,
+			releaseAmount: 10,
 
 			sleep:                   120 * time.Millisecond,
 			requests:                100,
@@ -100,12 +100,12 @@ func TestRedisLeakyBucketLimiter(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			defer tc.after(t)
 
-			limiter := NewRedisLeakyBucketLimiter(&RedisLeakyBucketOptions{
-				RedisClient: rdb,
-				Prefix:      tc.prefix,
-				Capacity:    tc.capacity,
-				Interval:    tc.interval,
-				Limit:       tc.limit,
+			limiter := NewRedisTokenBucketLimiter(&RedisTokenBucketOptions{
+				RedisClient:   rdb,
+				Prefix:        tc.prefix,
+				Capacity:      tc.capacity,
+				Interval:      tc.interval,
+				ReleaseAmount: tc.releaseAmount,
 			})
 
 			resCh := make(chan bool)
