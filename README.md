@@ -5,4 +5,5 @@ Geekbang Go Basic Bootcamp
 
 ![kube](./doc/images/v0.0.3/kube.png)
 
-- [] Rate limiter middleware
+- [X] Rate limiter middleware
+- [ ] Unit tests
