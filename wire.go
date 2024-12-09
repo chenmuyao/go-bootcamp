@@ -5,6 +5,7 @@ package main
 
 import (
 	"github.com/chenmuyao/go-bootcamp/internal/repository"
+	"github.com/chenmuyao/go-bootcamp/internal/repository/cache/rediscache"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
 	"github.com/chenmuyao/go-bootcamp/internal/service"
 	"github.com/chenmuyao/go-bootcamp/internal/web"
@@ -23,8 +24,8 @@ func InitWebServer() *gin.Engine {
 		dao.NewUserDAO,
 
 		// Cache
-		// rediscache.NewCodeRedisCache, rediscache.NewUserRedisCache,
-		ioc.InitCodeLocalCache, ioc.InitUserLocalCache,
+		rediscache.NewCodeRedisCache, rediscache.NewUserRedisCache,
+		// ioc.InitCodeLocalCache, ioc.InitUserLocalCache,
 
 		// Repo
 		repository.NewUserRepository, repository.NewCodeRepository,
