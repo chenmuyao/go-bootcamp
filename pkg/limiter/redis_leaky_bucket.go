@@ -26,7 +26,7 @@ type RedisLeakyBucketOptions struct {
 	Interval time.Duration
 }
 
-type RedisLeakyBucketLimiter struct {
+type redisLeakyBucketLimiter struct {
 	cmd      redis.Cmdable
 	prefix   string
 	capacity int
@@ -34,12 +34,12 @@ type RedisLeakyBucketLimiter struct {
 	interval int64
 }
 
-func NewRedisLeakyBucketLimiter(options *RedisLeakyBucketOptions) *RedisLeakyBucketLimiter {
+func NewRedisLeakyBucketLimiter(options *RedisLeakyBucketOptions) *redisLeakyBucketLimiter {
 	prefix := options.Prefix
 	if len(prefix) == 0 {
 		prefix = "rate-limit"
 	}
-	return &RedisLeakyBucketLimiter{
+	return &redisLeakyBucketLimiter{
 		cmd:      options.RedisClient,
 		prefix:   prefix,
 		interval: options.Interval.Milliseconds(),
@@ -48,7 +48,7 @@ func NewRedisLeakyBucketLimiter(options *RedisLeakyBucketOptions) *RedisLeakyBuc
 	}
 }
 
-func (fw *RedisLeakyBucketLimiter) AcceptConnection(ctx context.Context, biz string) bool {
+func (fw *redisLeakyBucketLimiter) AcceptConnection(ctx context.Context, biz string) bool {
 	key := fmt.Sprintf("%s-%s", fw.prefix, biz)
 	res, err := fw.cmd.Eval(ctx, luaLeakyBucket, []string{key}, fw.limit, fw.interval, fw.capacity).
 		Int()

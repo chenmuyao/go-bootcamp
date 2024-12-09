@@ -1,6 +1,7 @@
 package limiter
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -63,7 +64,7 @@ func TestSlidingWindowLimiter(t *testing.T) {
 
 			for range tc.requests {
 				go func() {
-					res := limiter.AcceptConnection(tc.ip)
+					res := limiter.AcceptConnection(context.Background(), tc.ip)
 					resCh <- res
 				}()
 			}
@@ -86,7 +87,7 @@ func TestSlidingWindowLimiter(t *testing.T) {
 
 			for range tc.delayedRequests {
 				go func() {
-					res := limiter.AcceptConnection(tc.ip)
+					res := limiter.AcceptConnection(context.Background(), tc.ip)
 					resCh <- res
 				}()
 			}

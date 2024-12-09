@@ -1,6 +1,7 @@
 package limiter
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -19,7 +20,7 @@ type SlidingWindowOptions struct {
 	Limit         int
 }
 
-type SlidingWindowLimiter struct {
+type slidingWindowLimiter struct {
 	cache      map[string]slidingWindowRateInfo
 	prefix     string
 	windowSize time.Duration
@@ -27,7 +28,7 @@ type SlidingWindowLimiter struct {
 	mutex      sync.Mutex
 }
 
-func NewSlidingWindowLimiter(options *SlidingWindowOptions) *SlidingWindowLimiter {
+func NewSlidingWindowLimiter(options *SlidingWindowOptions) *slidingWindowLimiter {
 	prefix := options.Prefix
 	if len(prefix) == 0 {
 		prefix = "rate-limit"
@@ -37,7 +38,7 @@ func NewSlidingWindowLimiter(options *SlidingWindowOptions) *SlidingWindowLimite
 		windowsAmount = 10
 	}
 	windowSize := options.Interval.Nanoseconds() / int64(windowsAmount)
-	return &SlidingWindowLimiter{
+	return &slidingWindowLimiter{
 		prefix:     prefix,
 		windowSize: time.Duration(windowSize),
 		limit:      options.Limit / windowsAmount,
@@ -46,7 +47,7 @@ func NewSlidingWindowLimiter(options *SlidingWindowOptions) *SlidingWindowLimite
 	}
 }
 
-func (fw *SlidingWindowLimiter) AcceptConnection(biz string) bool {
+func (fw *slidingWindowLimiter) AcceptConnection(ctx context.Context, biz string) bool {
 	fw.mutex.Lock()
 	defer fw.mutex.Unlock()
 

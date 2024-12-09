@@ -1,6 +1,7 @@
 package limiter
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -23,7 +24,7 @@ type leakyBucketRateInfo struct {
 	water        int
 }
 
-type LeakyBucketLimiter struct {
+type leakyBucketLimiter struct {
 	cache    map[string]leakyBucketRateInfo
 	prefix   string
 	capacity int
@@ -33,12 +34,12 @@ type LeakyBucketLimiter struct {
 	mutex sync.Mutex
 }
 
-func NewLeakyBucketLimiter(options *LeakyBucketOptions) *LeakyBucketLimiter {
+func NewLeakyBucketLimiter(options *LeakyBucketOptions) *leakyBucketLimiter {
 	prefix := options.Prefix
 	if len(prefix) == 0 {
 		prefix = "rate-limit"
 	}
-	return &LeakyBucketLimiter{
+	return &leakyBucketLimiter{
 		prefix:   prefix,
 		cache:    map[string]leakyBucketRateInfo{},
 		capacity: options.Capacity,
@@ -48,7 +49,7 @@ func NewLeakyBucketLimiter(options *LeakyBucketOptions) *LeakyBucketLimiter {
 	}
 }
 
-func (fw *LeakyBucketLimiter) leak(
+func (fw *leakyBucketLimiter) leak(
 	now time.Time,
 	rateInfo leakyBucketRateInfo,
 ) leakyBucketRateInfo {
@@ -65,7 +66,7 @@ func (fw *LeakyBucketLimiter) leak(
 	return rateInfo
 }
 
-func (fw *LeakyBucketLimiter) AcceptConnection(biz string) bool {
+func (fw *leakyBucketLimiter) AcceptConnection(ctx context.Context, biz string) bool {
 	fw.mutex.Lock()
 	defer fw.mutex.Unlock()
 

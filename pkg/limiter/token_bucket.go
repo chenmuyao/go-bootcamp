@@ -1,6 +1,7 @@
 package limiter
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -23,7 +24,7 @@ type tokenBucketRateInfo struct {
 	tokens          int
 }
 
-type TokenBucketLimiter struct {
+type tokenBucketLimiter struct {
 	cache         map[string]tokenBucketRateInfo
 	prefix        string
 	capacity      int
@@ -33,12 +34,12 @@ type TokenBucketLimiter struct {
 	mutex sync.Mutex
 }
 
-func NewTokenBucketLimiter(options *TokenBucketOptions) *TokenBucketLimiter {
+func NewTokenBucketLimiter(options *TokenBucketOptions) *tokenBucketLimiter {
 	prefix := options.Prefix
 	if len(prefix) == 0 {
 		prefix = "rate-limit"
 	}
-	return &TokenBucketLimiter{
+	return &tokenBucketLimiter{
 		prefix:        prefix,
 		cache:         map[string]tokenBucketRateInfo{},
 		capacity:      options.Capacity,
@@ -48,7 +49,7 @@ func NewTokenBucketLimiter(options *TokenBucketOptions) *TokenBucketLimiter {
 	}
 }
 
-func (fw *TokenBucketLimiter) release(
+func (fw *tokenBucketLimiter) release(
 	now time.Time,
 	rateInfo tokenBucketRateInfo,
 ) tokenBucketRateInfo {
@@ -65,7 +66,7 @@ func (fw *TokenBucketLimiter) release(
 	return rateInfo
 }
 
-func (fw *TokenBucketLimiter) AcceptConnection(biz string) bool {
+func (fw *tokenBucketLimiter) AcceptConnection(ctx context.Context, biz string) bool {
 	fw.mutex.Lock()
 	defer fw.mutex.Unlock()
 

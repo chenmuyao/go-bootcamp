@@ -26,7 +26,7 @@ type RedisTokenBucketOptions struct {
 	Interval      time.Duration
 }
 
-type RedisTokenBucketLimiter struct {
+type redisTokenBucketLimiter struct {
 	cmd           redis.Cmdable
 	prefix        string
 	capacity      int
@@ -34,12 +34,12 @@ type RedisTokenBucketLimiter struct {
 	interval      int64
 }
 
-func NewRedisTokenBucketLimiter(options *RedisTokenBucketOptions) *RedisTokenBucketLimiter {
+func NewRedisTokenBucketLimiter(options *RedisTokenBucketOptions) *redisTokenBucketLimiter {
 	prefix := options.Prefix
 	if len(prefix) == 0 {
 		prefix = "rate-limit"
 	}
-	return &RedisTokenBucketLimiter{
+	return &redisTokenBucketLimiter{
 		cmd:           options.RedisClient,
 		prefix:        prefix,
 		interval:      options.Interval.Milliseconds(),
@@ -48,7 +48,7 @@ func NewRedisTokenBucketLimiter(options *RedisTokenBucketOptions) *RedisTokenBuc
 	}
 }
 
-func (fw *RedisTokenBucketLimiter) AcceptConnection(ctx context.Context, biz string) bool {
+func (fw *redisTokenBucketLimiter) AcceptConnection(ctx context.Context, biz string) bool {
 	key := fmt.Sprintf("%s-%s", fw.prefix, biz)
 	res, err := fw.cmd.Eval(ctx, luaTokenBucket, []string{key}, fw.releaseAmount, fw.interval, fw.capacity).
 		Int()

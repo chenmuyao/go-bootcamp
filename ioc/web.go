@@ -7,8 +7,10 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/web"
 	"github.com/chenmuyao/go-bootcamp/internal/web/middleware"
 	"github.com/chenmuyao/go-bootcamp/pkg/ginx/middleware/ratelimit"
+	"github.com/chenmuyao/go-bootcamp/pkg/limiter"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 )
 
 func InitWebServer(middlewares []gin.HandlerFunc, userHandlers *web.UserHandler) *gin.Engine {
@@ -18,7 +20,7 @@ func InitWebServer(middlewares []gin.HandlerFunc, userHandlers *web.UserHandler)
 	return server
 }
 
-func InitGinMiddlewares() []gin.HandlerFunc {
+func InitGinMiddlewares(redisClient redis.Cmdable) []gin.HandlerFunc {
 	return []gin.HandlerFunc{
 		cors.New(cors.Config{
 			AllowCredentials: true,
@@ -38,11 +40,8 @@ func InitGinMiddlewares() []gin.HandlerFunc {
 		// useSession(),
 		// sessionCheckLogin(),
 
-		// ratelimit.NewFixedWindowLimiterBuilder(&ratelimit.FixedWindowOptions{
-		// 	Interval: time.Second,
-		// 	Limit:    100,
-		// }).Build(),
-		ratelimit.NewSlidingWindowLimiterBuilder(&ratelimit.SlidingWindowOptions{
+		ratelimit.NewRateLimiterBuilder(&limiter.RedisSlidingWindowOptions{
+			RedisClient:   redisClient,
 			Interval:      time.Second,
 			Limit:         100,
 			WindowsAmount: 10,

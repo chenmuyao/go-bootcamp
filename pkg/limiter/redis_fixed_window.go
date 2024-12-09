@@ -22,19 +22,19 @@ type RedisFixedWindowOptions struct {
 	Limit       int
 }
 
-type RedisFixedWindowLimiter struct {
+type redisFixedWindowLimiter struct {
 	cmd      redis.Cmdable
 	prefix   string
 	interval int64
 	limit    int
 }
 
-func NewRedisFixedWindowLimiter(options *RedisFixedWindowOptions) *RedisFixedWindowLimiter {
+func NewRedisFixedWindowLimiter(options *RedisFixedWindowOptions) *redisFixedWindowLimiter {
 	prefix := options.Prefix
 	if len(prefix) == 0 {
 		prefix = "rate-limit"
 	}
-	return &RedisFixedWindowLimiter{
+	return &redisFixedWindowLimiter{
 		cmd:      options.RedisClient,
 		prefix:   prefix,
 		interval: options.Interval.Milliseconds(),
@@ -42,7 +42,7 @@ func NewRedisFixedWindowLimiter(options *RedisFixedWindowOptions) *RedisFixedWin
 	}
 }
 
-func (fw *RedisFixedWindowLimiter) AcceptConnection(ctx context.Context, biz string) bool {
+func (fw *redisFixedWindowLimiter) AcceptConnection(ctx context.Context, biz string) bool {
 	key := fmt.Sprintf("%s-%s", fw.prefix, biz)
 	res, err := fw.cmd.Eval(ctx, luaFixedWindow, []string{key}, fw.limit, fw.interval).Int()
 	if err != nil {

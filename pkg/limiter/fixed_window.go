@@ -1,6 +1,7 @@
 package limiter
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -19,7 +20,7 @@ type fixedWindowRateInfo struct {
 	count     int
 }
 
-type FixedWindowLimiter struct {
+type fixedWindowLimiter struct {
 	cache    map[string]fixedWindowRateInfo
 	prefix   string
 	interval time.Duration
@@ -27,12 +28,12 @@ type FixedWindowLimiter struct {
 	mutex    sync.Mutex
 }
 
-func NewFixedWindowLimiter(options *FixedWindowOptions) *FixedWindowLimiter {
+func NewFixedWindowLimiter(options *FixedWindowOptions) *fixedWindowLimiter {
 	prefix := options.Prefix
 	if len(prefix) == 0 {
 		prefix = "rate-limit"
 	}
-	return &FixedWindowLimiter{
+	return &fixedWindowLimiter{
 		prefix:   prefix,
 		interval: options.Interval,
 		limit:    options.Limit,
@@ -41,7 +42,7 @@ func NewFixedWindowLimiter(options *FixedWindowOptions) *FixedWindowLimiter {
 	}
 }
 
-func (fw *FixedWindowLimiter) AcceptConnection(biz string) bool {
+func (fw *fixedWindowLimiter) AcceptConnection(ctx context.Context, biz string) bool {
 	fw.mutex.Lock()
 	defer fw.mutex.Unlock()
 

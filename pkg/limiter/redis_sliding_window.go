@@ -23,14 +23,14 @@ type RedisSlidingWindowOptions struct {
 	Limit         int
 }
 
-type RedisSlidingWindowLimiter struct {
+type redisSlidingWindowLimiter struct {
 	cmd        redis.Cmdable
 	prefix     string
 	windowSize int64
 	limit      int
 }
 
-func NewRedisSlidingWindowLimiter(options *RedisSlidingWindowOptions) *RedisSlidingWindowLimiter {
+func NewRedisSlidingWindowLimiter(options *RedisSlidingWindowOptions) *redisSlidingWindowLimiter {
 	prefix := options.Prefix
 	if len(prefix) == 0 {
 		prefix = "rate-limit"
@@ -40,7 +40,7 @@ func NewRedisSlidingWindowLimiter(options *RedisSlidingWindowOptions) *RedisSlid
 		windowsAmount = 10
 	}
 	windowSize := options.Interval.Nanoseconds() / int64(windowsAmount)
-	return &RedisSlidingWindowLimiter{
+	return &redisSlidingWindowLimiter{
 		cmd:        options.RedisClient,
 		prefix:     prefix,
 		windowSize: windowSize,
@@ -48,7 +48,7 @@ func NewRedisSlidingWindowLimiter(options *RedisSlidingWindowOptions) *RedisSlid
 	}
 }
 
-func (fw *RedisSlidingWindowLimiter) AcceptConnection(ctx context.Context, biz string) bool {
+func (fw *redisSlidingWindowLimiter) AcceptConnection(ctx context.Context, biz string) bool {
 	key := fmt.Sprintf("%s-%s", fw.prefix, biz)
 	res, err := fw.cmd.Eval(ctx, luaSlidingWindow, []string{key}, fw.limit, fw.windowSize, time.Now().UnixNano()).
 		Int()
