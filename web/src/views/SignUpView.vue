@@ -1,28 +1,31 @@
 <template>
-  <div class="signup">
-    <div class="signup-page">
-      <h3>Sign Up</h3>
-      <form class="w3-container" @submit.prevent="handleSignup">
+  <div class="signup bg-gumbo-100 min-h-screen flex items-center justify-center">
+    <div class="signup-page w-full max-w-md p-6 bg-white rounded-lg shadow-md">
+      <h3 class="text-2xl font-bold text-center mb-6">Sign Up</h3>
+      <form class="space-y-4" @submit.prevent="handleSignup">
         <div>
-          <label for="email">Email:</label>
-          <input class="w3-input" type="email" id="email" v-model="form.email" required>
+          <label for="email" class="block text-sm font-medium text-gumbo-700">Email:</label>
+          <input class="w-full p-2 border border-gumbo-300 rounded focus:outline-none focus:border-gumbo-500"
+            type="email" id="email" v-model="form.email" required>
         </div>
         <div>
-          <label for="password">Password:</label>
-          <input class="w3-input" type="password" id="password" v-model="form.password" required>
+          <label for="password" class="block text-sm font-medium text-gumbo-700">Password:</label>
+          <input class="w-full p-2 border border-gumbo-300 rounded focus:outline-none focus:border-gumbo-500"
+            type="password" id="password" v-model="form.password" required>
         </div>
         <div>
-          <label for="confirm-password">Confirm password:</label>
-          <input class="w3-input" type="password" id="confirm-password" v-model="form.confirmPassword" required>
+          <label for="confirm-password" class="block text-sm font-medium text-gumbo-700">Confirm password:</label>
+          <input class="w-full p-2 border border-gumbo-300 rounded focus:outline-none focus:border-gumbo-500"
+            type="password" id="confirm-password" v-model="form.confirmPassword" required>
         </div>
-        <div v-if="errorMessage" class="w3-panel w3-red">{{ errorMessage }}</div>
+        <div v-if="errorMessage" class="p-2 mb-4 text-sm text-gumbo-800 bg-gumbo-50 rounded-lg">{{ errorMessage }}</div>
         <div>
-          <button class="w3-margin-top w3-btn w3-ripple w3-green" type="submit" :disabled="!isFormValid">Sign
-            Up</button>
+          <button
+            class="w-full px-4 py-2 font-semibold text-white bg-gumbo-500 rounded hover:bg-gumbo-600 focus:outline-none focus:ring-2 focus:ring-gumbo-600 focus:ring-opacity-50"
+            type="submit" :disabled="!isFormValid">Sign Up</button>
         </div>
       </form>
     </div>
-
   </div>
 </template>
 
@@ -97,12 +100,4 @@ const handleSignup = () => {
 };
 </script>
 
-<style>
-@media (min-width: 1024px) {
-  .signup {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-  }
-}
-</style>
+<style></style>

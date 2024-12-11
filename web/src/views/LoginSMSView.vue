@@ -1,28 +1,29 @@
 <template>
-  <div class="login">
-    <div class="login-page">
-      <h3>Login</h3>
-      <form class="w3-container" @submit.prevent="handleLogin">
+  <div class="login bg-gumbo-100 min-h-screen flex items-center justify-center">
+    <div class="login-page w-full max-w-md p-6 bg-white rounded-lg shadow-md">
+      <h3 class="text-2xl font-bold text-center mb-6">Login</h3>
+      <form class="space-y-4" @submit.prevent="handleLogin">
         <div>
-          <label for="phone">Phone Number:</label>
-          <input class="w3-input" type="tel" id="phone" v-model="form.phone" required>
+          <label for="phone" class="block text-sm font-medium text-gumbo-700">Phone Number:</label>
+          <input class="w-full p-2 border border-gumbo-300 rounded focus:outline-none focus:border-gumbo-500" type="tel" id="phone" v-model="form.phone" required>
         </div>
         <div v-if="smsSent">
           <label for="code">Code:</label>
-          <input class="w3-input" type="text" id="code" v-model="form.code" required>
+          <input class="w-full p-2 border border-gumbo-300 rounded focus:outline-none focus:border-gumbo-500" type="text" id="code" v-model="form.code" required>
         </div>
-        <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+        <div v-if="errorMessage" class="p-2 mb-4 text-sm text-gumbo-800 bg-gumbo-50 rounded-lg">{{ errorMessage }}</div>
         <div v-if="!smsSent">
-          <button class="w3-margin-top w3-button w3-green" type="button" :disabled="!validatePhone(form.phone)"
+          <button class="w-full px-4 py-2 font-semibold text-white bg-gumbo-500 rounded hover:bg-gumbo-700 focus:outline-none focus:ring-2 focus:ring-gumbo-600 focus:ring-opacity-50" type="button" :disabled="!validatePhone(form.phone)"
             @click="sendSMS">Send
             SMS</button>
         </div>
-        <div v-else>
-          <button class="w3-margin w3-button w3-green" type="button"
+        <div v-else class="flex space-x-4">
+          <button class="block mt-4 text-center text-gumbo-500 hover:underline"
+            type="button"
             :disabled="!validatePhone(form.phone)" @click="sendSMS">Resend SMS</button>
-          <button class="w3-margin w3-button w3-green" type="submit"
+          <button class="flex-grow px-4 py-2 font-semibold text-white bg-gumbo-500 rounded hover:bg-gumbo-700 focus:outline-none focus:ring-2 focus:ring-gumbo-600 focus:ring-opacity-50"
+            type="submit"
             :disabled="!validateCode(form.code) || !validatePhone(form.phone)">Login</button>
-          <a class="w3-margin" href="/login">Login with password</a>
         </div>
       </form>
     </div>
@@ -118,11 +119,4 @@ const handleLogin = () => {
 
 
 <style>
-@media (min-width: 1024px) {
-  .login {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-  }
-}
 </style>

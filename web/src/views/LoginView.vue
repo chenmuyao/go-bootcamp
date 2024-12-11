@@ -1,20 +1,24 @@
 <template>
-  <div class="login">
-    <div class="login-page">
-      <h3>Login</h3>
-      <form class="w3-container" @submit.prevent="handleLogin">
+  <div class="login bg-gumbo-100 min-h-screen flex items-center justify-center">
+    <div class="login-page w-full max-w-md p-6 bg-white rounded-lg shadow-md">
+      <h3 class="text-2xl font-bold text-center mb-6">Login</h3>
+      <form class="space-y-4" @submit.prevent="handleLogin">
         <div>
-          <label for="email">Email:</label>
-          <input class="w3-input" type="email" id="email" v-model="form.email" required>
+          <label for="email" class="block text-sm font-medium text-gumbo-700">Email:</label>
+          <input class="w-full p-2 border border-gumbo-300 rounded focus:outline-none focus:border-gumbo-500" type="email"
+            id="email" v-model="form.email" required>
         </div>
         <div>
           <label for="password">Password:</label>
-          <input class="w3-input" type="password" id="password" v-model="form.password" required>
+          <input class="w-full p-2 border border-gumbo-300 rounded focus:outline-none focus:border-gumbo-500"
+            type="password" id="password" v-model="form.password" required>
         </div>
-        <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+        <div v-if="errorMessage" class="p-2 mb-4 text-sm text-gumbo-800 bg-gumbo-50 rounded-lg">{{ errorMessage }}</div>
         <div>
-          <button class="w3-margin-top w3-button w3-green" type="submit" :disabled="!isFormValid">Login</button>
-          <a class="w3-margin" href="/login_sms">Signup or Login with SMS</a>
+          <button
+            class="w-full px-4 py-2 font-semibold text-white bg-gumbo-500 rounded hover:bg-gumbo-700 focus:outline-none focus:ring-2 focus:ring-gumbo-600 focus:ring-opacity-50"
+            type="submit" :disabled="!isFormValid">Login</button>
+          <a class="block mt-4 text-center text-gumbo-500 hover:underline" href="/login_sms">Signup or Login with SMS</a>
         </div>
       </form>
     </div>
@@ -68,12 +72,12 @@ const handleLogin = () => {
   })
     .then((response) => {
       console.log(response)
-      if(response.status != 200) {
+      if (response.status != 200) {
         alert(response.statusText);
         return
       }
       console.log(response.data);
-      router.push({path: "/user/profile"});
+      router.push({ path: "/user/profile" });
 
     })
     .catch((error) => {
@@ -84,12 +88,4 @@ const handleLogin = () => {
 </script>
 
 
-<style>
-@media (min-width: 1024px) {
-  .login {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-  }
-}
-</style>
+<style></style>
