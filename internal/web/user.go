@@ -79,7 +79,7 @@ func (h *UserHandler) SendSMSLoginCode(ctx *gin.Context) {
 		return
 	}
 	tpl, err := template.New(bizLogin).
-		Parse("Verification code for webook: {{.Code}}\nExpires in 10 min.\n[webook]")
+		Parse("Verification code for WeTravel: {{.Code}}\nExpires in 10 min.\n[WeTravel]")
 	if err != nil {
 		slog.Error("cannot parse sms template", "error", err)
 		ctx.JSON(http.StatusInternalServerError, Result{

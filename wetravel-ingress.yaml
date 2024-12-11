@@ -2,7 +2,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: webook-ingress
+  name: wetravel-ingress
 spec:
   ingressClassName: nginx
   rules:
@@ -13,7 +13,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: webook
+            name: wetravel
             port:
               number: 7779
 ---

@@ -1,1 +1,1 @@
-CREATE DATABASE webook;
+CREATE DATABASE wetravel;

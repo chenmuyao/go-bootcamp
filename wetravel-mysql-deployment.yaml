@@ -2,22 +2,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: webook-mysql
+  name: wetravel-mysql
   labels:
-    app: webook-mysql
+    app: wetravel-mysql
 spec:
   selector:
     matchLabels:
-      app: webook-mysql
+      app: wetravel-mysql
   replicas: 1
   template:
     metadata:
-      name: webook-mysql
+      name: wetravel-mysql
       labels:
-        app: webook-mysql
+        app: wetravel-mysql
     spec:
       containers:
-        - name: webook-mysql
+        - name: wetravel-mysql
           image: mysql:9
           imagePullPolicy: IfNotPresent
           env:
@@ -37,10 +37,10 @@ spec:
         - name: mysql-storage
           persistentVolumeClaim:
             # PVC persistent volume claim
-            claimName: webook-mysql-pvc
+            claimName: wetravel-mysql-pvc
         - name: mysql-configmap
           configMap:
-            name: webook-mysql-configmap
+            name: wetravel-mysql-configmap
 
 ---
 

@@ -2,11 +2,11 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: webook-mysql-pvc
+  name: wetravel-mysql-pvc
   labels:
-    app: webook-mysql-pvc
+    app: wetravel-mysql-pvc
 spec:
-  storageClassName: webook
+  storageClassName: wetravel
   # Read write by one Pod (the pod of mysql)
   accessModes:
   - ReadWriteOnce

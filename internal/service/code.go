@@ -38,7 +38,7 @@ func NewCodeService(repo repository.CodeRepository, sms sms.Service) CodeService
 // NOTE: check -> do: racing condition
 // Redis single thread, use lua for atomic operations
 
-// NOTE: template example: "Verification code for webook: {{.Code}}\nExpires in 10 min.\n[webook]"
+// NOTE: template example: "Verification code for WeTravel: {{.Code}}\nExpires in 10 min.\n[WeTravel]"
 func (svc *codeService) Send(
 	ctx context.Context,
 	biz string,

@@ -2,14 +2,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: webook-redis
+  name: wetravel-redis
   namespace: default
 spec:
   selector:
-    app: webook-redis
+    app: wetravel-redis
   type: NodePort
   ports:
-  - name: webook-redis
+  - name: wetravel-redis
     protocol: TCP
     # service accessible port
     port: 6380

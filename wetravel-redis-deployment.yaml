@@ -2,22 +2,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: webook-redis
+  name: wetravel-redis
   labels:
-    app: webook-redis
+    app: wetravel-redis
 spec:
   selector:
     matchLabels:
-      app: webook-redis
+      app: wetravel-redis
   replicas: 1
   template:
     metadata:
-      name: webook-redis
+      name: wetravel-redis
       labels:
-        app: webook-redis
+        app: wetravel-redis
     spec:
       containers:
-        - name: webook-redis
+        - name: wetravel-redis
           # image: bitnami/redis:latest
           image: redis:latest
           imagePullPolicy: IfNotPresent

@@ -1,4 +1,4 @@
 FROM ubuntu:20.04
-COPY webook /app/webook
+COPY wetravel /app/wetravel
 WORKDIR /app
-CMD [ "/app/webook" ]
+CMD [ "/app/wetravel" ]
