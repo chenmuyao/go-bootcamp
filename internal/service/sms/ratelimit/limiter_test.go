@@ -38,7 +38,7 @@ func TestRateLimitSMSServiceSend(t *testing.T) {
 				l.EXPECT().AcceptConnection(gomock.Any(), gomock.Any()).Return(false)
 				return svc, l
 			},
-			wantErr: errLimited,
+			wantErr: ErrLimited,
 		},
 	}
 

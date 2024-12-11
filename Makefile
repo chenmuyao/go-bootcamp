@@ -20,18 +20,23 @@ run: dev
 cover:
 	@gocov test ./... | gocov-html -t kit > ./tmp/report.html && firefox ./tmp/report.html
 
-.PHONY: test
-test:
+.PHONY: mock
+mock:
 	@mockgen -source=./internal/service/user.go -package=svcmocks -destination=./internal/service/mocks/user.mock.go
 	@mockgen -source=./internal/service/code.go -package=svcmocks -destination=./internal/service/mocks/code.mock.go
 	@mockgen -source=./internal/service/sms/types.go -package=smsmocks -destination=./internal/service/sms/mocks/sms.mock.go
 	@mockgen -source=./internal/repository/user.go -package=repomocks -destination=./internal/repository/mocks/user.mock.go
 	@mockgen -source=./internal/repository/code.go -package=repomocks -destination=./internal/repository/mocks/code.mock.go
+	@mockgen -source=./internal/repository/sms.go -package=repomocks -destination=./internal/repository/mocks/sms.mock.go
 	@mockgen -source=./internal/repository/dao/user.go -package=daomocks -destination=./internal/repository/dao/mocks/user.mock.go
+	@mockgen -source=./internal/repository/dao/sms.go -package=daomocks -destination=./internal/repository/dao/mocks/sms.mock.go
 	@mockgen -source=./internal/repository/cache/types.go -package=cachemocks -destination=./internal/repository/cache/mocks/cache.mock.go
 	@mockgen -source=./pkg/limiter/types.go -package=limitermocks -destination=./pkg/limiter/mocks/limiter.mock.go
 	@mockgen -package=redismock -destination=./internal/repository/cache/rediscache/mocks/redismock.mock.go github.com/redis/go-redis/v9 Cmdable
 	@cd ./internal/integration/startup/ && wire && cd -
+
+.PHONY: test
+test: mock
 	@go test -v ./...
 
 .PHONY: dev

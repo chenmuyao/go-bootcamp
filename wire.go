@@ -21,7 +21,7 @@ func InitWebServer() *gin.Engine {
 		ioc.InitDB,
 
 		// DAO
-		dao.NewUserDAO,
+		dao.NewUserDAO, dao.NewAsyncSMSDAO,
 
 		// Cache
 		rediscache.NewCodeRedisCache, rediscache.NewUserRedisCache,
@@ -29,6 +29,7 @@ func InitWebServer() *gin.Engine {
 
 		// Repo
 		repository.NewUserRepository, repository.NewCodeRepository,
+		repository.NewAsyncSMSRepository,
 
 		// Services
 		ioc.InitSMSService,
