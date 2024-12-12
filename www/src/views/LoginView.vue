@@ -19,6 +19,7 @@
             class="w-full px-4 py-2 font-semibold text-white bg-gumbo-500 rounded hover:bg-gumbo-700 focus:outline-none focus:ring-2 focus:ring-gumbo-600 focus:ring-opacity-50"
             type="submit" :disabled="!isFormValid">Login</button>
           <a class="block mt-4 text-center text-gumbo-500 hover:underline" href="/login_sms">Signup or Login with SMS</a>
+          <a class="block mt-4 text-center text-gumbo-500 hover:underline" href="/login_gitea">Signup or Login with Gitea</a>
         </div>
       </form>
     </div>

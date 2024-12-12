@@ -33,6 +33,11 @@ const router = createRouter({
       component: () => import('@/views/LoginSMSView.vue'),
     },
     {
+      path: '/login_gitea',
+      name: 'login_gitea',
+      component: () => import('@/views/LoginGiteaView.vue'),
+    },
+    {
       path: '/user/profile',
       name: 'user profile',
       component: () => import('@/views/users/ProfileView.vue'),
