@@ -12,6 +12,7 @@ import { RouterLink, RouterView } from 'vue-router'
           <RouterLink to="/signup" class="text-white hover:text-gumbo-300">Sign Up</RouterLink>
           <RouterLink to="/login" class="text-white hover:text-gumbo-300">Login</RouterLink>
           <RouterLink to="/login_sms" class="text-white hover:text-gumbo-300">SignUp/Login SMS</RouterLink>
+          <RouterLink to="/logout" class="text-white hover:text-gumbo-300">Logout</RouterLink>
           <RouterLink to="/user/profile" class="text-white hover:text-gumbo-300">User Profile</RouterLink>
         </div>
         <!-- Add additional navigation items here if needed -->

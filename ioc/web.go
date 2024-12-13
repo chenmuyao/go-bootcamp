@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/chenmuyao/go-bootcamp/internal/web"
+	ijwt "github.com/chenmuyao/go-bootcamp/internal/web/jwt"
 	"github.com/chenmuyao/go-bootcamp/internal/web/middleware"
 	"github.com/chenmuyao/go-bootcamp/pkg/ginx/middleware/ratelimit"
 	"github.com/chenmuyao/go-bootcamp/pkg/limiter"
@@ -24,7 +25,7 @@ func InitWebServer(middlewares []gin.HandlerFunc,
 	return server
 }
 
-func InitGinMiddlewares(redisClient redis.Cmdable) []gin.HandlerFunc {
+func InitGinMiddlewares(redisClient redis.Cmdable, jwtHdl ijwt.Handler) []gin.HandlerFunc {
 	return []gin.HandlerFunc{
 		cors.New(cors.Config{
 			AllowCredentials: true,
@@ -40,7 +41,7 @@ func InitGinMiddlewares(redisClient redis.Cmdable) []gin.HandlerFunc {
 			MaxAge: 12 * time.Hour,
 		}),
 
-		useJWT(),
+		useJWT(jwtHdl),
 		// useSession(),
 		// sessionCheckLogin(),
 
@@ -53,8 +54,8 @@ func InitGinMiddlewares(redisClient redis.Cmdable) []gin.HandlerFunc {
 	}
 }
 
-func useJWT() gin.HandlerFunc {
-	loginJWT := middleware.NewLoginJWT([]string{
+func useJWT(jwtHdl ijwt.Handler) gin.HandlerFunc {
+	loginJWT := middleware.NewLoginJWT(jwtHdl, []string{
 		"/user/signup",
 		"/user/login",
 		"/user/login_sms/code/send",

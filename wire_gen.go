@@ -12,6 +12,7 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
 	"github.com/chenmuyao/go-bootcamp/internal/service"
 	"github.com/chenmuyao/go-bootcamp/internal/web"
+	"github.com/chenmuyao/go-bootcamp/internal/web/jwt"
 	"github.com/chenmuyao/go-bootcamp/ioc"
 	"github.com/gin-gonic/gin"
 )
@@ -20,7 +21,8 @@ import (
 
 func InitWebServer() *gin.Engine {
 	cmdable := ioc.InitRedis()
-	v := ioc.InitGinMiddlewares(cmdable)
+	handler := jwt.NewRedisJWTHandler(cmdable)
+	v := ioc.InitGinMiddlewares(cmdable, handler)
 	db := ioc.InitDB()
 	userDAO := dao.NewUserDAO(db)
 	userCache := rediscache.NewUserRedisCache(cmdable)
@@ -32,9 +34,9 @@ func InitWebServer() *gin.Engine {
 	asyncSMSRepository := repository.NewAsyncSMSRepository(asyncSMSDAO, db)
 	smsService := ioc.InitSMSService(cmdable, asyncSMSRepository)
 	codeService := service.NewCodeService(codeRepository, smsService)
-	userHandler := web.NewUserHandler(userService, codeService)
+	userHandler := web.NewUserHandler(userService, codeService, handler)
 	giteaService := ioc.InitGiteaService()
-	oAuth2GiteaHandler := web.NewOAuth2GiteaHandler(giteaService, userService)
+	oAuth2GiteaHandler := web.NewOAuth2GiteaHandler(giteaService, userService, handler)
 	engine := ioc.InitWebServer(v, userHandler, oAuth2GiteaHandler)
 	return engine
 }

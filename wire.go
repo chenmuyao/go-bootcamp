@@ -9,6 +9,7 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
 	"github.com/chenmuyao/go-bootcamp/internal/service"
 	"github.com/chenmuyao/go-bootcamp/internal/web"
+	ijwt "github.com/chenmuyao/go-bootcamp/internal/web/jwt"
 	"github.com/chenmuyao/go-bootcamp/ioc"
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
@@ -40,6 +41,7 @@ func InitWebServer() *gin.Engine {
 		// handler
 		web.NewUserHandler,
 		web.NewOAuth2GiteaHandler,
+		ijwt.NewRedisJWTHandler,
 
 		ioc.InitGinMiddlewares,
 		ioc.InitWebServer,

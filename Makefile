@@ -33,6 +33,7 @@ mock:
 	@mockgen -source=./internal/repository/cache/types.go -package=cachemocks -destination=./internal/repository/cache/mocks/cache.mock.go
 	@mockgen -source=./pkg/limiter/types.go -package=limitermocks -destination=./pkg/limiter/mocks/limiter.mock.go
 	@mockgen -package=redismock -destination=./internal/repository/cache/rediscache/mocks/redismock.mock.go github.com/redis/go-redis/v9 Cmdable
+	@mockgen -source=./internal/web/jwt/types.go -package=jwtmocks -destination=./internal/web/jwt/mocks/jwt.mock.go
 	@cd ./internal/integration/startup/ && wire && cd -
 
 .PHONY: test

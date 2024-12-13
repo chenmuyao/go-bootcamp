@@ -8,13 +8,15 @@ import (
 
 	"github.com/chenmuyao/go-bootcamp/internal/service"
 	"github.com/chenmuyao/go-bootcamp/internal/service/oauth2/gitea"
+	ijwt "github.com/chenmuyao/go-bootcamp/internal/web/jwt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/lithammer/shortuuid/v4"
 )
 
 type OAuth2GiteaHandler struct {
-	jwtHandler
+	ijwt.Handler
 	svc             gitea.Service
 	userSvc         service.UserService
 	key             []byte
@@ -23,13 +25,17 @@ type OAuth2GiteaHandler struct {
 
 var OAuthJWTKey = []byte("xQePmbb2TP9CUyFZkgOnV3JQdr22ZNBx")
 
-func NewOAuth2GiteaHandler(svc gitea.Service, userSvc service.UserService) *OAuth2GiteaHandler {
+func NewOAuth2GiteaHandler(
+	svc gitea.Service,
+	userSvc service.UserService,
+	hdl ijwt.Handler,
+) *OAuth2GiteaHandler {
 	return &OAuth2GiteaHandler{
 		svc:             svc,
 		userSvc:         userSvc,
 		key:             OAuthJWTKey,
 		stateCookieName: "jwt-state",
-		jwtHandler:      newJWTHandler(),
+		Handler:         hdl,
 	}
 }
 
@@ -83,13 +89,14 @@ func (o *OAuth2GiteaHandler) Callback(ctx *gin.Context) {
 		return
 	}
 
-	refreshToken, err := o.generateRefreshToken(u.ID)
+	ssid := uuid.New().String()
+	refreshToken, err := o.GenerateRefreshToken(u.ID, ssid)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
 		return
 	}
 
-	token, err := o.generateJWTToken(ctx, u.ID)
+	token, err := o.GenerateJWTToken(ctx, u.ID, ssid)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
 		return

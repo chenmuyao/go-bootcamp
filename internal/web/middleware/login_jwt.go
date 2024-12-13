@@ -3,22 +3,25 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/chenmuyao/go-bootcamp/internal/web"
+	ijwt "github.com/chenmuyao/go-bootcamp/internal/web/jwt"
 	"github.com/gin-gonic/gin"
+
 	"github.com/golang-jwt/jwt/v5"
 )
 
 type LoginJWT struct {
 	ignorePaths map[string]struct{}
+	ijwt.Handler
 }
 
-func NewLoginJWT(ignorePaths []string) *LoginJWT {
+func NewLoginJWT(hdl ijwt.Handler, ignorePaths []string) *LoginJWT {
 	ignorePathsMap := make(map[string]struct{}, len(ignorePaths))
 	for _, path := range ignorePaths {
 		ignorePathsMap[path] = struct{}{}
 	}
 	return &LoginJWT{
 		ignorePaths: ignorePathsMap,
+		Handler:     hdl,
 	}
 }
 
@@ -30,11 +33,11 @@ func (m *LoginJWT) CheckLogin() gin.HandlerFunc {
 			return
 		}
 		// Authorization: Bearer XXXX
-		tokenStr := web.ExtractToken(ctx)
+		tokenStr := m.ExtractToken(ctx)
 
-		var uc web.UserClaims
+		var uc ijwt.UserClaims
 		token, err := jwt.ParseWithClaims(tokenStr, &uc, func(t *jwt.Token) (interface{}, error) {
-			return web.JWTKey, nil
+			return ijwt.JWTKey, nil
 		})
 		if err != nil {
 			// token cannot be parsed
@@ -51,6 +54,12 @@ func (m *LoginJWT) CheckLogin() gin.HandlerFunc {
 		if uc.UserAgent != ctx.GetHeader("User-Agent") {
 			// NOTE: Instrument here. Might be attackers.
 			// A better option is to use the browser's fingerprint.
+			ctx.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		// Check if logged out
+		if err := m.CheckSession(ctx, uc.SSID); err != nil {
 			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}

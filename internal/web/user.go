@@ -11,6 +11,7 @@ import (
 
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"github.com/chenmuyao/go-bootcamp/internal/service"
+	ijwt "github.com/chenmuyao/go-bootcamp/internal/web/jwt"
 	"github.com/dlclark/regexp2"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -23,20 +24,24 @@ const (
 )
 
 type UserHandler struct {
-	jwtHandler
+	ijwt.Handler
 	emailRegex    *regexp2.Regexp
 	passwordRegex *regexp2.Regexp
 	svc           service.UserService
 	codeSvc       service.CodeService
 }
 
-func NewUserHandler(svc service.UserService, codeSvc service.CodeService) *UserHandler {
+func NewUserHandler(
+	svc service.UserService,
+	codeSvc service.CodeService,
+	hdl ijwt.Handler,
+) *UserHandler {
 	return &UserHandler{
 		emailRegex:    regexp2.MustCompile(emailRegexPattern, regexp2.None),
 		passwordRegex: regexp2.MustCompile(passwordRegexPattern, regexp2.None),
 		svc:           svc,
 		codeSvc:       codeSvc,
-		jwtHandler:    newJWTHandler(),
+		Handler:       hdl,
 	}
 }
 
@@ -54,6 +59,8 @@ func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 	// SMS code login
 	user.POST("/login_sms/code/send", h.SendSMSLoginCode)
 	user.POST("/login_sms", h.LoginSMS)
+
+	user.POST("/logout", h.LogoutJWT)
 }
 
 func (h *UserHandler) SendSMSLoginCode(ctx *gin.Context) {
@@ -144,12 +151,7 @@ func (h *UserHandler) LoginSMS(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
 		return
 	}
-	err = h.setRefreshToken(ctx, u.ID)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
-		return
-	}
-	err = h.setJWTToken(ctx, u.ID)
+	err = h.SetLoginToken(ctx, u.ID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
 		return
@@ -214,12 +216,7 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	})
 	switch err {
 	case nil:
-		err = h.setRefreshToken(ctx, u.ID)
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
-			return
-		}
-		err = h.setJWTToken(ctx, u.ID)
+		err = h.SetLoginToken(ctx, u.ID)
 		if err != nil {
 			return // error message is set
 		}
@@ -298,12 +295,7 @@ func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 	u, err := h.svc.Login(ctx, req.Email, req.Password)
 	switch err {
 	case nil:
-		err = h.setRefreshToken(ctx, u.ID)
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
-			return
-		}
-		err = h.setJWTToken(ctx, u.ID)
+		err = h.SetLoginToken(ctx, u.ID)
 		if err != nil {
 			return // error message is set
 		}
@@ -433,12 +425,12 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 }
 
 func (h *UserHandler) RefreshToken(ctx *gin.Context) {
-	tokenStr := ExtractToken(ctx)
+	tokenStr := h.ExtractToken(ctx)
 
-	var rc RefreshClaims
+	var rc ijwt.RefreshClaims
 
 	token, err := jwt.ParseWithClaims(tokenStr, &rc, func(t *jwt.Token) (interface{}, error) {
-		return h.refreshKey, nil
+		return ijwt.RefreshKey, nil
 	})
 	if err != nil {
 		ctx.AbortWithStatus(http.StatusUnauthorized)
@@ -449,12 +441,13 @@ func (h *UserHandler) RefreshToken(ctx *gin.Context) {
 		return
 	}
 
-	err = h.setRefreshToken(ctx, rc.UID)
+	err = h.CheckSession(ctx, rc.SSID)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
+		ctx.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
-	err = h.setJWTToken(ctx, rc.UID)
+
+	err = h.SetLoginToken(ctx, rc.UID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
 		return
@@ -462,6 +455,18 @@ func (h *UserHandler) RefreshToken(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, Result{
 		Code: CodeOK,
 		Msg:  "OK",
+	})
+}
+
+func (h *UserHandler) LogoutJWT(ctx *gin.Context) {
+	err := h.ClearToken(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
+		return
+	}
+	ctx.JSON(http.StatusOK, Result{
+		Code: CodeOK,
+		Msg:  "Logout success",
 	})
 }
 
@@ -474,8 +479,16 @@ func (h *UserHandler) RefreshToken(ctx *gin.Context) {
 // 	return userID, nil
 // }
 
+// func (h *UserHandler) LogoutSession(ctx *gin.Context) {
+// 	sess := sessions.Default(ctx)
+// 	sess.Options(sessions.Options{
+// 		MaxAge: -1,
+// 	})
+// 	sess.Save()
+// }
+
 func (h *UserHandler) getUserIDFromJWT(ctx *gin.Context) int64 {
-	uc := ctx.MustGet("user").(UserClaims)
+	uc := ctx.MustGet("user").(ijwt.UserClaims)
 
 	return uc.UID
 }
