@@ -33,6 +33,7 @@ func InitWebServer() *gin.Engine {
 	smsService := ioc.InitSMSService(cmdable, asyncSMSRepository)
 	codeService := service.NewCodeService(codeRepository, smsService)
 	userHandler := web.NewUserHandler(userService, codeService)
-	engine := ioc.InitWebServer(v, userHandler)
+	oAuth2GiteaHandler := NewDummyGiteaHandler(userService)
+	engine := ioc.InitWebServer(v, userHandler, oAuth2GiteaHandler)
 	return engine
 }

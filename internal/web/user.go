@@ -13,7 +13,6 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/service"
 	"github.com/dlclark/regexp2"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 const (
@@ -22,19 +21,12 @@ const (
 	bizLogin             = "login"
 )
 
-var JWTKey = []byte("xQUPmbb2TP9CUyFZkgOnV3JQdr22ZNBx")
-
 type UserHandler struct {
+	jwtHandler
 	emailRegex    *regexp2.Regexp
 	passwordRegex *regexp2.Regexp
 	svc           service.UserService
 	codeSvc       service.CodeService
-}
-
-type UserClaims struct {
-	jwt.RegisteredClaims
-	UserAgent string
-	UID       int64
 }
 
 func NewUserHandler(svc service.UserService, codeSvc service.CodeService) *UserHandler {
@@ -153,7 +145,7 @@ func (h *UserHandler) LoginSMS(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
 		return
 	}
-	ctx.JSON(http.StatusOK, Result{
+	ctx.JSON(http.StatusSeeOther, Result{
 		Code: CodeOK,
 		Msg:  "successful login",
 	})
@@ -434,24 +426,4 @@ func (h *UserHandler) getUserIDFromJWT(ctx *gin.Context) int64 {
 	uc := ctx.MustGet("user").(UserClaims)
 
 	return uc.UID
-}
-
-func (h *UserHandler) setJWTToken(ctx *gin.Context, uid int64) error {
-	uc := UserClaims{
-		UID:       uid,
-		UserAgent: ctx.GetHeader("User-Agent"),
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, uc)
-	tokenStr, err := token.SignedString(JWTKey)
-	if err != nil {
-		slog.Error("token string generate error", "err", err)
-		return err
-	}
-
-	ctx.Header("x-jwt-token", tokenStr)
-	return nil
 }

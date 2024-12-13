@@ -35,9 +35,11 @@ func InitWebServer() *gin.Engine {
 		ioc.InitSMSService,
 		service.NewCodeService,
 		service.NewUserService,
+		ioc.InitGiteaService,
 
 		// handler
 		web.NewUserHandler,
+		web.NewOAuth2GiteaHandler,
 
 		ioc.InitGinMiddlewares,
 		ioc.InitWebServer,

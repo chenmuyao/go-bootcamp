@@ -42,6 +42,11 @@ const router = createRouter({
       name: 'user profile',
       component: () => import('@/views/users/ProfileView.vue'),
     },
+    {
+      path: '/oauth2success',
+      name: 'oauth2 callback',
+      component: () => import('@/components/OAuth2Success.vue'),
+    },
   ],
 })
 

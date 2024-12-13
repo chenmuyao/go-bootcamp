@@ -29,6 +29,7 @@ type UserService interface {
 	EditProfile(ctx context.Context, user *domain.User) error
 	GetProfile(ctx context.Context, userID int64) (domain.User, error)
 	FindOrCreate(ctx context.Context, phone string) (domain.User, error)
+	FindOrCreateByGitea(ctx context.Context, info domain.GiteaInfo) (domain.User, error)
 }
 
 type userService struct {
@@ -116,6 +117,31 @@ func (svc *userService) FindOrCreate(ctx context.Context, phone string) (domain.
 	if err == repository.ErrDuplicatedUser {
 		// TODO: should query the master database
 		return svc.repo.FindByPhone(ctx, phone)
+	}
+	// err == nil
+	return u, nil
+}
+
+func (svc *userService) FindOrCreateByGitea(
+	ctx context.Context,
+	info domain.GiteaInfo,
+) (domain.User, error) {
+	u, err := svc.repo.FindByEmail(ctx, info.Email)
+	if err != repository.ErrUserNotFound {
+		return u, err
+	}
+	// Create a new user
+	u, err = svc.repo.Create(ctx, domain.User{
+		Email: info.Email,
+		Name:  info.Login,
+	})
+	// system error
+	if err != nil && err != repository.ErrDuplicatedUser {
+		return domain.User{}, err
+	}
+	if err == repository.ErrDuplicatedUser {
+		// TODO: should query the master database
+		return svc.repo.FindByEmail(ctx, info.Email)
 	}
 	// err == nil
 	return u, nil

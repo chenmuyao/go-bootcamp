@@ -38,6 +38,7 @@ func InitWebServer() *gin.Engine {
 
 		// handler
 		web.NewUserHandler,
+		NewDummyGiteaHandler,
 
 		ioc.InitGinMiddlewares,
 		ioc.InitWebServer,

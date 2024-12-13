@@ -70,6 +70,21 @@ func (mr *MockUserServiceMockRecorder) FindOrCreate(ctx, phone any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindOrCreate", reflect.TypeOf((*MockUserService)(nil).FindOrCreate), ctx, phone)
 }
 
+// FindOrCreateByGitea mocks base method.
+func (m *MockUserService) FindOrCreateByGitea(ctx context.Context, info domain.GiteaInfo) (domain.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindOrCreateByGitea", ctx, info)
+	ret0, _ := ret[0].(domain.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindOrCreateByGitea indicates an expected call of FindOrCreateByGitea.
+func (mr *MockUserServiceMockRecorder) FindOrCreateByGitea(ctx, info any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindOrCreateByGitea", reflect.TypeOf((*MockUserService)(nil).FindOrCreateByGitea), ctx, info)
+}
+
 // GetProfile mocks base method.
 func (m *MockUserService) GetProfile(ctx context.Context, userID int64) (domain.User, error) {
 	m.ctrl.T.Helper()

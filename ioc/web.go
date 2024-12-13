@@ -13,10 +13,14 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func InitWebServer(middlewares []gin.HandlerFunc, userHandlers *web.UserHandler) *gin.Engine {
+func InitWebServer(middlewares []gin.HandlerFunc,
+	userHandlers *web.UserHandler,
+	giteaHandlers *web.OAuth2GiteaHandler,
+) *gin.Engine {
 	server := gin.Default()
 	server.Use(middlewares...)
 	userHandlers.RegisterRoutes(server)
+	giteaHandlers.RegisterRoutes(server)
 	return server
 }
 
@@ -55,6 +59,8 @@ func useJWT() gin.HandlerFunc {
 		"/user/login",
 		"/user/login_sms/code/send",
 		"/user/login_sms",
+		"/oauth2/gitea/authurl",
+		"/oauth2/gitea/callback",
 	})
 	return loginJWT.CheckLogin()
 }
