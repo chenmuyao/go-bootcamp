@@ -11,11 +11,10 @@ import (
 	"net/url"
 
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
-	"github.com/lithammer/shortuuid/v4"
 )
 
 type Service interface {
-	AuthURL(ctx context.Context) string
+	AuthURL(ctx context.Context, state string) string
 	VerifyCode(ctx context.Context, code string) (domain.GiteaInfo, error)
 }
 
@@ -37,11 +36,9 @@ func NewService(baseURL string, clientID string, clientSecret string) Service {
 	}
 }
 
-func (s *service) AuthURL(ctx context.Context) string {
+func (s *service) AuthURL(ctx context.Context, state string) string {
 	// url, clientId, redirectURI, state
 	authURLPattern := "https://%s/login/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code&state=%s"
-
-	state := shortuuid.New()
 
 	return fmt.Sprintf(authURLPattern, s.baseURL, s.clientID, redirectURI, state)
 }
