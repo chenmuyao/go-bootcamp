@@ -13,6 +13,7 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/service"
 	"github.com/dlclark/regexp2"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 const (
@@ -35,6 +36,7 @@ func NewUserHandler(svc service.UserService, codeSvc service.CodeService) *UserH
 		passwordRegex: regexp2.MustCompile(passwordRegexPattern, regexp2.None),
 		svc:           svc,
 		codeSvc:       codeSvc,
+		jwtHandler:    newJWTHandler(),
 	}
 }
 
@@ -46,6 +48,8 @@ func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 	user.GET("/profile", h.Profile)
 	user.GET("/profile/:id", h.Profile)
 	user.POST("/edit", h.Edit)
+
+	user.GET("/refresh_token", h.RefreshToken)
 
 	// SMS code login
 	user.POST("/login_sms/code/send", h.SendSMSLoginCode)
@@ -140,6 +144,11 @@ func (h *UserHandler) LoginSMS(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
 		return
 	}
+	err = h.setRefreshToken(ctx, u.ID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
+		return
+	}
 	err = h.setJWTToken(ctx, u.ID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
@@ -205,6 +214,11 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	})
 	switch err {
 	case nil:
+		err = h.setRefreshToken(ctx, u.ID)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
+			return
+		}
 		err = h.setJWTToken(ctx, u.ID)
 		if err != nil {
 			return // error message is set
@@ -284,6 +298,11 @@ func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 	u, err := h.svc.Login(ctx, req.Email, req.Password)
 	switch err {
 	case nil:
+		err = h.setRefreshToken(ctx, u.ID)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
+			return
+		}
 		err = h.setJWTToken(ctx, u.ID)
 		if err != nil {
 			return // error message is set
@@ -411,6 +430,39 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 		log.Printf("failed to update user profile: %s\n", err.Error())
 		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
 	}
+}
+
+func (h *UserHandler) RefreshToken(ctx *gin.Context) {
+	tokenStr := ExtractToken(ctx)
+
+	var rc RefreshClaims
+
+	token, err := jwt.ParseWithClaims(tokenStr, &rc, func(t *jwt.Token) (interface{}, error) {
+		return h.refreshKey, nil
+	})
+	if err != nil {
+		ctx.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	if token == nil || !token.Valid {
+		ctx.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	err = h.setRefreshToken(ctx, rc.UID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
+		return
+	}
+	err = h.setJWTToken(ctx, rc.UID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
+		return
+	}
+	ctx.JSON(http.StatusOK, Result{
+		Code: CodeOK,
+		Msg:  "OK",
+	})
 }
 
 // func (h *UserHandler) getUserIDFromSession(ctx *gin.Context) (int64, error) {

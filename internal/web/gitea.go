@@ -29,6 +29,7 @@ func NewOAuth2GiteaHandler(svc gitea.Service, userSvc service.UserService) *OAut
 		userSvc:         userSvc,
 		key:             OAuthJWTKey,
 		stateCookieName: "jwt-state",
+		jwtHandler:      newJWTHandler(),
 	}
 }
 
@@ -82,6 +83,12 @@ func (o *OAuth2GiteaHandler) Callback(ctx *gin.Context) {
 		return
 	}
 
+	refreshToken, err := o.generateRefreshToken(u.ID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
+		return
+	}
+
 	token, err := o.generateJWTToken(ctx, u.ID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
@@ -89,8 +96,9 @@ func (o *OAuth2GiteaHandler) Callback(ctx *gin.Context) {
 	}
 
 	redirectURI := fmt.Sprintf(
-		"http://localhost:5173/oauth2success?token=%s", // TODO: should not hard code
+		"http://localhost:5173/oauth2success?token=%s&refresh_token=%s", // TODO: should not hard code
 		token,
+		refreshToken,
 	)
 	ctx.Redirect(http.StatusPermanentRedirect, redirectURI)
 }

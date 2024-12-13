@@ -15,13 +15,16 @@ const router = useRouter()
 onMounted(() => {
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get('token');
+  const refresh_token = urlParams.get('refresh_token');
 
-  // 如果存在token，则存储到localStorage
   if (token) {
     localStorage.setItem('token', token);
   }
 
-  // 重定向到/user/profile
+  if (refresh_token) {
+    localStorage.setItem('refresh_token', refresh_token);
+  }
+
   router.push('/user/profile');
 })
 

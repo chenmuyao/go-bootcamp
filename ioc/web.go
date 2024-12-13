@@ -30,7 +30,7 @@ func InitGinMiddlewares(redisClient redis.Cmdable) []gin.HandlerFunc {
 			AllowCredentials: true,
 			AllowHeaders:     []string{"Content-Type", "Authorization"},
 			// Allow frontend to access headers sent back from the backend
-			ExposeHeaders: []string{"x-jwt-token"},
+			ExposeHeaders: []string{"x-jwt-token", "x-refresh-token"},
 			AllowOriginFunc: func(origin string) bool {
 				if strings.HasPrefix(origin, "http://localhost") {
 					return true
@@ -59,6 +59,7 @@ func useJWT() gin.HandlerFunc {
 		"/user/login",
 		"/user/login_sms/code/send",
 		"/user/login_sms",
+		"/user/refresh_token",
 		"/oauth2/gitea/authurl",
 		"/oauth2/gitea/callback",
 	})
