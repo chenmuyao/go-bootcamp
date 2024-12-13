@@ -26,12 +26,11 @@ onMounted(() => {
         return
       }
       console.log(response.data);
-      router.push('/login');
-
     })
     .catch((error) => {
       console.error(error)
     });
+  router.push('/login');
 
 })
 
