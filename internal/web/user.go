@@ -17,11 +17,23 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// {{{ Consts
+
 const (
 	emailRegexPattern    = `^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$`
 	passwordRegexPattern = `^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,}$`
 	bizLogin             = "login"
+	codeSMSTemplate      = "Verification code for WeTravel: {{.Code}}\nExpires in 10 min.\n[WeTravel]"
 )
+
+// }}}
+// {{{ Global Varirables
+
+// }}}
+// {{{ Interface
+
+// }}}
+// {{{ Struct
 
 type UserHandler struct {
 	ijwt.Handler
@@ -45,23 +57,11 @@ func NewUserHandler(
 	}
 }
 
-func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
-	user := server.Group("/user/")
-	user.POST("/signup", h.SignUp)
-	// user.POST("/login", h.Login)
-	user.POST("/login", h.LoginJWT)
-	user.GET("/profile", h.Profile)
-	user.GET("/profile/:id", h.Profile)
-	user.POST("/edit", h.Edit)
+// }}}
+// {{{ Other structs
 
-	user.GET("/refresh_token", h.RefreshToken)
-
-	// SMS code login
-	user.POST("/login_sms/code/send", h.SendSMSLoginCode)
-	user.POST("/login_sms", h.LoginSMS)
-
-	user.POST("/logout", h.LogoutJWT)
-}
+// }}}
+// {{{ Struct Methods
 
 func (h *UserHandler) SendSMSLoginCode(ctx *gin.Context) {
 	type Req struct {
@@ -81,8 +81,7 @@ func (h *UserHandler) SendSMSLoginCode(ctx *gin.Context) {
 		})
 		return
 	}
-	tpl, err := template.New(bizLogin).
-		Parse("Verification code for WeTravel: {{.Code}}\nExpires in 10 min.\n[WeTravel]")
+	tpl, err := template.New(bizLogin).Parse(codeSMSTemplate)
 	if err != nil {
 		slog.Error("cannot parse sms template", "error", err)
 		ctx.JSON(http.StatusInternalServerError, Result{
@@ -218,7 +217,8 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	case nil:
 		err = h.SetLoginToken(ctx, u.ID)
 		if err != nil {
-			return // error message is set
+			ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
+			return
 		}
 		ctx.JSON(http.StatusOK, Result{
 			Code: CodeOK,
@@ -492,3 +492,29 @@ func (h *UserHandler) getUserIDFromJWT(ctx *gin.Context) int64 {
 
 	return uc.UID
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
+
+func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
+	user := server.Group("/user/")
+	user.POST("/signup", h.SignUp)
+	// user.POST("/login", h.Login)
+	user.POST("/login", h.LoginJWT)
+	user.GET("/profile", h.Profile)
+	user.GET("/profile/:id", h.Profile)
+	user.POST("/edit", h.Edit)
+
+	user.GET("/refresh_token", h.RefreshToken)
+
+	// SMS code login
+	user.POST("/login_sms/code/send", h.SendSMSLoginCode)
+	user.POST("/login_sms", h.LoginSMS)
+
+	user.POST("/logout", h.LogoutJWT)
+}
+
+// }}}

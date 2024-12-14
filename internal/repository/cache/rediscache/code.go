@@ -9,14 +9,24 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// {{{ Consts
+
+// }}}
+// {{{ Global Varirables
+
 var (
 	//go:embed lua/set_code.lua
 	luaSetCode string
 	//go:embed lua/verify_code.lua
 	luaVerifyCode string
 )
-
 var ErrNoCodeExp = errors.New("verification code exists but has no expiration date")
+
+// }}}
+// {{{ Interface
+
+// }}}
+// {{{ Struct
 
 type CodeRedisCache struct {
 	cache.BaseCodeCache
@@ -28,6 +38,12 @@ func NewCodeRedisCache(cmd redis.Cmdable) cache.CodeCache {
 		cmd: cmd,
 	}
 }
+
+// }}}
+// {{{ Other structs
+
+// }}}
+// {{{ Struct Methods
 
 func (c *CodeRedisCache) Set(ctx context.Context, biz, phone, code string) error {
 	res, err := c.cmd.Eval(ctx, luaSetCode, []string{c.Key(biz, phone)}, code).Int()
@@ -62,3 +78,11 @@ func (c *CodeRedisCache) Verify(ctx context.Context, biz, phone, code string) (b
 		return true, nil
 	}
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
+
+// }}}

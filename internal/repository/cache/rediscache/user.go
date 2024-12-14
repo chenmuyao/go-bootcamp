@@ -10,6 +10,19 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// {{{ Consts
+
+const defaultCacheExpiration = time.Minute * 15
+
+// }}}
+// {{{ Global Varirables
+
+// }}}
+// {{{ Interface
+
+// }}}
+// {{{ Struct
+
 type UserRedisCache struct {
 	cache.BaseUserCache
 	// NOTE: Client or ClientCluster
@@ -23,9 +36,15 @@ type UserRedisCache struct {
 func NewUserRedisCache(cmd redis.Cmdable) cache.UserCache {
 	return &UserRedisCache{
 		cmd:        cmd,
-		expiration: time.Minute * 15,
+		expiration: defaultCacheExpiration,
 	}
 }
+
+// }}}
+// {{{ Other structs
+
+// }}}
+// {{{ Struct Methods
 
 func (c *UserRedisCache) Get(ctx context.Context, uid int64) (domain.User, error) {
 	key := c.Key(uid)
@@ -53,3 +72,11 @@ func (c *UserRedisCache) Set(ctx context.Context, user domain.User) error {
 
 	return c.cmd.Set(ctx, key, data, c.expiration).Err()
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
+
+// }}}

@@ -1,4 +1,5 @@
-//go:build !k8s
+// unused. test for build tag
+//go:build dev
 
 package config
 

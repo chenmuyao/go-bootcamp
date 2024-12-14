@@ -10,18 +10,19 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// {{{ RedisSlidingWindowLimiter
+// {{{ Consts
+
+// }}}
+// {{{ Global Varirables
 
 //go:embed lua/sliding_window.lua
 var luaSlidingWindow string
 
-type RedisSlidingWindowOptions struct {
-	RedisClient   redis.Cmdable
-	Prefix        string
-	Interval      time.Duration
-	WindowsAmount int
-	Limit         int
-}
+// }}}
+// {{{ Interface
+
+// }}}
+// {{{ Struct
 
 type redisSlidingWindowLimiter struct {
 	cmd        redis.Cmdable
@@ -48,6 +49,20 @@ func NewRedisSlidingWindowLimiter(options *RedisSlidingWindowOptions) *redisSlid
 	}
 }
 
+// }}}
+// {{{ Other structs
+
+type RedisSlidingWindowOptions struct {
+	RedisClient   redis.Cmdable
+	Prefix        string
+	Interval      time.Duration
+	WindowsAmount int
+	Limit         int
+}
+
+// }}}
+// {{{ Struct Methods
+
 func (fw *redisSlidingWindowLimiter) AcceptConnection(ctx context.Context, biz string) bool {
 	key := fmt.Sprintf("%s-%s", fw.prefix, biz)
 	res, err := fw.cmd.Eval(ctx, luaSlidingWindow, []string{key}, fw.limit, fw.windowSize, time.Now().UnixNano()).
@@ -65,5 +80,11 @@ func (fw *redisSlidingWindowLimiter) AcceptConnection(ctx context.Context, biz s
 		return true
 	}
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
 
 // }}}

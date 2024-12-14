@@ -8,7 +8,12 @@ import (
 	"github.com/chenmuyao/go-bootcamp/pkg/limiter"
 )
 
+// {{{ Global Varirables
+
 var ErrLimited = errors.New("sms queries reach the limit")
+
+// }}}
+// {{{ Struct
 
 type RateLimitSMSService struct {
 	svc     sms.Service
@@ -24,6 +29,9 @@ func NewRateLimitSMSService(svc sms.Service, l limiter.Limiter) *RateLimitSMSSer
 	}
 }
 
+// }}}
+// {{{ Struct Methods
+
 func (r *RateLimitSMSService) Send(
 	ctx context.Context,
 	toNb string,
@@ -37,3 +45,5 @@ func (r *RateLimitSMSService) Send(
 	}
 	return r.svc.Send(ctx, toNb, body, args...)
 }
+
+// }}}

@@ -7,6 +7,6 @@ import (
 
 func InitRedis() redis.Cmdable {
 	return redis.NewClient(&redis.Options{
-		Addr: config.Config.Redis.Addr,
+		Addr: config.Cfg.Redis.Addr,
 	})
 }

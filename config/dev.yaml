@@ -1,0 +1,10 @@
+remote:
+  provider: etcd3
+  endpoint: localhost:12379
+  path: /wetravel
+
+redis:
+  addr: localhost:6379
+
+db:
+  dsn: root:root@tcp(127.0.0.1:13316)/wetravel?charset=utf8mb4&parseTime=True&loc=Local

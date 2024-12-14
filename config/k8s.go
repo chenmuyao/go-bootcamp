@@ -1,3 +1,4 @@
+// unused. test for build tag
 //go:build k8s
 
 package config

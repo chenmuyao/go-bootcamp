@@ -9,7 +9,7 @@ import (
 
 func InitDB() *gorm.DB {
 	db, err := gorm.Open(
-		mysql.Open(config.Config.DB.DSN),
+		mysql.Open(config.Cfg.DB.DSN),
 		&gorm.Config{},
 	)
 	if err != nil {

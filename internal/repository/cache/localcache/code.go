@@ -10,6 +10,24 @@ import (
 	"github.com/jellydator/ttlcache/v3"
 )
 
+// {{{ Consts
+
+const (
+	// if a second same request is comming in X% of expiration time, then it is
+	// considered as too fraquent
+	percentageTooFrequent = 10
+	maxRetryTime          = 3
+)
+
+// }}}
+// {{{ Global Varirables
+
+// }}}
+// {{{ Interface
+
+// }}}
+// {{{ Struct
+
 type CodeLocalCache struct {
 	cache.BaseCodeCache
 	code       *ttlcache.Cache[string, string]
@@ -31,6 +49,12 @@ func NewCodeLocalCache(
 	}
 }
 
+// }}}
+// {{{ Other structs
+
+// }}}
+// {{{ Struct Methods
+
 func (c *CodeLocalCache) Set(ctx context.Context, biz, phone, code string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -42,7 +66,8 @@ func (c *CodeLocalCache) Set(ctx context.Context, biz, phone, code string) error
 		slog.Info("time until", "time", time.Until(codeItem.ExpiresAt()))
 	}
 	// check if insert too frequently
-	if codeItem != nil && time.Until(codeItem.ExpiresAt()) >= c.expiration*9/10 {
+	if codeItem != nil &&
+		time.Until(codeItem.ExpiresAt()) >= c.getExpThreshold() {
 		// request too frequently
 		return cache.ErrCodeSendTooMany
 	}
@@ -50,7 +75,7 @@ func (c *CodeLocalCache) Set(ctx context.Context, biz, phone, code string) error
 	// or codeItem == nil
 
 	c.code.Set(key, code, ttlcache.DefaultTTL)
-	c.cnt.Set(key, 3, ttlcache.DefaultTTL)
+	c.cnt.Set(key, maxRetryTime, ttlcache.DefaultTTL)
 
 	return nil
 }
@@ -85,3 +110,15 @@ func (c *CodeLocalCache) Verify(ctx context.Context, biz, phone, code string) (b
 	c.cnt.Set(key, 0, codeItem.TTL())
 	return true, nil
 }
+
+func (c *CodeLocalCache) getExpThreshold() time.Duration {
+	return c.expiration * (100 - percentageTooFrequent) / 100
+}
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
+
+// }}}

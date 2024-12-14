@@ -11,14 +11,34 @@ import (
 	"net/url"
 
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
+	"github.com/chenmuyao/go-bootcamp/pkg/httpx"
 )
+
+// {{{ Consts
+
+const (
+	// url, clientId, redirectURI, state
+	authURLPattern     = "https://%s/login/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code&state=%s"
+	userAPIPattern     = "https://%s/api/v1/user"
+	accessTokenPattern = "https://%s/login/oauth/access_token"
+	grantType          = "authorization_code"
+)
+
+// }}}
+// {{{ Global Varirables
+
+var redirectURI = url.PathEscape("http://localhost:8081/oauth2/gitea/callback")
+
+// }}}
+// {{{ Interface
 
 type Service interface {
 	AuthURL(ctx context.Context, state string) string
 	VerifyCode(ctx context.Context, code string) (domain.GiteaInfo, error)
 }
 
-var redirectURI = url.PathEscape("http://localhost:8081/oauth2/gitea/callback")
+// }}}
+// {{{ Struct
 
 type service struct {
 	baseURL      string
@@ -36,10 +56,13 @@ func NewService(baseURL string, clientID string, clientSecret string) Service {
 	}
 }
 
-func (s *service) AuthURL(ctx context.Context, state string) string {
-	// url, clientId, redirectURI, state
-	authURLPattern := "https://%s/login/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code&state=%s"
+// }}}
+// {{{ Other structs
 
+// }}}
+// {{{ Struct Methods
+
+func (s *service) AuthURL(ctx context.Context, state string) string {
 	return fmt.Sprintf(authURLPattern, s.baseURL, s.clientID, redirectURI, state)
 }
 
@@ -54,7 +77,7 @@ func (s *service) VerifyCode(ctx context.Context, code string) (domain.GiteaInfo
 		ClientID:     s.clientID,
 		ClientSecret: s.clientSecret,
 		Code:         code,
-		GrantType:    "authorization_code",
+		GrantType:    grantType,
 	}
 
 	var buf bytes.Buffer
@@ -65,15 +88,15 @@ func (s *service) VerifyCode(ctx context.Context, code string) (domain.GiteaInfo
 		return domain.GiteaInfo{}, err
 	}
 
-	accessTokenURL := fmt.Sprintf("https://%s/login/oauth/access_token", s.baseURL)
+	accessTokenURL := fmt.Sprintf(accessTokenPattern, s.baseURL)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, accessTokenURL, &buf)
 	if err != nil {
 		slog.Error("access token query construction error")
 		return domain.GiteaInfo{}, err
 	}
 
-	req.Header.Add("accept", "application/json")
-	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add(httpx.Accept, httpx.ApplicationJSON)
+	req.Header.Add(httpx.ContentType, httpx.ApplicationJSON)
 
 	httpResp, err := s.httpClient.Do(req)
 	if err != nil {
@@ -99,15 +122,15 @@ func (s *service) VerifyCode(ctx context.Context, code string) (domain.GiteaInfo
 	}
 
 	// Get User Info
-	apiURL := fmt.Sprintf("https://%s/api/v1/user", s.baseURL)
+	apiURL := fmt.Sprintf(userAPIPattern, s.baseURL)
 	apiReq, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
 	if err != nil {
 		slog.Error("api request error")
 		return domain.GiteaInfo{}, err
 	}
-	apiReq.Header.Add("accept", "application/json")
-	apiReq.Header.Add("Authorization", fmt.Sprintf("token %s", resp.AccessToken))
-	apiReq.Header.Add("Content-Type", "application/json")
+	apiReq.Header.Add(httpx.Accept, httpx.ApplicationJSON)
+	apiReq.Header.Add(httpx.Authorization, fmt.Sprintf("token %s", resp.AccessToken))
+	apiReq.Header.Add(httpx.ContentType, httpx.ApplicationJSON)
 
 	apiResp, err := s.httpClient.Do(apiReq)
 	if err != nil {
@@ -127,3 +150,11 @@ func (s *service) VerifyCode(ctx context.Context, code string) (domain.GiteaInfo
 
 	return giteaInfo, err
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
+
+// }}}

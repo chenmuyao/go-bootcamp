@@ -15,6 +15,25 @@ import (
 	"github.com/lithammer/shortuuid/v4"
 )
 
+// {{{ Consts
+
+const (
+	redirectPattern = "http://localhost:5173/oauth2success?token=%s&refresh_token=%s"
+	cookieDomain    = "/oauth2/gitea/callback"
+	cookieMaxAge    = 600
+)
+
+// }}}
+// {{{ Global Varirables
+
+var OAuthJWTKey = []byte("xQePmbb2TP9CUyFZkgOnV3JQdr22ZNBx")
+
+// }}}
+// {{{ Interface
+
+// }}}
+// {{{ Struct
+
 type OAuth2GiteaHandler struct {
 	ijwt.Handler
 	svc             gitea.Service
@@ -22,8 +41,6 @@ type OAuth2GiteaHandler struct {
 	key             []byte
 	stateCookieName string
 }
-
-var OAuthJWTKey = []byte("xQePmbb2TP9CUyFZkgOnV3JQdr22ZNBx")
 
 func NewOAuth2GiteaHandler(
 	svc gitea.Service,
@@ -38,6 +55,17 @@ func NewOAuth2GiteaHandler(
 		Handler:         hdl,
 	}
 }
+
+// }}}
+// {{{ Other structs
+
+type StateClaims struct {
+	jwt.RegisteredClaims
+	State string
+}
+
+// }}}
+// {{{ Struct Methods
 
 func (o *OAuth2GiteaHandler) RegisterRoutes(server *gin.Engine) {
 	g := server.Group("/oauth2/gitea")
@@ -102,17 +130,8 @@ func (o *OAuth2GiteaHandler) Callback(ctx *gin.Context) {
 		return
 	}
 
-	redirectURI := fmt.Sprintf(
-		"http://localhost:5173/oauth2success?token=%s&refresh_token=%s", // TODO: should not hard code
-		token,
-		refreshToken,
-	)
+	redirectURI := fmt.Sprintf(redirectPattern, token, refreshToken)
 	ctx.Redirect(http.StatusPermanentRedirect, redirectURI)
-}
-
-type StateClaims struct {
-	jwt.RegisteredClaims
-	State string
 }
 
 func (o *OAuth2GiteaHandler) setStateCookie(ctx *gin.Context, state string) error {
@@ -126,7 +145,7 @@ func (o *OAuth2GiteaHandler) setStateCookie(ctx *gin.Context, state string) erro
 		slog.Error("token string generate error", "err", err)
 		return err
 	}
-	ctx.SetCookie(o.stateCookieName, tokenStr, 600, "/oauth2/gitea/callback", "", false, true)
+	ctx.SetCookie(o.stateCookieName, tokenStr, cookieMaxAge, cookieDomain, "", false, true)
 	return nil
 }
 
@@ -150,3 +169,11 @@ func (o *OAuth2GiteaHandler) verifyState(ctx *gin.Context) error {
 	}
 	return nil
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
+
+// }}}

@@ -7,22 +7,16 @@ import (
 	"time"
 )
 
-// {{{ TokenBucketLimiter
+// {{{ Consts
 
-type TokenBucketOptions struct {
-	Prefix string
+// }}}
+// {{{ Global Varirables
 
-	Capacity int
+// }}}
+// {{{ Interface
 
-	// to calculate rate
-	RelaseAmount int
-	Interval     time.Duration
-}
-
-type tokenBucketRateInfo struct {
-	lastReleaseTime time.Time
-	tokens          int
-}
+// }}}
+// {{{ Struct
 
 type tokenBucketLimiter struct {
 	cache         map[string]tokenBucketRateInfo
@@ -48,6 +42,27 @@ func NewTokenBucketLimiter(options *TokenBucketOptions) *tokenBucketLimiter {
 		mutex:         sync.Mutex{},
 	}
 }
+
+// }}}
+// {{{ Other structs
+
+type TokenBucketOptions struct {
+	Prefix string
+
+	Capacity int
+
+	// to calculate rate
+	RelaseAmount int
+	Interval     time.Duration
+}
+
+type tokenBucketRateInfo struct {
+	lastReleaseTime time.Time
+	tokens          int
+}
+
+// }}}
+// {{{ Struct Methods
 
 func (fw *tokenBucketLimiter) release(
 	now time.Time,
@@ -97,5 +112,11 @@ func (fw *tokenBucketLimiter) AcceptConnection(ctx context.Context, biz string) 
 
 	return true
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
 
 // }}}

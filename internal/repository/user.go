@@ -12,11 +12,19 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
 )
 
+// {{{ Consts
+
+// }}}
+// {{{ Global Varirables
+
 var (
 	ErrDuplicatedUser = dao.ErrDuplicatedUser
 	// NOTE: Strongly related to the service
 	ErrUserNotFound = dao.ErrRecordNotFound
 )
+
+// }}}
+// {{{ Interface
 
 type UserRepository interface {
 	Create(ctx context.Context, u domain.User) (domain.User, error)
@@ -25,6 +33,9 @@ type UserRepository interface {
 	UpdateProfile(ctx context.Context, user *domain.User) error
 	FindByID(ctx context.Context, userID int64) (domain.User, error)
 }
+
+// }}}
+// {{{ Struct
 
 type CachedUserRepository struct {
 	cache cache.UserCache
@@ -37,6 +48,12 @@ func NewUserRepository(dao dao.UserDAO, cache cache.UserCache) UserRepository {
 		cache: cache,
 	}
 }
+
+// }}}
+// {{{ Other structs
+
+// }}}
+// {{{ Struct Methods
 
 func (repo *CachedUserRepository) Create(ctx context.Context, u domain.User) (domain.User, error) {
 	daoUser, err := repo.dao.Insert(ctx, repo.userDomainToDAO(&u))
@@ -167,3 +184,11 @@ func (repo *CachedUserRepository) userDomainToDAO(u *domain.User) dao.User {
 		Profile:  u.Profile,
 	}
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
+
+// }}}

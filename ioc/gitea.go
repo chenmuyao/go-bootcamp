@@ -1,20 +1,21 @@
 package ioc
 
 import (
-	"os"
+	"log/slog"
 
+	"github.com/chenmuyao/go-bootcamp/config"
 	"github.com/chenmuyao/go-bootcamp/internal/service/oauth2/gitea"
 )
 
 func InitGiteaService() gitea.Service {
-	baseURL := "git.vinchent.xyz"
-	clientID, ok := os.LookupEnv("GITEA_CLIENT_ID")
-	if !ok {
-		panic("Gitea client id not found")
+	baseURL := config.Cfg.OAuth2.BaseURL
+	clientID := config.Cfg.OAuth2.ClientID
+	if clientID == "" {
+		slog.Error("Gitea client id not found")
 	}
-	clientSecret, ok := os.LookupEnv("GITEA_CLIENT_SECRET")
-	if !ok {
-		panic("Gitea client secret not found")
+	clientSecret := config.Cfg.OAuth2.ClientSecret
+	if clientSecret == "" {
+		slog.Error("Gitea client secret not found")
 	}
 	return gitea.NewService(baseURL, clientID, clientSecret)
 }

@@ -10,10 +10,18 @@ import (
 	"gorm.io/gorm"
 )
 
+// {{{ Consts
+
+// }}}
+// {{{ Global Varirables
+
 var (
 	ErrDuplicatedUser = errors.New("email already exists")
 	ErrRecordNotFound = gorm.ErrRecordNotFound
 )
+
+// }}}
+// {{{ Interface
 
 type UserDAO interface {
 	Insert(ctx context.Context, u User) (User, error)
@@ -22,6 +30,9 @@ type UserDAO interface {
 	FindByID(ctx context.Context, id int64) (User, error)
 	UpdateProfile(ctx context.Context, user User) error
 }
+
+// }}}
+// {{{ Struct
 
 type GORMUserDAO struct {
 	db *gorm.DB
@@ -32,6 +43,9 @@ func NewUserDAO(db *gorm.DB) UserDAO {
 		db: db,
 	}
 }
+
+// }}}
+// {{{ Other structs
 
 type User struct {
 	Password string
@@ -50,6 +64,9 @@ type User struct {
 	Utime    int64
 	Birthday int64
 }
+
+// }}}
+// {{{ Struct Methods
 
 func (dao *GORMUserDAO) Insert(ctx context.Context, u User) (User, error) {
 	now := time.Now().UnixMilli()
@@ -90,3 +107,11 @@ func (dao *GORMUserDAO) UpdateProfile(ctx context.Context, user User) error {
 
 	return err
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
+
+// }}}

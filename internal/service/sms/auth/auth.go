@@ -7,6 +7,17 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// {{{ Consts
+
+// }}}
+// {{{ Global Varirables
+
+// }}}
+// {{{ Interface
+
+// }}}
+// {{{ Struct
+
 type AuthSMSService struct {
 	svc   sms.Service
 	token string
@@ -21,9 +32,15 @@ func NewAuthSMSService(svc sms.Service, key string, token string) *AuthSMSServic
 	}
 }
 
+// }}}
+// {{{ Other structs
+
 type SMSClaims struct {
 	jwt.RegisteredClaims
 }
+
+// }}}
+// {{{ Struct Methods
 
 func (a *AuthSMSService) Send(
 	ctx context.Context,
@@ -40,3 +57,11 @@ func (a *AuthSMSService) Send(
 	}
 	return a.svc.Send(ctx, toNb, body, args...)
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
+
+// }}}

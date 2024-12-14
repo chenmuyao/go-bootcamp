@@ -9,7 +9,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// {{{ Errors
+// {{{ Consts
+
+// }}}
+// {{{ Global Varirables
 
 var (
 	ErrDuplicatedUser        = repository.ErrDuplicatedUser
@@ -18,6 +21,7 @@ var (
 )
 
 // }}}
+// {{{ Interface
 
 // NOTE:
 // 1. For test purpose
@@ -32,6 +36,9 @@ type UserService interface {
 	FindOrCreateByGitea(ctx context.Context, info domain.GiteaInfo) (domain.User, error)
 }
 
+// }}}
+// {{{ Struct
+
 type userService struct {
 	repo repository.UserRepository
 }
@@ -41,6 +48,12 @@ func NewUserService(repo repository.UserRepository) UserService {
 		repo: repo,
 	}
 }
+
+// }}}
+// {{{ Other structs
+
+// }}}
+// {{{ Struct Methods
 
 func (svc *userService) SignUp(ctx context.Context, u domain.User) (domain.User, error) {
 	// default cost perf test 13.28 req/s
@@ -146,3 +159,11 @@ func (svc *userService) FindOrCreateByGitea(
 	// err == nil
 	return u, nil
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
+
+// }}}

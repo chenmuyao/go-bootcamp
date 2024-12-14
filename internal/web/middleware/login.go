@@ -10,6 +10,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// {{{ Consts
+
+// }}}
+// {{{ Global Varirables
+
+// }}}
+// {{{ Interface
+
+// }}}
+// {{{ Struct
+
 type LoginMiddlewareBuilder struct {
 	ignorePaths map[string]struct{}
 }
@@ -23,6 +34,12 @@ func LoginMiddleware(ignorePaths []string) *LoginMiddlewareBuilder {
 		ignorePaths: ignorePathsMap,
 	}
 }
+
+// }}}
+// {{{ Other structs
+
+// }}}
+// {{{ Struct Methods
 
 func (m *LoginMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 	gob.Register(time.Now())
@@ -60,3 +77,11 @@ func (m *LoginMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 		}
 	}
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
+
+// }}}

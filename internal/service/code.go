@@ -13,15 +13,26 @@ import (
 
 // TODO: Implement Email and Voice Code service
 
+// {{{ Consts
+
+// }}}
+// {{{ Global Varirables
+
 var (
 	ErrCodeSendTooMany   = repository.ErrCodeSendTooMany
 	ErrCodeVerifyTooMany = repository.ErrCodeVerifyTooMany
 )
 
+// }}}
+// {{{ Interface
+
 type CodeService interface {
 	Send(ctx context.Context, biz string, phone string, tpl *template.Template) error
 	Verify(ctx context.Context, biz string, phone string, inputCode string) (bool, error)
 }
+
+// }}}
+// {{{ Struct
 
 type codeService struct {
 	repo repository.CodeRepository
@@ -34,6 +45,12 @@ func NewCodeService(repo repository.CodeRepository, sms sms.Service) CodeService
 		sms:  sms,
 	}
 }
+
+// }}}
+// {{{ Other structs
+
+// }}}
+// {{{ Struct Methods
 
 // NOTE: check -> do: racing condition
 // Redis single thread, use lua for atomic operations
@@ -90,3 +107,11 @@ func (svc *codeService) generateCode() string {
 	code := rand.Intn(1000000)
 	return fmt.Sprintf("%06d", code)
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
+
+// }}}

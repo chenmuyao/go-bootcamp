@@ -329,3 +329,8 @@ func TestUserEmailPattern(t *testing.T) {
 		})
 	}
 }
+
+func init() {
+	// limit log output
+	gin.SetMode(gin.ReleaseMode)
+}

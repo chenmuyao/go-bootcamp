@@ -7,18 +7,16 @@ import (
 	"time"
 )
 
-// {{{ SlidingWindowLimiter
+// {{{ Consts
 
-type slidingWindowRateInfo struct {
-	requests []time.Time
-}
+// }}}
+// {{{ Global Varirables
 
-type SlidingWindowOptions struct {
-	Prefix        string
-	Interval      time.Duration
-	WindowsAmount int
-	Limit         int
-}
+// }}}
+// {{{ Interface
+
+// }}}
+// {{{ Struct
 
 type slidingWindowLimiter struct {
 	cache      map[string]slidingWindowRateInfo
@@ -46,6 +44,23 @@ func NewSlidingWindowLimiter(options *SlidingWindowOptions) *slidingWindowLimite
 		mutex:      sync.Mutex{},
 	}
 }
+
+// }}}
+// {{{ Other structs
+
+type slidingWindowRateInfo struct {
+	requests []time.Time
+}
+
+type SlidingWindowOptions struct {
+	Prefix        string
+	Interval      time.Duration
+	WindowsAmount int
+	Limit         int
+}
+
+// }}}
+// {{{ Struct Methods
 
 func (fw *slidingWindowLimiter) AcceptConnection(ctx context.Context, biz string) bool {
 	fw.mutex.Lock()
@@ -82,5 +97,11 @@ func (fw *slidingWindowLimiter) AcceptConnection(ctx context.Context, biz string
 
 	return true
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
 
 // }}}

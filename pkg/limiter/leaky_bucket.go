@@ -7,22 +7,16 @@ import (
 	"time"
 )
 
-// {{{ LeakyBucketLimiter
+// {{{ Consts
 
-type LeakyBucketOptions struct {
-	Prefix string
+// }}}
+// {{{ Global Varirables
 
-	Capacity int
+// }}}
+// {{{ Interface
 
-	// to calculate rate
-	Limit    int
-	Interval time.Duration
-}
-
-type leakyBucketRateInfo struct {
-	lastLeakTime time.Time
-	water        int
-}
+// }}}
+// {{{ Struct
 
 type leakyBucketLimiter struct {
 	cache    map[string]leakyBucketRateInfo
@@ -48,6 +42,27 @@ func NewLeakyBucketLimiter(options *LeakyBucketOptions) *leakyBucketLimiter {
 		mutex:    sync.Mutex{},
 	}
 }
+
+// }}}
+// {{{ Other structs
+
+type LeakyBucketOptions struct {
+	Prefix string
+
+	Capacity int
+
+	// to calculate rate
+	Limit    int
+	Interval time.Duration
+}
+
+type leakyBucketRateInfo struct {
+	lastLeakTime time.Time
+	water        int
+}
+
+// }}}
+// {{{ Struct Methods
 
 func (fw *leakyBucketLimiter) leak(
 	now time.Time,
@@ -97,5 +112,11 @@ func (fw *leakyBucketLimiter) AcceptConnection(ctx context.Context, biz string) 
 
 	return true
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
 
 // }}}

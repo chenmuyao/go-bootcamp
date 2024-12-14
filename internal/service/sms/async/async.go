@@ -12,12 +12,16 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/service/sms/ratelimit"
 )
 
-type AsyncSMSServiceOptions struct {
-	PollInterval time.Duration
-	RetryTimes   int
-	// For twilio, it could be 20504 Twilio Internal Error
-	RetryErrorCodes []int
-}
+// {{{ Consts
+
+// }}}
+// {{{ Global Varirables
+
+// }}}
+// {{{ Interface
+
+// }}}
+// {{{ Struct
 
 // NOTE: Use Singleton to fire only one go routine that reprogram async send.
 type AsyncSMSService struct {
@@ -45,6 +49,19 @@ func NewAsyncSMSService(
 	go a.asyncSend(ctx)
 	return a
 }
+
+// }}}
+// {{{ Other structs
+
+type AsyncSMSServiceOptions struct {
+	PollInterval time.Duration
+	RetryTimes   int
+	// For twilio, it could be 20504 Twilio Internal Error
+	RetryErrorCodes []int
+}
+
+// }}}
+// {{{ Struct Methods
 
 func (a *AsyncSMSService) Send(
 	ctx context.Context,
@@ -100,3 +117,11 @@ func (a *AsyncSMSService) store(
 
 	return a.repo.AddSMS(ctx, toNb, body, string(argsJSON))
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
+
+// }}}

@@ -10,21 +10,19 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// {{{ RedisTokenBucketLimiter
+// {{{ Consts
+
+// }}}
+// {{{ Global Varirables
 
 //go:embed lua/token_bucket.lua
 var luaTokenBucket string
 
-type RedisTokenBucketOptions struct {
-	RedisClient redis.Cmdable
-	Prefix      string
+// }}}
+// {{{ Interface
 
-	Capacity int
-
-	// to calculate rate
-	ReleaseAmount int
-	Interval      time.Duration
-}
+// }}}
+// {{{ Struct
 
 type redisTokenBucketLimiter struct {
 	cmd           redis.Cmdable
@@ -48,6 +46,23 @@ func NewRedisTokenBucketLimiter(options *RedisTokenBucketOptions) *redisTokenBuc
 	}
 }
 
+// }}}
+// {{{ Other structs
+
+type RedisTokenBucketOptions struct {
+	RedisClient redis.Cmdable
+	Prefix      string
+
+	Capacity int
+
+	// to calculate rate
+	ReleaseAmount int
+	Interval      time.Duration
+}
+
+// }}}
+// {{{ Struct Methods
+
 func (fw *redisTokenBucketLimiter) AcceptConnection(ctx context.Context, biz string) bool {
 	key := fmt.Sprintf("%s-%s", fw.prefix, biz)
 	res, err := fw.cmd.Eval(ctx, luaTokenBucket, []string{key}, fw.releaseAmount, fw.interval, fw.capacity).
@@ -65,5 +80,11 @@ func (fw *redisTokenBucketLimiter) AcceptConnection(ctx context.Context, biz str
 		return true
 	}
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
 
 // }}}

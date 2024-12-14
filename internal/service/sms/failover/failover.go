@@ -9,7 +9,18 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/service/sms"
 )
 
+// {{{ Consts
+
+// }}}
+// {{{ Global Varirables
+
 var errFailOverAll = errors.New("failed after polling all service providers")
+
+// }}}
+// {{{ Interface
+
+// }}}
+// {{{ Struct
 
 type FailOverSMSService struct {
 	svcs []sms.Service
@@ -23,6 +34,12 @@ func NewFailOverSMSService(svcs []sms.Service) *FailOverSMSService {
 		svcs: svcs,
 	}
 }
+
+// }}}
+// {{{ Other structs
+
+// }}}
+// {{{ Struct Methods
 
 func (f *FailOverSMSService) Send(
 	ctx context.Context,
@@ -67,3 +84,11 @@ func (f *FailOverSMSService) SendV1(
 	}
 	return errFailOverAll
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
+
+// }}}

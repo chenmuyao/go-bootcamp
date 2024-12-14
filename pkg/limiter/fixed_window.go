@@ -7,18 +7,16 @@ import (
 	"time"
 )
 
-// {{{ FixedWindowLimiter
+// {{{ Consts
 
-type FixedWindowOptions struct {
-	Prefix   string
-	Interval time.Duration
-	Limit    int
-}
+// }}}
+// {{{ Global Varirables
 
-type fixedWindowRateInfo struct {
-	timeBegin time.Time
-	count     int
-}
+// }}}
+// {{{ Interface
+
+// }}}
+// {{{ Struct
 
 type fixedWindowLimiter struct {
 	cache    map[string]fixedWindowRateInfo
@@ -41,6 +39,23 @@ func NewFixedWindowLimiter(options *FixedWindowOptions) *fixedWindowLimiter {
 		mutex:    sync.Mutex{},
 	}
 }
+
+// }}}
+// {{{ Other structs
+
+type FixedWindowOptions struct {
+	Prefix   string
+	Interval time.Duration
+	Limit    int
+}
+
+type fixedWindowRateInfo struct {
+	timeBegin time.Time
+	count     int
+}
+
+// }}}
+// {{{ Struct Methods
 
 func (fw *fixedWindowLimiter) AcceptConnection(ctx context.Context, biz string) bool {
 	fw.mutex.Lock()
@@ -76,5 +91,11 @@ func (fw *fixedWindowLimiter) AcceptConnection(ctx context.Context, biz string) 
 
 	return true
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
 
 // }}}

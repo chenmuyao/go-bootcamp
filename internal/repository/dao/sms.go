@@ -8,6 +8,39 @@ import (
 	"gorm.io/gorm"
 )
 
+// {{{ Consts
+
+// }}}
+// {{{ Global Varirables
+
+var ErrDuplicatedSMS = errors.New("sms already exists")
+
+// }}}
+// {{{ Interface
+
+type AsyncSMSDAO interface {
+	Insert(ctx context.Context, s SMSInfo) error
+	Update(ctx context.Context, s SMSInfo) error
+	GetFirst(ctx context.Context) (SMSInfo, error)
+	Delete(ctx context.Context, smsInfo SMSInfo) error
+}
+
+// }}}
+// {{{ Struct
+
+type GORMAsyncSMSDAO struct {
+	db *gorm.DB
+}
+
+func NewAsyncSMSDAO(db *gorm.DB) AsyncSMSDAO {
+	return &GORMAsyncSMSDAO{
+		db: db,
+	}
+}
+
+// }}}
+// {{{ Other structs
+
 type SMSInfo struct {
 	gorm.Model
 
@@ -18,23 +51,8 @@ type SMSInfo struct {
 	RetryTimes int
 }
 
-var ErrDuplicatedSMS = errors.New("sms already exists")
-
-type AsyncSMSDAO interface {
-	Insert(ctx context.Context, s SMSInfo) error
-	Update(ctx context.Context, s SMSInfo) error
-	GetFirst(ctx context.Context) (SMSInfo, error)
-	Delete(ctx context.Context, smsInfo SMSInfo) error
-}
-type GORMAsyncSMSDAO struct {
-	db *gorm.DB
-}
-
-func NewAsyncSMSDAO(db *gorm.DB) AsyncSMSDAO {
-	return &GORMAsyncSMSDAO{
-		db: db,
-	}
-}
+// }}}
+// {{{ Struct Methods
 
 func (dao *GORMAsyncSMSDAO) Insert(ctx context.Context, s SMSInfo) error {
 	err := dao.db.WithContext(ctx).Create(&s).Error
@@ -64,3 +82,11 @@ func (dao *GORMAsyncSMSDAO) Delete(ctx context.Context, smsInfo SMSInfo) error {
 	err := dao.db.Unscoped().Delete(&smsInfo).Error
 	return err
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
+
+// }}}

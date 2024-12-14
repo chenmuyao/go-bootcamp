@@ -9,6 +9,14 @@ import (
 	"gorm.io/gorm"
 )
 
+// {{{ Consts
+
+// }}}
+// {{{ Global Varirables
+
+// }}}
+// {{{ Interface
+
 type AsyncSMSRepository interface {
 	AddSMS(ctx context.Context, toNb string, body string, args string) error
 	TrySend(
@@ -17,6 +25,9 @@ type AsyncSMSRepository interface {
 		maxRetry int,
 	)
 }
+
+// }}}
+// {{{ Struct
 
 type asyncSMSRepository struct {
 	dao dao.AsyncSMSDAO
@@ -29,6 +40,12 @@ func NewAsyncSMSRepository(dao dao.AsyncSMSDAO, db *gorm.DB) AsyncSMSRepository 
 		db:  db,
 	}
 }
+
+// }}}
+// {{{ Other structs
+
+// }}}
+// {{{ Struct Methods
 
 func (r *asyncSMSRepository) AddSMS(
 	ctx context.Context,
@@ -59,6 +76,9 @@ func (r *asyncSMSRepository) TrySend(
 		}
 	}
 }
+
+// }}}
+// {{{ Private functions
 
 func trySendFirstRecord(
 	ctx context.Context,
@@ -103,3 +123,8 @@ func trySendFirstRecord(
 	_ = smsDAO.Delete(ctx, first)
 	return nil
 }
+
+// }}}
+// {{{ Package functions
+
+// }}}

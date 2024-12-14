@@ -4,10 +4,22 @@ import (
 	"net/http"
 
 	ijwt "github.com/chenmuyao/go-bootcamp/internal/web/jwt"
+	"github.com/chenmuyao/go-bootcamp/pkg/httpx"
 	"github.com/gin-gonic/gin"
 
 	"github.com/golang-jwt/jwt/v5"
 )
+
+// {{{ Consts
+
+// }}}
+// {{{ Global Varirables
+
+// }}}
+// {{{ Interface
+
+// }}}
+// {{{ Struct
 
 type LoginJWT struct {
 	ignorePaths map[string]struct{}
@@ -24,6 +36,12 @@ func NewLoginJWT(hdl ijwt.Handler, ignorePaths []string) *LoginJWT {
 		Handler:     hdl,
 	}
 }
+
+// }}}
+// {{{ Other structs
+
+// }}}
+// {{{ Struct Methods
 
 func (m *LoginJWT) CheckLogin() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -51,7 +69,7 @@ func (m *LoginJWT) CheckLogin() gin.HandlerFunc {
 			return
 		}
 
-		if uc.UserAgent != ctx.GetHeader("User-Agent") {
+		if uc.UserAgent != ctx.GetHeader(httpx.UserAgent) {
 			// NOTE: Instrument here. Might be attackers.
 			// A better option is to use the browser's fingerprint.
 			ctx.AbortWithStatus(http.StatusUnauthorized)
@@ -79,3 +97,11 @@ func (m *LoginJWT) CheckLogin() gin.HandlerFunc {
 		ctx.Set("user", uc)
 	}
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
+
+// }}}

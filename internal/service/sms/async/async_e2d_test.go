@@ -20,8 +20,9 @@ import (
 )
 
 func TestAsyncSMSCode(t *testing.T) {
+	config.InitConfig("../../../../config/dev.yaml")
 	db, err := gorm.Open(
-		mysqlDriver.Open(config.Config.DB.DSN),
+		mysqlDriver.Open(config.Cfg.DB.DSN),
 		&gorm.Config{},
 	)
 	if err != nil {

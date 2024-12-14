@@ -7,16 +7,50 @@ import (
 	"strings"
 	"time"
 
+	"github.com/chenmuyao/go-bootcamp/internal/consts"
+	"github.com/chenmuyao/go-bootcamp/pkg/httpx"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
 
+// {{{ Consts
+// }}}
+// {{{ Global Varirables
+
 var (
 	JWTKey     = []byte("xQUPmbb2TP9CUyFZkgOnV3JQdr22ZNBx")
 	RefreshKey = []byte("xQUPmbb2TP9CUyFZkgOnV3JQdr2fsNBx")
+	ssidPrefix = "users:ssid"
 )
+
+// }}}
+// {{{ Interface
+
+// }}}
+// {{{ Struct
+
+type RedisJWTHandler struct {
+	signingMethod jwt.SigningMethod
+	client        redis.Cmdable
+	rcExpiration  time.Duration
+	jwtExpiration time.Duration
+}
+
+var _ Handler = &RedisJWTHandler{}
+
+func NewRedisJWTHandler(client redis.Cmdable) Handler {
+	return &RedisJWTHandler{
+		signingMethod: jwt.SigningMethodHS256,
+		client:        client,
+		rcExpiration:  time.Hour * 24 * 7,
+		jwtExpiration: 30 * time.Minute,
+	}
+}
+
+// }}}
+// {{{ Other structs
 
 type UserClaims struct {
 	jwt.RegisteredClaims
@@ -31,24 +65,11 @@ type RefreshClaims struct {
 	SSID string
 }
 
-type RedisJWTHandler struct {
-	signingMethod jwt.SigningMethod
-	client        redis.Cmdable
-	rcExpiration  time.Duration
-}
-
-var _ Handler = &RedisJWTHandler{}
-
-func NewRedisJWTHandler(client redis.Cmdable) Handler {
-	return &RedisJWTHandler{
-		signingMethod: jwt.SigningMethodHS256,
-		client:        client,
-		rcExpiration:  time.Hour * 24 * 7,
-	}
-}
+// }}}
+// {{{ Struct Methods
 
 func (h *RedisJWTHandler) ExtractToken(ctx *gin.Context) string {
-	authCode := ctx.GetHeader("Authorization")
+	authCode := ctx.GetHeader(httpx.Authorization)
 	if authCode == "" {
 		return ""
 	}
@@ -62,10 +83,10 @@ func (h *RedisJWTHandler) ExtractToken(ctx *gin.Context) string {
 }
 
 func (h *RedisJWTHandler) ClearToken(ctx *gin.Context) error {
-	ctx.Header("x-jwt-token", "")
-	ctx.Header("x-refresh-token", "")
+	ctx.Header(consts.XJWTToken, "")
+	ctx.Header(consts.XRefreshToken, "")
 	uc := ctx.MustGet("user").(UserClaims)
-	return h.client.Set(ctx, fmt.Sprintf("users:ssid:%s", uc.SSID), "", h.rcExpiration).Err()
+	return h.client.Set(ctx, fmt.Sprintf("%s:%s", ssidPrefix, uc.SSID), "", h.rcExpiration).Err()
 }
 
 func (h *RedisJWTHandler) SetLoginToken(ctx *gin.Context, uid int64) error {
@@ -86,7 +107,7 @@ func (h *RedisJWTHandler) setJWTToken(ctx *gin.Context, uid int64, ssid string) 
 	if err != nil {
 		return err
 	}
-	ctx.Header("x-jwt-token", tokenStr)
+	ctx.Header(consts.XJWTToken, tokenStr)
 	return nil
 }
 
@@ -97,9 +118,9 @@ func (h *RedisJWTHandler) GenerateJWTToken(
 ) (string, error) {
 	uc := UserClaims{
 		UID:       uid,
-		UserAgent: ctx.GetHeader("User-Agent"),
+		UserAgent: ctx.GetHeader(httpx.UserAgent),
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(30 * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(h.jwtExpiration)),
 		},
 		SSID: ssid,
 	}
@@ -111,7 +132,7 @@ func (h *RedisJWTHandler) setRefreshToken(ctx *gin.Context, uid int64, ssid stri
 	if err != nil {
 		return err
 	}
-	ctx.Header("x-refresh-token", tokenStr)
+	ctx.Header(consts.XRefreshToken, tokenStr)
 	return nil
 }
 
@@ -119,7 +140,7 @@ func (h *RedisJWTHandler) GenerateRefreshToken(uid int64, ssid string) (string, 
 	rc := RefreshClaims{
 		UID: uid,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(h.rcExpiration)),
 		},
 		SSID: ssid,
 	}
@@ -138,7 +159,7 @@ func (h *RedisJWTHandler) makeToken(claims jwt.Claims, signingKey []byte) (strin
 
 func (h *RedisJWTHandler) CheckSession(ctx *gin.Context, ssid string) error {
 	// NOTE: Ignore redis error. In case of redis error, most users can still use the service
-	cnt, err := h.client.Exists(ctx, fmt.Sprintf("users:ssid:%s", ssid)).Result()
+	cnt, err := h.client.Exists(ctx, fmt.Sprintf("%s:%s", ssidPrefix, ssid)).Result()
 	if err != nil {
 		// warning
 		slog.Warn("Redis error", "err", err)
@@ -149,3 +170,11 @@ func (h *RedisJWTHandler) CheckSession(ctx *gin.Context, ssid string) error {
 	}
 	return nil
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
+
+// }}}

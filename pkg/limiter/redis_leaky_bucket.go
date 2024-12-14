@@ -10,21 +10,19 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// {{{ RedisLeakyBucketLimiter
+// {{{ Consts
+
+// }}}
+// {{{ Global Varirables
 
 //go:embed lua/leaky_bucket.lua
 var luaLeakyBucket string
 
-type RedisLeakyBucketOptions struct {
-	RedisClient redis.Cmdable
-	Prefix      string
+// }}}
+// {{{ Interface
 
-	Capacity int
-
-	// to calculate rate
-	Limit    int
-	Interval time.Duration
-}
+// }}}
+// {{{ Struct
 
 type redisLeakyBucketLimiter struct {
 	cmd      redis.Cmdable
@@ -48,6 +46,23 @@ func NewRedisLeakyBucketLimiter(options *RedisLeakyBucketOptions) *redisLeakyBuc
 	}
 }
 
+// }}}
+// {{{ Other structs
+
+type RedisLeakyBucketOptions struct {
+	RedisClient redis.Cmdable
+	Prefix      string
+
+	Capacity int
+
+	// to calculate rate
+	Limit    int
+	Interval time.Duration
+}
+
+// }}}
+// {{{ Struct Methods
+
 func (fw *redisLeakyBucketLimiter) AcceptConnection(ctx context.Context, biz string) bool {
 	key := fmt.Sprintf("%s-%s", fw.prefix, biz)
 	res, err := fw.cmd.Eval(ctx, luaLeakyBucket, []string{key}, fw.limit, fw.interval, fw.capacity).
@@ -65,5 +80,11 @@ func (fw *redisLeakyBucketLimiter) AcceptConnection(ctx context.Context, biz str
 		return true
 	}
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
 
 // }}}

@@ -7,6 +7,17 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/service/sms"
 )
 
+// {{{ Consts
+
+// }}}
+// {{{ Global Varirables
+
+// }}}
+// {{{ Interface
+
+// }}}
+// {{{ Struct
+
 type TimeoutFailOverSMSService struct {
 	svcs []sms.Service
 
@@ -26,6 +37,12 @@ func NewTimeoutFailOverSMSService(svcs []sms.Service, threshold int32) *TimeoutF
 		threshold: threshold,
 	}
 }
+
+// }}}
+// {{{ Other structs
+
+// }}}
+// {{{ Struct Methods
 
 func (t *TimeoutFailOverSMSService) Send(
 	ctx context.Context,
@@ -63,3 +80,11 @@ func (t *TimeoutFailOverSMSService) Send(
 	}
 	return err
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
+
+// }}}

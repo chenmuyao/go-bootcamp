@@ -10,17 +10,19 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// {{{ RedisFixedWindowLimiter
+// {{{ Consts
+
+// }}}
+// {{{ Global Varirables
 
 //go:embed lua/fixed_window.lua
 var luaFixedWindow string
 
-type RedisFixedWindowOptions struct {
-	RedisClient redis.Cmdable
-	Prefix      string
-	Interval    time.Duration
-	Limit       int
-}
+// }}}
+// {{{ Interface
+
+// }}}
+// {{{ Struct
 
 type redisFixedWindowLimiter struct {
 	cmd      redis.Cmdable
@@ -42,6 +44,19 @@ func NewRedisFixedWindowLimiter(options *RedisFixedWindowOptions) *redisFixedWin
 	}
 }
 
+// }}}
+// {{{ Other structs
+
+type RedisFixedWindowOptions struct {
+	RedisClient redis.Cmdable
+	Prefix      string
+	Interval    time.Duration
+	Limit       int
+}
+
+// }}}
+// {{{ Struct Methods
+
 func (fw *redisFixedWindowLimiter) AcceptConnection(ctx context.Context, biz string) bool {
 	key := fmt.Sprintf("%s-%s", fw.prefix, biz)
 	res, err := fw.cmd.Eval(ctx, luaFixedWindow, []string{key}, fw.limit, fw.interval).Int()
@@ -58,5 +73,11 @@ func (fw *redisFixedWindowLimiter) AcceptConnection(ctx context.Context, biz str
 		return true
 	}
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
 
 // }}}

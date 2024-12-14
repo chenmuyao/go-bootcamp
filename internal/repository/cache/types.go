@@ -8,11 +8,19 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
 )
 
+// {{{ Consts
+
+// }}}
+// {{{ Global Varirables
+
 var (
 	ErrCodeSendTooMany   = errors.New("too frequent send requests")
 	ErrCodeVerifyTooMany = errors.New("too frequent verify requests")
 	ErrKeyNotExist       = errors.New("inexisted key")
 )
+
+// }}}
+// {{{ Interface
 
 type CodeCache interface {
 	Set(ctx context.Context, biz, phone, code string) error
@@ -20,19 +28,36 @@ type CodeCache interface {
 	// Key(biz, phone string) string
 }
 
-type BaseCodeCache struct{}
-
-func (b *BaseCodeCache) Key(biz, phone string) string {
-	return fmt.Sprintf("phone_code:%s:%s", biz, phone)
-}
-
 type UserCache interface {
 	Get(ctx context.Context, uid int64) (domain.User, error)
 	Set(ctx context.Context, user domain.User) error
 }
 
+// }}}
+// {{{ Struct
+
+type BaseCodeCache struct{}
+
 type BaseUserCache struct{}
+
+// }}}
+// {{{ Other structs
+
+// }}}
+// {{{ Struct Methods
+
+func (b *BaseCodeCache) Key(biz, phone string) string {
+	return fmt.Sprintf("phone_code:%s:%s", biz, phone)
+}
 
 func (c *BaseUserCache) Key(uid int64) string {
 	return fmt.Sprintf("user:info:%d", uid)
 }
+
+// }}}
+// {{{ Private functions
+
+// }}}
+// {{{ Package functions
+
+// }}}

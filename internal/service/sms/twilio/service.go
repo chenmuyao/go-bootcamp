@@ -8,6 +8,8 @@ import (
 	openapi "github.com/twilio/twilio-go/rest/api/v2010"
 )
 
+// {{{ Struct
+
 type Service struct {
 	client *tw.RestClient
 	fromNb string
@@ -19,6 +21,9 @@ func NewService(client *tw.RestClient, fromNb string) *Service {
 		fromNb: fromNb,
 	}
 }
+
+// }}}
+// {{{ Struct Methods
 
 func (s *Service) Send(ctx context.Context, toNb string, body string, args ...string) error {
 	params := &openapi.CreateMessageParams{}
@@ -36,3 +41,5 @@ func (s *Service) Send(ctx context.Context, toNb string, body string, args ...st
 	}
 	return nil
 }
+
+// }}}

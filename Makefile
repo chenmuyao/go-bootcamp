@@ -51,6 +51,7 @@ dev:
 docker:
 	@rm -f wetravel
 	@go mod tidy
-	@GOOS=linux GOARCH=arm go build --tags=k8s -o wetravel .
+	# @GOOS=linux GOARCH=arm go build --tags=k8s -o wetravel .
+	@GOOS=linux GOARCH=arm go build -o wetravel .
 	@docker rmi -f vinchent123/wetravel:v0.0.1
 	@docker build -t vinchent123/wetravel:v0.0.1 .
