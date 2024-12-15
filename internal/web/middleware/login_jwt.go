@@ -26,7 +26,7 @@ type LoginJWT struct {
 	ijwt.Handler
 }
 
-func NewLoginJWT(hdl ijwt.Handler, ignorePaths []string) *LoginJWT {
+func NewLoginJWTBuilder(hdl ijwt.Handler, ignorePaths []string) *LoginJWT {
 	ignorePathsMap := make(map[string]struct{}, len(ignorePaths))
 	for _, path := range ignorePaths {
 		ignorePathsMap[path] = struct{}{}
@@ -43,7 +43,7 @@ func NewLoginJWT(hdl ijwt.Handler, ignorePaths []string) *LoginJWT {
 // }}}
 // {{{ Struct Methods
 
-func (m *LoginJWT) CheckLogin() gin.HandlerFunc {
+func (m *LoginJWT) Build() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		path := ctx.Request.URL.Path
 		if _, ok := m.ignorePaths[path]; ok {

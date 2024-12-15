@@ -6,12 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/url"
 
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"github.com/chenmuyao/go-bootcamp/pkg/httpx"
+	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 )
 
 // {{{ Consts
@@ -45,14 +45,16 @@ type service struct {
 	clientID     string
 	clientSecret string
 	httpClient   *http.Client
+	l            logger.Logger
 }
 
-func NewService(baseURL string, clientID string, clientSecret string) Service {
+func NewService(baseURL string, clientID string, clientSecret string, l logger.Logger) Service {
 	return &service{
 		baseURL:      baseURL,
 		clientID:     clientID,
 		clientSecret: clientSecret,
 		httpClient:   http.DefaultClient,
+		l:            l,
 	}
 }
 
@@ -63,6 +65,10 @@ func NewService(baseURL string, clientID string, clientSecret string) Service {
 // {{{ Struct Methods
 
 func (s *service) AuthURL(ctx context.Context, state string) string {
+	s.l.Info("Gitea Auth", logger.Field{
+		Key:   "state",
+		Value: state,
+	})
 	return fmt.Sprintf(authURLPattern, s.baseURL, s.clientID, redirectURI, state)
 }
 
@@ -84,14 +90,14 @@ func (s *service) VerifyCode(ctx context.Context, code string) (domain.GiteaInfo
 
 	err := json.NewEncoder(&buf).Encode(&body)
 	if err != nil {
-		slog.Error("json encode error")
+		s.l.Error("json encode error")
 		return domain.GiteaInfo{}, err
 	}
 
 	accessTokenURL := fmt.Sprintf(accessTokenPattern, s.baseURL)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, accessTokenURL, &buf)
 	if err != nil {
-		slog.Error("access token query construction error")
+		s.l.Error("access token query construction error")
 		return domain.GiteaInfo{}, err
 	}
 
@@ -100,7 +106,7 @@ func (s *service) VerifyCode(ctx context.Context, code string) (domain.GiteaInfo
 
 	httpResp, err := s.httpClient.Do(req)
 	if err != nil {
-		slog.Error("http client do error")
+		s.l.Error("http client do error")
 		return domain.GiteaInfo{}, err
 	}
 	if httpResp.StatusCode != http.StatusOK {
@@ -117,7 +123,7 @@ func (s *service) VerifyCode(ctx context.Context, code string) (domain.GiteaInfo
 	var resp Response
 	err = json.NewDecoder(httpResp.Body).Decode(&resp)
 	if err != nil {
-		slog.Error("resp decode error")
+		s.l.Error("resp decode error")
 		return domain.GiteaInfo{}, err
 	}
 
@@ -125,7 +131,7 @@ func (s *service) VerifyCode(ctx context.Context, code string) (domain.GiteaInfo
 	apiURL := fmt.Sprintf(userAPIPattern, s.baseURL)
 	apiReq, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
 	if err != nil {
-		slog.Error("api request error")
+		s.l.Error("api request error")
 		return domain.GiteaInfo{}, err
 	}
 	apiReq.Header.Add(httpx.Accept, httpx.ApplicationJSON)
@@ -134,7 +140,7 @@ func (s *service) VerifyCode(ctx context.Context, code string) (domain.GiteaInfo
 
 	apiResp, err := s.httpClient.Do(apiReq)
 	if err != nil {
-		slog.Error("api http error")
+		s.l.Error("api http error")
 		return domain.GiteaInfo{}, err
 	}
 	if apiResp.StatusCode != http.StatusOK {
@@ -144,7 +150,7 @@ func (s *service) VerifyCode(ctx context.Context, code string) (domain.GiteaInfo
 	var giteaInfo domain.GiteaInfo
 	err = json.NewDecoder(apiResp.Body).Decode(&giteaInfo)
 	if err != nil {
-		slog.Error("api decode error", "apiResp", apiResp)
+		s.l.Error("api decode error", logger.Field{Key: "apiResp", Value: apiResp})
 		return domain.GiteaInfo{}, err
 	}
 

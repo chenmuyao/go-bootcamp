@@ -1,6 +1,7 @@
 package ioc
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/web/middleware"
 	"github.com/chenmuyao/go-bootcamp/pkg/ginx/middleware/ratelimit"
 	"github.com/chenmuyao/go-bootcamp/pkg/limiter"
+	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -25,7 +27,11 @@ func InitWebServer(middlewares []gin.HandlerFunc,
 	return server
 }
 
-func InitGinMiddlewares(redisClient redis.Cmdable, jwtHdl ijwt.Handler) []gin.HandlerFunc {
+func InitGinMiddlewares(
+	redisClient redis.Cmdable,
+	jwtHdl ijwt.Handler,
+	l logger.Logger,
+) []gin.HandlerFunc {
 	return []gin.HandlerFunc{
 		cors.New(cors.Config{
 			AllowCredentials: true,
@@ -41,21 +47,24 @@ func InitGinMiddlewares(redisClient redis.Cmdable, jwtHdl ijwt.Handler) []gin.Ha
 			MaxAge: 12 * time.Hour,
 		}),
 
-		useJWT(jwtHdl),
-		// useSession(),
-		// sessionCheckLogin(),
-
 		ratelimit.NewRateLimiterBuilder(&limiter.RedisSlidingWindowOptions{
 			RedisClient:   redisClient,
 			Interval:      time.Second,
 			Limit:         100,
 			WindowsAmount: 10,
 		}).Build(),
+		middleware.NewLogMiddlewareBuilder(func(ctx context.Context, al middleware.AccessLog) {
+			l.Debug("", logger.Field{Key: "req", Value: al})
+		}).AllowReqBody().AllowRespBody().Build(),
+		useJWT(jwtHdl),
+		// useSession(),
+		// sessionCheckLogin(),
+
 	}
 }
 
 func useJWT(jwtHdl ijwt.Handler) gin.HandlerFunc {
-	loginJWT := middleware.NewLoginJWT(jwtHdl, []string{
+	loginJWT := middleware.NewLoginJWTBuilder(jwtHdl, []string{
 		"/user/signup",
 		"/user/login",
 		"/user/login_sms/code/send",
@@ -64,7 +73,7 @@ func useJWT(jwtHdl ijwt.Handler) gin.HandlerFunc {
 		"/oauth2/gitea/authurl",
 		"/oauth2/gitea/callback",
 	})
-	return loginJWT.CheckLogin()
+	return loginJWT.Build()
 }
 
 // func sessionCheckLogin() gin.HandlerFunc {

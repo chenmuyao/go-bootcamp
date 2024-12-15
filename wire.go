@@ -20,6 +20,7 @@ func InitWebServer() *gin.Engine {
 		// third-party dependencies
 		ioc.InitRedis,
 		ioc.InitDB,
+		ioc.InitLogger,
 
 		// DAO
 		dao.NewUserDAO, dao.NewAsyncSMSDAO,

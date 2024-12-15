@@ -5,9 +5,14 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/service/oauth2/gitea"
 	"github.com/chenmuyao/go-bootcamp/internal/web"
 	ijwt "github.com/chenmuyao/go-bootcamp/internal/web/jwt"
+	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 )
 
-func NewDummyGiteaHandler(userSvc service.UserService, hdl ijwt.Handler) *web.OAuth2GiteaHandler {
-	dummySvc := gitea.NewService("dummy", "dummy", "dummy")
+func NewDummyGiteaHandler(
+	userSvc service.UserService,
+	hdl ijwt.Handler,
+	l logger.Logger,
+) *web.OAuth2GiteaHandler {
+	dummySvc := gitea.NewService("dummy", "dummy", "dummy", l)
 	return web.NewOAuth2GiteaHandler(dummySvc, userSvc, hdl)
 }
