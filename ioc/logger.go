@@ -9,7 +9,7 @@ import (
 func InitLogger() logger.Logger {
 	config := zap.NewDevelopmentConfig()
 	config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	l, err := config.Build()
+	l, err := config.Build(zap.AddCallerSkip(1))
 	if err != nil {
 		panic(err)
 	}
