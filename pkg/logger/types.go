@@ -36,4 +36,11 @@ type Field struct {
 // }}}
 // {{{ Package functions
 
+func Error(err error) Field {
+	return Field{
+		Key:   "err",
+		Value: err,
+	}
+}
+
 // }}}

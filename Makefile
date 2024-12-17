@@ -38,7 +38,7 @@ mock:
 
 .PHONY: test
 test: mock
-	@go test -v ./...
+	@go test ./...
 
 .PHONY: dev
 dev:

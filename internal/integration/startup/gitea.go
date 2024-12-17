@@ -14,5 +14,5 @@ func NewDummyGiteaHandler(
 	l logger.Logger,
 ) *web.OAuth2GiteaHandler {
 	dummySvc := gitea.NewService("dummy", "dummy", "dummy", l)
-	return web.NewOAuth2GiteaHandler(dummySvc, userSvc, hdl)
+	return web.NewOAuth2GiteaHandler(l, dummySvc, userSvc, hdl)
 }

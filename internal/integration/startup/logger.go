@@ -1,7 +1,11 @@
 package startup
 
-import "github.com/chenmuyao/go-bootcamp/pkg/logger"
+import (
+	"github.com/chenmuyao/go-bootcamp/pkg/logger"
+	"go.uber.org/zap"
+)
 
 func InitLogger() logger.Logger {
-	return logger.NewNopLogger()
+	l, _ := zap.NewDevelopment()
+	return logger.NewZapLogger(l)
 }

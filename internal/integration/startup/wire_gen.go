@@ -35,7 +35,7 @@ func InitWebServer() *gin.Engine {
 	asyncSMSRepository := repository.NewAsyncSMSRepository(asyncSMSDAO, db)
 	smsService := ioc.InitSMSService(cmdable, asyncSMSRepository)
 	codeService := service.NewCodeService(codeRepository, smsService)
-	userHandler := web.NewUserHandler(userService, codeService, handler)
+	userHandler := web.NewUserHandler(logger, userService, codeService, handler)
 	oAuth2GiteaHandler := NewDummyGiteaHandler(userService, handler, logger)
 	engine := ioc.InitWebServer(v, userHandler, oAuth2GiteaHandler)
 	return engine

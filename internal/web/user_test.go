@@ -13,9 +13,12 @@ import (
 	mock "github.com/chenmuyao/go-bootcamp/internal/service/mocks"
 	ijwt "github.com/chenmuyao/go-bootcamp/internal/web/jwt"
 	jwtmocks "github.com/chenmuyao/go-bootcamp/internal/web/jwt/mocks"
+	"github.com/chenmuyao/go-bootcamp/pkg/ginx"
+	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
+	"go.uber.org/zap"
 )
 
 func TestUserHandler_SignUp(t *testing.T) {
@@ -27,7 +30,7 @@ func TestUserHandler_SignUp(t *testing.T) {
 		reqBuilder func(t *testing.T) *http.Request
 
 		wantCode int
-		wantBody Result
+		wantBody ginx.Result
 	}{
 		{
 			name: "signup ok",
@@ -58,8 +61,8 @@ func TestUserHandler_SignUp(t *testing.T) {
 				return req
 			},
 			wantCode: http.StatusOK,
-			wantBody: Result{
-				Code: CodeOK,
+			wantBody: ginx.Result{
+				Code: ginx.CodeOK,
 				Msg:  "signup success",
 			},
 		},
@@ -103,8 +106,8 @@ func TestUserHandler_SignUp(t *testing.T) {
 				return req
 			},
 			wantCode: http.StatusBadRequest,
-			wantBody: Result{
-				Code: CodeUserSide,
+			wantBody: ginx.Result{
+				Code: ginx.CodeUserSide,
 				Msg:  "not a valid email",
 			},
 		},
@@ -128,8 +131,8 @@ func TestUserHandler_SignUp(t *testing.T) {
 				return req
 			},
 			wantCode: http.StatusBadRequest,
-			wantBody: Result{
-				Code: CodeUserSide,
+			wantBody: ginx.Result{
+				Code: ginx.CodeUserSide,
 				Msg:  "not a valid password",
 			},
 		},
@@ -153,8 +156,8 @@ func TestUserHandler_SignUp(t *testing.T) {
 				return req
 			},
 			wantCode: http.StatusBadRequest,
-			wantBody: Result{
-				Code: CodeUserSide,
+			wantBody: ginx.Result{
+				Code: ginx.CodeUserSide,
 				Msg:  "2 passwords don't match",
 			},
 		},
@@ -182,8 +185,8 @@ func TestUserHandler_SignUp(t *testing.T) {
 				return req
 			},
 			wantCode: http.StatusBadRequest,
-			wantBody: Result{
-				Code: CodeUserSide,
+			wantBody: ginx.Result{
+				Code: ginx.CodeUserSide,
 				Msg:  "user exists",
 			},
 		},
@@ -211,7 +214,7 @@ func TestUserHandler_SignUp(t *testing.T) {
 				return req
 			},
 			wantCode: http.StatusInternalServerError,
-			wantBody: InternalServerErrorResult,
+			wantBody: ginx.InternalServerErrorResult,
 		},
 	}
 
@@ -222,7 +225,13 @@ func TestUserHandler_SignUp(t *testing.T) {
 
 			// Prepare
 			userSvc, codeSvc, jwtHdl := tc.mock(ctrl)
-			hdl := NewUserHandler(userSvc, codeSvc, jwtHdl)
+			l, _ := zap.NewDevelopment()
+			hdl := NewUserHandler(
+				logger.NewZapLogger(l),
+				userSvc,
+				codeSvc,
+				jwtHdl,
+			)
 
 			server := gin.Default()
 			hdl.RegisterRoutes(server)
@@ -235,7 +244,7 @@ func TestUserHandler_SignUp(t *testing.T) {
 
 			// Check Results
 			assert.Equal(t, tc.wantCode, recorder.Code)
-			var res Result
+			var res ginx.Result
 			_ = json.NewDecoder(recorder.Body).Decode(&res)
 			assert.Equal(t, tc.wantBody, res)
 		})
@@ -251,7 +260,7 @@ func TestLoginJWT(t *testing.T) {
 		reqBuilder func(*testing.T) *http.Request
 
 		wantCode int
-		wantRes  Result
+		wantRes  ginx.Result
 	}{
 		{
 			name: "login ok",
@@ -276,8 +285,8 @@ func TestLoginJWT(t *testing.T) {
 				return req
 			},
 			wantCode: http.StatusOK,
-			wantRes: Result{
-				Code: CodeOK,
+			wantRes: ginx.Result{
+				Code: ginx.CodeOK,
 				Msg:  "successful login",
 			},
 		},
@@ -287,7 +296,8 @@ func TestLoginJWT(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			us, cs, jwtHdl := tc.mock(ctrl)
-			hdl := NewUserHandler(us, cs, jwtHdl)
+			l, _ := zap.NewDevelopment()
+			hdl := NewUserHandler(logger.NewZapLogger(l), us, cs, jwtHdl)
 
 			server := gin.Default()
 			hdl.RegisterRoutes(server)
@@ -298,7 +308,7 @@ func TestLoginJWT(t *testing.T) {
 			server.ServeHTTP(rec, req)
 
 			assert.Equal(t, tc.wantCode, rec.Code)
-			var res Result
+			var res ginx.Result
 			err := json.NewDecoder(rec.Body).Decode(&res)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.wantRes, res)
@@ -319,7 +329,7 @@ func TestUserEmailPattern(t *testing.T) {
 		{name: "ok", email: "123@1234.com", match: true},
 	}
 
-	h := NewUserHandler(nil, nil, nil)
+	h := NewUserHandler(logger.NewNopLogger(), nil, nil, nil)
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {

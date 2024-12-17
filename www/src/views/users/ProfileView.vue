@@ -59,7 +59,7 @@ const fetchProfile = async () => {
   axios.get('/user/profile')
     .then((response) => {
       console.log(response)
-      userProfile.value = response.data;
+      userProfile.value = response.data.data;
     })
     .catch((error) => {
       console.error(error)

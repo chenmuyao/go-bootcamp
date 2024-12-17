@@ -12,7 +12,7 @@ import (
 
 	"github.com/chenmuyao/go-bootcamp/config"
 	"github.com/chenmuyao/go-bootcamp/internal/integration/startup"
-	"github.com/chenmuyao/go-bootcamp/internal/web"
+	"github.com/chenmuyao/go-bootcamp/pkg/ginx"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
@@ -31,7 +31,7 @@ func TestSendSMSCode(t *testing.T) {
 		phone string
 
 		wantCode int
-		wantBody web.Result
+		wantBody ginx.Result
 	}{
 		{
 			name:   "send ok",
@@ -51,8 +51,8 @@ func TestSendSMSCode(t *testing.T) {
 			},
 			phone:    "12345",
 			wantCode: http.StatusOK,
-			wantBody: web.Result{
-				Code: web.CodeOK,
+			wantBody: ginx.Result{
+				Code: ginx.CodeOK,
 				Msg:  "Sent successfully",
 			},
 		},
@@ -63,8 +63,8 @@ func TestSendSMSCode(t *testing.T) {
 			},
 			phone:    "",
 			wantCode: http.StatusBadRequest,
-			wantBody: web.Result{
-				Code: web.CodeUserSide,
+			wantBody: ginx.Result{
+				Code: ginx.CodeUserSide,
 				Msg:  "empty phone number",
 			},
 		},
@@ -86,10 +86,10 @@ func TestSendSMSCode(t *testing.T) {
 				assert.Equal(t, "600123", code)
 			},
 			phone:    "12345",
-			wantCode: http.StatusTooManyRequests,
-			wantBody: web.Result{
-				Code: web.CodeUserSide,
-				Msg:  "send too many",
+			wantCode: http.StatusBadRequest,
+			wantBody: ginx.Result{
+				Code: ginx.CodeUserSide,
+				Msg:  "sent too many",
 			},
 		},
 		{
@@ -111,7 +111,7 @@ func TestSendSMSCode(t *testing.T) {
 			},
 			phone:    "12345",
 			wantCode: http.StatusInternalServerError,
-			wantBody: web.InternalServerErrorResult,
+			wantBody: ginx.InternalServerErrorResult,
 		},
 	}
 
@@ -132,7 +132,7 @@ func TestSendSMSCode(t *testing.T) {
 			server.ServeHTTP(rec, req)
 
 			assert.Equal(t, tc.wantCode, rec.Code)
-			var res web.Result
+			var res ginx.Result
 			err = json.NewDecoder(rec.Body).Decode(&res)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.wantBody, res)

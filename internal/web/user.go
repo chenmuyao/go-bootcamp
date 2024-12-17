@@ -1,10 +1,9 @@
 package web
 
 import (
+	"errors"
 	"fmt"
 	"log"
-	"log/slog"
-	"net/http"
 	"strconv"
 	"text/template"
 	"time"
@@ -12,6 +11,8 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"github.com/chenmuyao/go-bootcamp/internal/service"
 	ijwt "github.com/chenmuyao/go-bootcamp/internal/web/jwt"
+	"github.com/chenmuyao/go-bootcamp/pkg/ginx"
+	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 	"github.com/dlclark/regexp2"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -36,6 +37,7 @@ const (
 // {{{ Struct
 
 type UserHandler struct {
+	l logger.Logger
 	ijwt.Handler
 	emailRegex    *regexp2.Regexp
 	passwordRegex *regexp2.Regexp
@@ -44,6 +46,7 @@ type UserHandler struct {
 }
 
 func NewUserHandler(
+	l logger.Logger,
 	svc service.UserService,
 	codeSvc service.CodeService,
 	hdl ijwt.Handler,
@@ -54,6 +57,7 @@ func NewUserHandler(
 		svc:           svc,
 		codeSvc:       codeSvc,
 		Handler:       hdl,
+		l:             l,
 	}
 }
 
@@ -63,152 +67,126 @@ func NewUserHandler(
 // }}}
 // {{{ Struct Methods
 
-func (h *UserHandler) SendSMSLoginCode(ctx *gin.Context) {
-	type Req struct {
-		Phone string `json:"phone"`
-	}
+func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
+	user := server.Group("/user/")
+	user.POST("/signup", ginx.WrapBody(h.l, h.SignUp))
+	// user.POST("/login", h.Login)
+	user.POST("/login", ginx.WrapBody(h.l, h.LoginJWT))
+	user.GET("/profile", ginx.WrapLog(h.l, h.Profile))
+	user.GET("/profile/:id", ginx.WrapLog(h.l, h.Profile))
+	user.POST("/edit", ginx.WrapBodyAndClaims(h.l, h.Edit))
 
-	var req Req
-	if err := ctx.Bind(&req); err != nil {
-		slog.Error("bind error", "msg", err)
-		return
-	}
+	user.GET("/refresh_token", ginx.WrapLog(h.l, h.RefreshToken))
 
+	// SMS code login
+	user.POST("/login_sms/code/send", ginx.WrapBody(h.l, h.SendSMSLoginCode))
+	user.POST("/login_sms", ginx.WrapBody(h.l, h.LoginSMS))
+
+	user.POST("/logout", ginx.WrapLog(h.l, h.LogoutJWT))
+}
+
+func (h *UserHandler) SendSMSLoginCode(ctx *gin.Context, req UserSMSCodeReq) (ginx.Result, error) {
 	if req.Phone == "" {
-		ctx.JSON(http.StatusBadRequest, Result{
-			Code: CodeUserSide,
+		return ginx.Result{
+			Code: ginx.CodeUserSide,
 			Msg:  "empty phone number",
-		})
-		return
+		}, errors.New("empty phone number")
 	}
 	tpl, err := template.New(bizLogin).Parse(codeSMSTemplate)
 	if err != nil {
-		slog.Error("cannot parse sms template", "error", err)
-		ctx.JSON(http.StatusInternalServerError, Result{
-			Code: CodeServerSide,
+		return ginx.Result{
+			Code: ginx.CodeServerSide,
 			Msg:  "internal sever error",
-		})
-		return
+		}, fmt.Errorf("cannot parse sms template: %w", err)
 	}
 	err = h.codeSvc.Send(ctx, bizLogin, req.Phone, tpl)
 	switch err {
 	case nil:
-		ctx.JSON(http.StatusOK, Result{
-			Code: CodeOK,
+		return ginx.Result{
+			Code: ginx.CodeOK,
 			Msg:  "Sent successfully",
-		})
-		return
+		}, nil
 	case service.ErrCodeSendTooMany:
-		ctx.JSON(http.StatusTooManyRequests, Result{
-			Code: CodeUserSide,
-			Msg:  "send too many",
-		})
-		return
+		return ginx.Result{
+			Code: ginx.CodeUserSide,
+			Msg:  "sent too many",
+		}, errors.New("sent too many")
 	default:
-		slog.Error("sms send code error", "error", err)
-		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
-		return
+
+		return ginx.InternalServerErrorResult, fmt.Errorf("sms send code error: %w", err)
 	}
 }
 
-func (h *UserHandler) LoginSMS(ctx *gin.Context) {
-	type Req struct {
-		Phone string `json:"phone"`
-		Code  string `json:"code"`
-	}
-
-	var req Req
-	if err := ctx.Bind(&req); err != nil {
-		return
-	}
-
+func (h *UserHandler) LoginSMS(ctx *gin.Context, req UserLoginSMSReq) (ginx.Result, error) {
 	if req.Phone == "" || req.Code == "" {
-		ctx.JSON(http.StatusBadRequest, Result{
-			Code: CodeUserSide,
+		return ginx.Result{
+			Code: ginx.CodeUserSide,
 			Msg:  "must have the phone number and the code",
-		})
-		return
+		}, fmt.Errorf("invalid phone or code: %s/%s", req.Phone, req.Code)
 	}
 
 	ok, err := h.codeSvc.Verify(ctx, bizLogin, req.Phone, req.Code)
 	if err != nil {
-		slog.Error("verify", "msg", err)
-		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
-		return
+		return ginx.InternalServerErrorResult, fmt.Errorf("verify code internal error: %w", err)
 	}
 	if !ok {
-		ctx.JSON(http.StatusBadRequest, Result{
-			Code: CodeUserSide,
+		return ginx.Result{
+			Code: ginx.CodeUserSide,
 			Msg:  "Wrong code, please retry",
-		})
-		return
+		}, errors.New("wrong code")
 	}
 
 	u, err := h.svc.FindOrCreate(ctx, req.Phone)
 	if err != nil {
-		slog.Error("find or create", "msg", err)
-		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
-		return
+		return ginx.InternalServerErrorResult, fmt.Errorf(
+			"find or create user internal error: %w",
+			err,
+		)
 	}
 	err = h.SetLoginToken(ctx, u.ID)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
-		return
+		return ginx.InternalServerErrorResult, fmt.Errorf(
+			"set login token internal error: %w",
+			err,
+		)
 	}
-	ctx.JSON(http.StatusSeeOther, Result{
-		Code: CodeOK,
+	return ginx.Result{
+		Code: ginx.CodeOK,
 		Msg:  "successful login",
-	})
+	}, nil
 }
 
-func (h *UserHandler) SignUp(ctx *gin.Context) {
-	type SignUpReq struct {
-		Email           string `json:"email"`
-		Password        string `json:"password"`
-		ConfirmPassword string `json:"confirm_password"`
-	}
-
-	// Get request
-	var req SignUpReq
-
-	if err := ctx.Bind(&req); err != nil {
-		return
-	}
-
+func (h *UserHandler) SignUp(ctx *gin.Context, req UserSignUpReq) (ginx.Result, error) {
 	// Check request
 	isEmail, err := h.emailRegex.MatchString(req.Email)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
-		return
+		return ginx.InternalServerErrorResult, err
 	}
 	if !isEmail {
-		ctx.JSON(http.StatusBadRequest, Result{
-			Code: CodeUserSide,
+		return ginx.Result{
+			Code: ginx.CodeUserSide,
 			Msg:  "not a valid email",
-		})
-		return
+		}, fmt.Errorf("invalid email")
 	}
 
 	validPassword, err := h.passwordRegex.MatchString(req.Password)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
-		return
+		return ginx.InternalServerErrorResult, err
 	}
 	if !validPassword {
-		ctx.JSON(http.StatusBadRequest, Result{
-			Code: CodeUserSide,
+		return ginx.Result{
+			Code: ginx.CodeUserSide,
 			Msg:  "not a valid password",
-		})
-		return
+		}, fmt.Errorf("invalid password")
 	}
 
 	if req.Password != req.ConfirmPassword {
-		ctx.JSON(http.StatusBadRequest, Result{
-			Code: CodeUserSide,
+		return ginx.Result{
+			Code: ginx.CodeUserSide,
 			Msg:  "2 passwords don't match",
-		})
-		return
+		}, fmt.Errorf("2 passwords don't match")
 	}
+
 	u, err := h.svc.SignUp(ctx, domain.User{
 		Email:    req.Email,
 		Password: req.Password,
@@ -217,20 +195,19 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 	case nil:
 		err = h.SetLoginToken(ctx, u.ID)
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
-			return
+			return ginx.InternalServerErrorResult, err
 		}
-		ctx.JSON(http.StatusOK, Result{
-			Code: CodeOK,
+		return ginx.Result{
+			Code: ginx.CodeOK,
 			Msg:  "signup success",
-		})
+		}, nil
 	case service.ErrDuplicatedUser:
-		ctx.JSON(http.StatusBadRequest, Result{
-			Code: CodeUserSide,
+		return ginx.Result{
+			Code: ginx.CodeUserSide,
 			Msg:  "user exists",
-		})
+		}, fmt.Errorf("user exists")
 	default:
-		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
+		return ginx.InternalServerErrorResult, err
 	}
 }
 
@@ -277,18 +254,7 @@ func (h *UserHandler) SignUp(ctx *gin.Context) {
 // 	}
 // }
 
-func (h *UserHandler) LoginJWT(ctx *gin.Context) {
-	type Req struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
-
-	var req Req
-
-	if err := ctx.Bind(&req); err != nil {
-		return
-	}
-
+func (h *UserHandler) LoginJWT(ctx *gin.Context, req UserLoginReq) (ginx.Result, error) {
 	// NOTE: No need to check, because if it's not valid, we won't get
 	// anything from the DB anyway.
 
@@ -297,23 +263,23 @@ func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 	case nil:
 		err = h.SetLoginToken(ctx, u.ID)
 		if err != nil {
-			return // error message is set
+			return ginx.InternalServerErrorResult, err
 		}
-		ctx.JSON(http.StatusOK, Result{
-			Code: CodeOK,
+		return ginx.Result{
+			Code: ginx.CodeOK,
 			Msg:  "successful login",
-		})
+		}, nil
 	case service.ErrInvalidUserOrPassword:
-		ctx.JSON(http.StatusBadRequest, Result{
-			Code: CodeUserSide,
+		return ginx.Result{
+			Code: ginx.CodeUserSide,
 			Msg:  "wrong login or password",
-		})
+		}, errors.New("wrong login or password")
 	default:
-		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
+		return ginx.InternalServerErrorResult, err
 	}
 }
 
-func (h *UserHandler) Profile(ctx *gin.Context) {
+func (h *UserHandler) Profile(ctx *gin.Context) (ginx.Result, error) {
 	var userID int64
 	var err error
 	id := ctx.Param("id")
@@ -325,15 +291,13 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 		// 	ctx.String(http.StatusInternalServerError, "system error")
 		// 	return
 		// }
-		userID = h.getUserIDFromJWT(ctx)
+		userID = ctx.MustGet("user").(ijwt.UserClaims).UID
 	} else {
 		if userID, err = strconv.ParseInt(id, 10, 64); err != nil {
-			log.Println(err)
-			ctx.JSON(http.StatusBadRequest, Result{
-				Code: CodeUserSide,
+			return ginx.Result{
+				Code: ginx.CodeUserSide,
 				Msg:  fmt.Sprintf("unknown userID: %s", id),
-			})
-			return
+			}, fmt.Errorf("unknown userID %s: %w", id, err)
 		}
 	}
 
@@ -342,15 +306,17 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 	case nil:
 		break
 	case service.ErrInvalidUserID:
-		ctx.JSON(http.StatusNotFound, Result{
-			Code: CodeUserSide,
-			Msg:  "unknown userID",
-		})
-		return
+		return ginx.Result{
+			Code: ginx.CodeUserSide,
+			Msg:  "invalid userID",
+		}, fmt.Errorf("unknown userID %d: %w", userID, err)
 	default:
 		log.Printf("failed to get user profile: %s\n", err.Error())
-		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
-		return
+		return ginx.InternalServerErrorResult, fmt.Errorf(
+			"failed to get user %d profile: %w",
+			userID,
+			err,
+		)
 	}
 
 	resp := struct {
@@ -367,39 +333,22 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 		Profile:  u.Profile,
 	}
 
-	ctx.JSON(http.StatusOK, resp)
+	return ginx.Result{
+		Code: ginx.CodeOK,
+		Data: resp,
+	}, nil
 }
 
-func (h *UserHandler) Edit(ctx *gin.Context) {
-	type Req struct {
-		Name     string `json:"name"`
-		Birthday string `json:"birthday"`
-		Profile  string `json:"profile"`
-	}
-
-	var req Req
-
-	if err := ctx.Bind(&req); err != nil {
-		log.Printf("Binding error: %s\n", err)
-		return
-	}
-
-	// Get the userID from session
-	// userID, err := h.getUserIDFromSession(ctx)
-	// if err != nil {
-	// 	log.Println(err)
-	// 	ctx.String(http.StatusInternalServerError, "system error")
-	// 	return
-	// }
-	userID := h.getUserIDFromJWT(ctx)
+func (h *UserHandler) Edit(
+	ctx *gin.Context,
+	req UserEditReq,
+	uc ijwt.UserClaims,
+) (ginx.Result, error) {
+	userID := uc.UID
 
 	birthday, err := time.Parse("2006-01-02", req.Birthday)
 	if err != nil {
-		// NOTE: check should be done on the frontend. If we bypass the
-		// frontend check, it must not be a normal user, and we don't care
-		// about the error message.
-		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
-		return
+		return ginx.InternalServerErrorResult, err
 	}
 	err = h.svc.EditProfile(ctx, &domain.User{
 		ID:       userID,
@@ -409,22 +358,21 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 	})
 	switch err {
 	case nil:
-		ctx.JSON(http.StatusOK, Result{
-			Code: CodeOK,
+		return ginx.Result{
+			Code: ginx.CodeOK,
 			Msg:  "user profile update success",
-		})
+		}, nil
 	case service.ErrInvalidUserID:
-		ctx.JSON(http.StatusNotFound, Result{
-			Code: CodeUserSide,
+		return ginx.Result{
+			Code: ginx.CodeUserSide,
 			Msg:  "unknown userID",
-		})
+		}, fmt.Errorf("invalid user id %d: %w", userID, err)
 	default:
-		log.Printf("failed to update user profile: %s\n", err.Error())
-		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
+		return ginx.InternalServerErrorResult, fmt.Errorf("failed to edit user profile: %w", err)
 	}
 }
 
-func (h *UserHandler) RefreshToken(ctx *gin.Context) {
+func (h *UserHandler) RefreshToken(ctx *gin.Context) (ginx.Result, error) {
 	tokenStr := h.ExtractToken(ctx)
 
 	var rc ijwt.RefreshClaims
@@ -433,41 +381,37 @@ func (h *UserHandler) RefreshToken(ctx *gin.Context) {
 		return ijwt.RefreshKey, nil
 	})
 	if err != nil {
-		ctx.AbortWithStatus(http.StatusUnauthorized)
-		return
+		return ginx.UnauthorizedResult, err
 	}
 	if token == nil || !token.Valid {
-		ctx.AbortWithStatus(http.StatusUnauthorized)
-		return
+		return ginx.UnauthorizedResult, err
 	}
 
 	err = h.CheckSession(ctx, rc.SSID)
 	if err != nil {
-		ctx.AbortWithStatus(http.StatusUnauthorized)
-		return
+		return ginx.UnauthorizedResult, err
 	}
 
 	err = h.SetLoginToken(ctx, rc.UID)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
-		return
+		return ginx.InternalServerErrorResult, err
 	}
-	ctx.JSON(http.StatusOK, Result{
-		Code: CodeOK,
+
+	return ginx.Result{
+		Code: ginx.CodeOK,
 		Msg:  "OK",
-	})
+	}, nil
 }
 
-func (h *UserHandler) LogoutJWT(ctx *gin.Context) {
+func (h *UserHandler) LogoutJWT(ctx *gin.Context) (ginx.Result, error) {
 	err := h.ClearToken(ctx)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, InternalServerErrorResult)
-		return
+		return ginx.InternalServerErrorResult, fmt.Errorf("failed to clear token: %w", err)
 	}
-	ctx.JSON(http.StatusOK, Result{
-		Code: CodeOK,
+	return ginx.Result{
+		Code: ginx.CodeOK,
 		Msg:  "Logout success",
-	})
+	}, nil
 }
 
 // func (h *UserHandler) getUserIDFromSession(ctx *gin.Context) (int64, error) {
@@ -487,34 +431,10 @@ func (h *UserHandler) LogoutJWT(ctx *gin.Context) {
 // 	sess.Save()
 // }
 
-func (h *UserHandler) getUserIDFromJWT(ctx *gin.Context) int64 {
-	uc := ctx.MustGet("user").(ijwt.UserClaims)
-
-	return uc.UID
-}
-
 // }}}
 // {{{ Private functions
 
 // }}}
 // {{{ Package functions
-
-func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
-	user := server.Group("/user/")
-	user.POST("/signup", h.SignUp)
-	// user.POST("/login", h.Login)
-	user.POST("/login", h.LoginJWT)
-	user.GET("/profile", h.Profile)
-	user.GET("/profile/:id", h.Profile)
-	user.POST("/edit", h.Edit)
-
-	user.GET("/refresh_token", h.RefreshToken)
-
-	// SMS code login
-	user.POST("/login_sms/code/send", h.SendSMSLoginCode)
-	user.POST("/login_sms", h.LoginSMS)
-
-	user.POST("/logout", h.LogoutJWT)
-}
 
 // }}}
