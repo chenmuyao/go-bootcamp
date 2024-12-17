@@ -38,6 +38,10 @@ func InitWebServer() *gin.Engine {
 	userHandler := web.NewUserHandler(logger, userService, codeService, handler)
 	giteaService := ioc.InitGiteaService(logger)
 	oAuth2GiteaHandler := web.NewOAuth2GiteaHandler(logger, giteaService, userService, handler)
-	engine := ioc.InitWebServer(v, userHandler, oAuth2GiteaHandler)
+	articleDAO := dao.NewArticleDAO(db)
+	articleRepository := repository.NewArticleRepository(articleDAO)
+	articleService := service.NewArticleService(articleRepository)
+	articleHandler := web.NewArticleHandler(logger, articleService)
+	engine := ioc.InitWebServer(v, userHandler, oAuth2GiteaHandler, articleHandler)
 	return engine
 }

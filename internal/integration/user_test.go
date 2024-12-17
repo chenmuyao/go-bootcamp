@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chenmuyao/go-bootcamp/config"
 	"github.com/chenmuyao/go-bootcamp/internal/integration/startup"
 	"github.com/chenmuyao/go-bootcamp/pkg/ginx"
 	"github.com/gin-gonic/gin"
@@ -18,7 +17,6 @@ import (
 )
 
 func TestSendSMSCode(t *testing.T) {
-	config.InitConfig("../../config/dev.yaml")
 	rdb := startup.InitRedis()
 	server := startup.InitWebServer()
 

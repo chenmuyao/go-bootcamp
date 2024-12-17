@@ -15,6 +15,7 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/web/jwt"
 	"github.com/chenmuyao/go-bootcamp/ioc"
 	"github.com/gin-gonic/gin"
+	"github.com/google/wire"
 )
 
 // Injectors from wire.go:
@@ -24,7 +25,7 @@ func InitWebServer() *gin.Engine {
 	handler := jwt.NewRedisJWTHandler(cmdable)
 	logger := InitLogger()
 	v := ioc.InitGinMiddlewares(cmdable, handler, logger)
-	db := ioc.InitDB(logger)
+	db := InitDB()
 	userDAO := dao.NewUserDAO(db)
 	userCache := rediscache.NewUserRedisCache(cmdable)
 	userRepository := repository.NewUserRepository(userDAO, userCache)
@@ -37,6 +38,28 @@ func InitWebServer() *gin.Engine {
 	codeService := service.NewCodeService(codeRepository, smsService)
 	userHandler := web.NewUserHandler(logger, userService, codeService, handler)
 	oAuth2GiteaHandler := NewDummyGiteaHandler(userService, handler, logger)
-	engine := ioc.InitWebServer(v, userHandler, oAuth2GiteaHandler)
+	articleDAO := dao.NewArticleDAO(db)
+	articleRepository := repository.NewArticleRepository(articleDAO)
+	articleService := service.NewArticleService(articleRepository)
+	articleHandler := web.NewArticleHandler(logger, articleService)
+	engine := ioc.InitWebServer(v, userHandler, oAuth2GiteaHandler, articleHandler)
 	return engine
 }
+
+func InitArticleHandler() *web.ArticleHandler {
+	logger := InitLogger()
+	db := InitDB()
+	articleDAO := dao.NewArticleDAO(db)
+	articleRepository := repository.NewArticleRepository(articleDAO)
+	articleService := service.NewArticleService(articleRepository)
+	articleHandler := web.NewArticleHandler(logger, articleService)
+	return articleHandler
+}
+
+// wire.go:
+
+var thirdPartySet = wire.NewSet(
+	InitRedis,
+	InitDB,
+	InitLogger,
+)

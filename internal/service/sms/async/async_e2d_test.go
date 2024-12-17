@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chenmuyao/go-bootcamp/config"
 	"github.com/chenmuyao/go-bootcamp/internal/repository"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
 	"github.com/chenmuyao/go-bootcamp/internal/service/sms"
@@ -20,9 +19,10 @@ import (
 )
 
 func TestAsyncSMSCode(t *testing.T) {
-	config.InitConfig("../../../../config/dev.yaml")
 	db, err := gorm.Open(
-		mysqlDriver.Open(config.Cfg.DB.DSN),
+		mysqlDriver.Open(
+			"root:root@tcp(127.0.0.1:13316)/wetravel?charset=utf8mb4&parseTime=True&loc=Local",
+		),
 		&gorm.Config{},
 	)
 	if err != nil {

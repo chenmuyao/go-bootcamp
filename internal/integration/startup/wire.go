@@ -15,36 +15,57 @@ import (
 	"github.com/google/wire"
 )
 
+var thirdPartySet = wire.NewSet(
+	InitRedis,
+	InitDB,
+	InitLogger,
+)
+
 func InitWebServer() *gin.Engine {
 	wire.Build(
 		// third-party dependencies
-		InitRedis,
-		ioc.InitDB,
-		InitLogger,
+		thirdPartySet,
 
 		// DAO
-		dao.NewUserDAO, dao.NewAsyncSMSDAO,
+		dao.NewUserDAO, dao.NewAsyncSMSDAO, dao.NewArticleDAO,
 
 		// Cache
-		rediscache.NewCodeRedisCache, rediscache.NewUserRedisCache,
-		// ioc.InitCodeLocalCache, ioc.InitUserLocalCache,
+		rediscache.NewCodeRedisCache,
+		rediscache.NewUserRedisCache,
+		// ioc.InitCodeLocalCache,
+		// ioc.InitUserLocalCache,
 
 		// Repo
-		repository.NewUserRepository, repository.NewCodeRepository,
+		repository.NewUserRepository,
+		repository.NewCodeRepository,
 		repository.NewAsyncSMSRepository,
+		repository.NewArticleRepository,
 
 		// Services
 		ioc.InitSMSService,
 		service.NewCodeService,
 		service.NewUserService,
+		service.NewArticleService,
 
 		// handler
 		web.NewUserHandler,
 		NewDummyGiteaHandler,
 		ijwt.NewRedisJWTHandler,
+		web.NewArticleHandler,
 
 		ioc.InitGinMiddlewares,
 		ioc.InitWebServer,
 	)
 	return &gin.Engine{}
+}
+
+func InitArticleHandler() *web.ArticleHandler {
+	wire.Build(
+		thirdPartySet,
+		dao.NewArticleDAO,
+		repository.NewArticleRepository,
+		service.NewArticleService,
+		web.NewArticleHandler,
+	)
+	return &web.ArticleHandler{}
 }

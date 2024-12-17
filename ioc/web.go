@@ -19,11 +19,13 @@ import (
 func InitWebServer(middlewares []gin.HandlerFunc,
 	userHandlers *web.UserHandler,
 	giteaHandlers *web.OAuth2GiteaHandler,
+	articleHandlers *web.ArticleHandler,
 ) *gin.Engine {
 	server := gin.Default()
 	server.Use(middlewares...)
 	userHandlers.RegisterRoutes(server)
 	giteaHandlers.RegisterRoutes(server)
+	articleHandlers.RegisterRoutes(server)
 	return server
 }
 

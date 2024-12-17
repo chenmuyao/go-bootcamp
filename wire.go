@@ -23,26 +23,34 @@ func InitWebServer() *gin.Engine {
 		ioc.InitLogger,
 
 		// DAO
-		dao.NewUserDAO, dao.NewAsyncSMSDAO,
+		dao.NewUserDAO,
+		dao.NewAsyncSMSDAO,
+		dao.NewArticleDAO,
 
 		// Cache
-		rediscache.NewCodeRedisCache, rediscache.NewUserRedisCache,
-		// ioc.InitCodeLocalCache, ioc.InitUserLocalCache,
+		rediscache.NewCodeRedisCache,
+		rediscache.NewUserRedisCache,
+		// ioc.InitCodeLocalCache,
+		// ioc.InitUserLocalCache,
 
 		// Repo
-		repository.NewUserRepository, repository.NewCodeRepository,
+		repository.NewUserRepository,
+		repository.NewCodeRepository,
 		repository.NewAsyncSMSRepository,
+		repository.NewArticleRepository,
 
 		// Services
 		ioc.InitSMSService,
 		service.NewCodeService,
 		service.NewUserService,
 		ioc.InitGiteaService,
+		service.NewArticleService,
 
 		// handler
 		web.NewUserHandler,
 		web.NewOAuth2GiteaHandler,
 		ijwt.NewRedisJWTHandler,
+		web.NewArticleHandler,
 
 		ioc.InitGinMiddlewares,
 		ioc.InitWebServer,

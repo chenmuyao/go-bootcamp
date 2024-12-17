@@ -7,6 +7,8 @@ Geekbang Go Basic Bootcamp
 
 - [X] Rate limiter middleware
 - [ ] Unit tests
+- [ ] Use zap logger everywhere
+- [ ] Update k8s deploys with conf and etcd
 - [ ] Sync -> Async
   - [ ] Average response time
     - [ ] absolute value
