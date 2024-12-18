@@ -7,8 +7,11 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/repository"
 )
 
+var ErrArticleNotFound = repository.ErrArticleNotFound
+
 type ArticleService interface {
 	Save(ctx context.Context, article domain.Article) (int64, error)
+	Publish(ctx context.Context, article domain.Article) (int64, error)
 }
 
 type articleService struct {
@@ -22,5 +25,17 @@ func NewArticleService(repo repository.ArticleRepository) ArticleService {
 }
 
 func (a *articleService) Save(ctx context.Context, article domain.Article) (int64, error) {
-	return a.repo.Create(ctx, article)
+	if article.ID > 0 {
+		return article.ID, a.repo.Update(ctx, article)
+	} else {
+		return a.repo.Create(ctx, article)
+	}
+}
+
+func (a *articleService) Publish(ctx context.Context, article domain.Article) (int64, error) {
+	if article.ID > 0 {
+		return article.ID, a.repo.Update(ctx, article)
+	} else {
+		return a.repo.Create(ctx, article)
+	}
 }

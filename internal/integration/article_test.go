@@ -3,6 +3,7 @@ package integration
 import (
 	"bytes"
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -44,7 +45,8 @@ func (s *ArticleHandlerSuite) SetupSuite() {
 }
 
 func (s *ArticleHandlerSuite) TearDownTest() {
-	s.db.Exec("truncate table `articles`")
+	log.Println("TRUNCATE")
+	s.db.Exec("TRUNCATE articles")
 }
 
 func (s *ArticleHandlerSuite) TestEdit() {
@@ -72,17 +74,98 @@ func (s *ArticleHandlerSuite) TestEdit() {
 				assert.True(t, article.Ctime > 0)
 				assert.True(t, article.Utime > 0)
 				assert.True(t, article.ID > 0)
-				assert.Equal(t, "my title", article.Title)
+				assert.Equal(t, "my super title", article.Title)
 				assert.Equal(t, "my content", article.Content)
 			},
 			article: web.ArticleEditReq{
-				Title:   "my title",
+				Title:   "my super title",
 				Content: "my content",
 			},
 			wantCode: http.StatusOK,
 			wantRes: Result[int64]{
 				Code: ginx.CodeOK,
 				Data: 1,
+			},
+		},
+		{
+			name: "Edit a post",
+			before: func(t *testing.T) {
+				err := s.db.Create(dao.Article{
+					ID:       2,
+					Title:    "my title",
+					Content:  "my content",
+					AuthorID: 123,
+					Status:   1,
+					Ctime:    456,
+					Utime:    789,
+				}).Error
+				assert.NoError(t, err)
+			},
+			after: func(t *testing.T) {
+				// check that the article is saved into the DB
+				var article dao.Article
+				err := s.db.Where("id = ?", 2).First(&article).Error
+				assert.NoError(t, err)
+				assert.True(t, article.Utime > 789)
+				article.Utime = 0
+				assert.Equal(t, dao.Article{
+					ID:       2,
+					Title:    "new title",
+					Content:  "new content",
+					AuthorID: 123,
+					Status:   1,
+					Ctime:    456,
+				}, article)
+			},
+			article: web.ArticleEditReq{
+				ID:      2,
+				Title:   "new title",
+				Content: "new content",
+			},
+			wantCode: http.StatusOK,
+			wantRes: Result[int64]{
+				Code: ginx.CodeOK,
+				Data: 2,
+			},
+		},
+		{
+			name: "Edit a post of someone else",
+			before: func(t *testing.T) {
+				err := s.db.Create(dao.Article{
+					ID:       3,
+					Title:    "my title",
+					Content:  "my content",
+					AuthorID: 234,
+					Status:   1,
+					Ctime:    456,
+					Utime:    789,
+				}).Error
+				assert.NoError(t, err)
+			},
+			after: func(t *testing.T) {
+				// check that the article is saved into the DB
+				var article dao.Article
+				err := s.db.Where("id = ?", 3).First(&article).Error
+				assert.NoError(t, err)
+				assert.Equal(t, dao.Article{
+					ID:       3,
+					Title:    "my title",
+					Content:  "my content",
+					AuthorID: 234,
+					Status:   1,
+					Ctime:    456,
+					Utime:    789,
+				}, article)
+			},
+			article: web.ArticleEditReq{
+				ID:      3,
+				Title:   "new title",
+				Content: "new content",
+			},
+			wantCode: http.StatusBadRequest,
+			wantRes: Result[int64]{
+				Code: ginx.CodeUserSide,
+				Msg:  "article not found",
 			},
 		},
 	}

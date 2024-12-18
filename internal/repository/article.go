@@ -7,8 +7,11 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
 )
 
+var ErrArticleNotFound = dao.ErrArticleNotFound
+
 type ArticleRepository interface {
 	Create(ctx context.Context, article domain.Article) (int64, error)
+	Update(ctx context.Context, article domain.Article) error
 }
 
 type CachedArticleRepository struct {
@@ -19,6 +22,10 @@ func NewArticleRepository(dao dao.ArticleDAO) ArticleRepository {
 	return &CachedArticleRepository{
 		dao: dao,
 	}
+}
+
+func (c *CachedArticleRepository) Update(ctx context.Context, article domain.Article) error {
+	return c.dao.UpdateByID(ctx, c.toEntity(article))
 }
 
 func (c *CachedArticleRepository) Create(
@@ -37,6 +44,7 @@ func (c *CachedArticleRepository) Create(
 
 func (c *CachedArticleRepository) toEntity(article domain.Article) dao.Article {
 	return dao.Article{
+		ID:       article.ID,
 		Title:    article.Title,
 		Content:  article.Content,
 		AuthorID: article.Author.ID,
