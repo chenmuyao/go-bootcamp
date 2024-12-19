@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
@@ -57,6 +58,42 @@ func (c *CachedArticleRepository) Create(
 
 func (c *CachedArticleRepository) Sync(ctx context.Context, article domain.Article) (int64, error) {
 	return c.dao.Sync(ctx, c.toEntity(article))
+}
+
+func (c *CachedArticleRepository) SyncV3(
+	ctx context.Context,
+	article domain.Article,
+) (int64, error) {
+	ret, err := c.dao.Transaction(ctx, func(ctx context.Context, tx any) (any, error) {
+		daoTx := tx.(dao.ArticleDAO)
+		var err error
+		id := article.ID
+
+		articleEntity := c.toEntity(article)
+		if id > 0 {
+			err = daoTx.UpdateByID(ctx, articleEntity)
+		} else {
+			id, err = daoTx.Insert(ctx, articleEntity)
+			if err != nil {
+				return 0, err
+			}
+			articleEntity.ID = id
+		}
+		now := time.Now().UnixMilli()
+		publishedArticle := dao.PublishedArticle(articleEntity)
+		publishedArticle.Utime = now
+		err = daoTx.Upsert(ctx, publishedArticle)
+		if err != nil {
+			return 0, err
+		}
+		return id, err
+	})
+	if err != nil {
+		// TODO: log and retry
+		return 0, err
+	}
+	id := ret.(int64)
+	return id, nil
 }
 
 // NOTE: manual transaction --> not recommended

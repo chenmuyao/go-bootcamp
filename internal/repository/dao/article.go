@@ -15,6 +15,8 @@ type ArticleDAO interface {
 	Insert(ctx context.Context, article Article) (int64, error)
 	UpdateByID(ctx context.Context, article Article) error
 	Sync(ctx context.Context, article Article) (int64, error)
+	Transaction(ctx context.Context, fn func(ctx context.Context, tx any) (any, error)) (any, error)
+	Upsert(ctx context.Context, article PublishedArticle) error
 }
 
 type GORMArticleDAO struct {
@@ -157,4 +159,38 @@ func (a *GORMArticleDAO) Sync(ctx context.Context, article Article) (int64, erro
 		return nil
 	})
 	return id, err
+}
+
+func (a *GORMArticleDAO) Transaction(
+	ctx context.Context,
+	fn func(ctx context.Context, tx any) (any, error),
+) (any, error) {
+	var ret any
+	var err error
+	err = a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		txDAO := NewArticleDAO(tx)
+		ret, err = fn(ctx, txDAO)
+		return err
+	})
+	return ret, err
+}
+
+func (a *GORMArticleDAO) Upsert(ctx context.Context, article PublishedArticle) error {
+	now := time.Now().UnixMilli()
+	res := a.db.Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "id"}},
+		DoUpdates: clause.Assignments(map[string]interface{}{
+			"title":   article.Title,
+			"content": article.Content,
+			"utime":   now,
+		}),
+	}).Create(&article)
+	if res.Error != nil {
+		// TODO: log and retry
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrArticleNotFound
+	}
+	return nil
 }
