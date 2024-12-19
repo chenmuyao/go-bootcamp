@@ -56,7 +56,7 @@ func (c *CachedArticleRepository) Create(
 }
 
 func (c *CachedArticleRepository) Sync(ctx context.Context, article domain.Article) (int64, error) {
-	panic("unimplemented")
+	return c.dao.Sync(ctx, c.toEntity(article))
 }
 
 // NOTE: manual transaction --> not recommended

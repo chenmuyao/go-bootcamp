@@ -56,6 +56,21 @@ func (mr *MockArticleDAOMockRecorder) Insert(ctx, article any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockArticleDAO)(nil).Insert), ctx, article)
 }
 
+// Sync mocks base method.
+func (m *MockArticleDAO) Sync(ctx context.Context, article dao.Article) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Sync", ctx, article)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Sync indicates an expected call of Sync.
+func (mr *MockArticleDAOMockRecorder) Sync(ctx, article any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Sync", reflect.TypeOf((*MockArticleDAO)(nil).Sync), ctx, article)
+}
+
 // UpdateByID mocks base method.
 func (m *MockArticleDAO) UpdateByID(ctx context.Context, article dao.Article) error {
 	m.ctrl.T.Helper()

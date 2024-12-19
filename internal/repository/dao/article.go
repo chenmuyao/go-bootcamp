@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var ErrArticleNotFound = errors.New("article not found")
@@ -13,6 +14,7 @@ var ErrArticleNotFound = errors.New("article not found")
 type ArticleDAO interface {
 	Insert(ctx context.Context, article Article) (int64, error)
 	UpdateByID(ctx context.Context, article Article) error
+	Sync(ctx context.Context, article Article) (int64, error)
 }
 
 type GORMArticleDAO struct {
@@ -64,4 +66,89 @@ func (a *GORMArticleDAO) UpdateByID(ctx context.Context, article Article) error 
 		return ErrArticleNotFound
 	}
 	return nil
+}
+
+func (a *GORMArticleDAO) SyncV1(ctx context.Context, article Article) (int64, error) {
+	tx := a.db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return 0, tx.Error
+	}
+	// avoid panicking
+	defer tx.Rollback()
+
+	txDAO := NewArticleDAO(tx)
+	var err error
+	id := article.ID
+
+	if id > 0 {
+		err = txDAO.UpdateByID(ctx, article)
+	} else {
+		id, err = txDAO.Insert(ctx, article)
+		if err != nil {
+			return 0, err
+		}
+		article.ID = id
+	}
+	now := time.Now().UnixMilli()
+	publishedArticle := PublishedArticle(article)
+	publishedArticle.Utime = now
+	err = tx.Clauses(clause.OnConflict{
+		// Not used for mysql but compatible with other dialects
+		// mysql: INSERT xxx ON DUPLICATE KEY SET title = ?
+		// sqlite/postgres: INSERT XXX ON CONFLICT DO NOTHING
+		// sqlite/postgres: INSERT XXX ON CONFLICT DO UPDATES
+		// sqlite/postgres: INSERT XXX ON CONFLICT DO UPDATES WHERE
+		Columns: []clause.Column{{Name: "id"}},
+		DoUpdates: clause.Assignments(map[string]interface{}{
+			"title":   publishedArticle.Title,
+			"content": publishedArticle.Content,
+			"utime":   now,
+		}),
+	}).Create(&publishedArticle).Error
+	if err != nil {
+		// TODO: log and retry
+		return 0, err
+	}
+	tx.Commit()
+	return id, nil
+}
+
+// Use closure (recommended)
+func (a *GORMArticleDAO) Sync(ctx context.Context, article Article) (int64, error) {
+	id := article.ID
+	err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		txDAO := NewArticleDAO(tx)
+		var err error
+		if id > 0 {
+			err = txDAO.UpdateByID(ctx, article)
+		} else {
+			id, err = txDAO.Insert(ctx, article)
+			if err != nil {
+				return err
+			}
+			article.ID = id
+		}
+		now := time.Now().UnixMilli()
+		publishedArticle := PublishedArticle(article)
+		publishedArticle.Utime = now
+		err = tx.Clauses(clause.OnConflict{
+			// Not used for mysql but compatible with other dialects
+			// mysql: INSERT xxx ON DUPLICATE KEY SET title = ?
+			// sqlite/postgres: INSERT XXX ON CONFLICT DO NOTHING
+			// sqlite/postgres: INSERT XXX ON CONFLICT DO UPDATES
+			// sqlite/postgres: INSERT XXX ON CONFLICT DO UPDATES WHERE
+			Columns: []clause.Column{{Name: "id"}},
+			DoUpdates: clause.Assignments(map[string]interface{}{
+				"title":   publishedArticle.Title,
+				"content": publishedArticle.Content,
+				"utime":   now,
+			}),
+		}).Create(&publishedArticle).Error
+		if err != nil {
+			// TODO: log and retry
+			return err
+		}
+		return nil
+	})
+	return id, err
 }
