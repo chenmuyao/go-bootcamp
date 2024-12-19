@@ -92,7 +92,7 @@ func (a *GORMArticleDAO) SyncV1(ctx context.Context, article Article) (int64, er
 	now := time.Now().UnixMilli()
 	publishedArticle := PublishedArticle(article)
 	publishedArticle.Utime = now
-	err = tx.Clauses(clause.OnConflict{
+	res := tx.Clauses(clause.OnConflict{
 		// Not used for mysql but compatible with other dialects
 		// mysql: INSERT xxx ON DUPLICATE KEY SET title = ?
 		// sqlite/postgres: INSERT XXX ON CONFLICT DO NOTHING
@@ -104,10 +104,13 @@ func (a *GORMArticleDAO) SyncV1(ctx context.Context, article Article) (int64, er
 			"content": publishedArticle.Content,
 			"utime":   now,
 		}),
-	}).Create(&publishedArticle).Error
-	if err != nil {
+	}).Create(&publishedArticle)
+	if res.Error != nil {
 		// TODO: log and retry
-		return 0, err
+		return 0, res.Error
+	}
+	if res.RowsAffected == 0 {
+		return 0, ErrArticleNotFound
 	}
 	tx.Commit()
 	return id, nil
@@ -131,7 +134,7 @@ func (a *GORMArticleDAO) Sync(ctx context.Context, article Article) (int64, erro
 		now := time.Now().UnixMilli()
 		publishedArticle := PublishedArticle(article)
 		publishedArticle.Utime = now
-		err = tx.Clauses(clause.OnConflict{
+		res := tx.Clauses(clause.OnConflict{
 			// Not used for mysql but compatible with other dialects
 			// mysql: INSERT xxx ON DUPLICATE KEY SET title = ?
 			// sqlite/postgres: INSERT XXX ON CONFLICT DO NOTHING
@@ -143,10 +146,13 @@ func (a *GORMArticleDAO) Sync(ctx context.Context, article Article) (int64, erro
 				"content": publishedArticle.Content,
 				"utime":   now,
 			}),
-		}).Create(&publishedArticle).Error
-		if err != nil {
+		}).Create(&publishedArticle)
+		if res.Error != nil {
 			// TODO: log and retry
-			return err
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return ErrArticleNotFound
 		}
 		return nil
 	})
