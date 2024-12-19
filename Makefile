@@ -30,6 +30,8 @@ mock:
 	@mockgen -source=./internal/repository/code.go -package=repomocks -destination=./internal/repository/mocks/code.mock.go
 	@mockgen -source=./internal/repository/sms.go -package=repomocks -destination=./internal/repository/mocks/sms.mock.go
 	@mockgen -source=./internal/repository/article.go -package=repomocks -destination=./internal/repository/mocks/article.mock.go
+	@mockgen -source=./internal/repository/article_author.go -package=repomocks -destination=./internal/repository/mocks/article_author.mock.go
+	@mockgen -source=./internal/repository/article_reader.go -package=repomocks -destination=./internal/repository/mocks/article_reader.mock.go
 	@mockgen -source=./internal/repository/dao/user.go -package=daomocks -destination=./internal/repository/dao/mocks/user.mock.go
 	@mockgen -source=./internal/repository/dao/sms.go -package=daomocks -destination=./internal/repository/dao/mocks/sms.mock.go
 	@mockgen -source=./internal/repository/dao/article.go -package=daomocks -destination=./internal/repository/dao/mocks/article.mock.go
