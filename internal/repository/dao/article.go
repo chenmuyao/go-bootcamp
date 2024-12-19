@@ -36,6 +36,9 @@ type Article struct {
 	Utime    int64
 }
 
+// same DB, different tables
+type PublishedArticle Article
+
 func (a *GORMArticleDAO) Insert(ctx context.Context, article Article) (int64, error) {
 	now := time.Now().UnixMilli()
 	article.Ctime = now

@@ -57,7 +57,7 @@ func (a *articleService) Save(ctx context.Context, article domain.Article) (int6
 }
 
 func (a *articleService) Publish(ctx context.Context, article domain.Article) (int64, error) {
-	panic("unimplemented")
+	return a.repo.Sync(ctx, article)
 }
 
 func (a *articleService) PublishV1(ctx context.Context, article domain.Article) (int64, error) {

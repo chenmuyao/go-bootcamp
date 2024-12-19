@@ -56,6 +56,21 @@ func (mr *MockArticleRepositoryMockRecorder) Create(ctx, article any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockArticleRepository)(nil).Create), ctx, article)
 }
 
+// Sync mocks base method.
+func (m *MockArticleRepository) Sync(ctx context.Context, article domain.Article) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Sync", ctx, article)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Sync indicates an expected call of Sync.
+func (mr *MockArticleRepositoryMockRecorder) Sync(ctx, article any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Sync", reflect.TypeOf((*MockArticleRepository)(nil).Sync), ctx, article)
+}
+
 // Update mocks base method.
 func (m *MockArticleRepository) Update(ctx context.Context, article domain.Article) error {
 	m.ctrl.T.Helper()
