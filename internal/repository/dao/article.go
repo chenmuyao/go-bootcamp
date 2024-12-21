@@ -17,6 +17,14 @@ type ArticleDAO interface {
 	Sync(ctx context.Context, article Article) (int64, error)
 	Transaction(ctx context.Context, fn func(ctx context.Context, tx any) (any, error)) (any, error)
 	Upsert(ctx context.Context, article PublishedArticle) error
+	// model is like &Article{} or &PublishedArticle{}
+	UpdateStatusByID(
+		ctx context.Context,
+		model any,
+		userID int64,
+		articleID int64,
+		status uint8,
+	) error
 }
 
 type GORMArticleDAO struct {
@@ -59,7 +67,32 @@ func (a *GORMArticleDAO) UpdateByID(ctx context.Context, article Article) error 
 		Updates(map[string]any{
 			"title":   article.Title,
 			"content": article.Content,
+			"status":  article.Status,
 			"utime":   now,
+		})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrArticleNotFound
+	}
+	return nil
+}
+
+func (a *GORMArticleDAO) UpdateStatusByID(
+	ctx context.Context,
+	model any,
+	userID int64,
+	articleID int64,
+	status uint8,
+) error {
+	now := time.Now().UnixMilli()
+	res := a.db.WithContext(ctx).
+		Model(&Article{}).
+		Where("id = ? AND author_id = ?", articleID, userID).
+		Updates(map[string]any{
+			"status": status,
+			"utime":  now,
 		})
 	if res.Error != nil {
 		return res.Error
@@ -91,28 +124,10 @@ func (a *GORMArticleDAO) SyncV1(ctx context.Context, article Article) (int64, er
 		}
 		article.ID = id
 	}
-	now := time.Now().UnixMilli()
 	publishedArticle := PublishedArticle(article)
-	publishedArticle.Utime = now
-	res := tx.Clauses(clause.OnConflict{
-		// Not used for mysql but compatible with other dialects
-		// mysql: INSERT xxx ON DUPLICATE KEY SET title = ?
-		// sqlite/postgres: INSERT XXX ON CONFLICT DO NOTHING
-		// sqlite/postgres: INSERT XXX ON CONFLICT DO UPDATES
-		// sqlite/postgres: INSERT XXX ON CONFLICT DO UPDATES WHERE
-		Columns: []clause.Column{{Name: "id"}},
-		DoUpdates: clause.Assignments(map[string]interface{}{
-			"title":   publishedArticle.Title,
-			"content": publishedArticle.Content,
-			"utime":   now,
-		}),
-	}).Create(&publishedArticle)
-	if res.Error != nil {
-		// TODO: log and retry
-		return 0, res.Error
-	}
-	if res.RowsAffected == 0 {
-		return 0, ErrArticleNotFound
+	err = txDAO.Upsert(ctx, publishedArticle)
+	if err != nil {
+		return 0, err
 	}
 	tx.Commit()
 	return id, nil
@@ -133,28 +148,10 @@ func (a *GORMArticleDAO) Sync(ctx context.Context, article Article) (int64, erro
 			}
 			article.ID = id
 		}
-		now := time.Now().UnixMilli()
 		publishedArticle := PublishedArticle(article)
-		publishedArticle.Utime = now
-		res := tx.Clauses(clause.OnConflict{
-			// Not used for mysql but compatible with other dialects
-			// mysql: INSERT xxx ON DUPLICATE KEY SET title = ?
-			// sqlite/postgres: INSERT XXX ON CONFLICT DO NOTHING
-			// sqlite/postgres: INSERT XXX ON CONFLICT DO UPDATES
-			// sqlite/postgres: INSERT XXX ON CONFLICT DO UPDATES WHERE
-			Columns: []clause.Column{{Name: "id"}},
-			DoUpdates: clause.Assignments(map[string]interface{}{
-				"title":   publishedArticle.Title,
-				"content": publishedArticle.Content,
-				"utime":   now,
-			}),
-		}).Create(&publishedArticle)
-		if res.Error != nil {
-			// TODO: log and retry
-			return res.Error
-		}
-		if res.RowsAffected == 0 {
-			return ErrArticleNotFound
+		err = txDAO.Upsert(ctx, publishedArticle)
+		if err != nil {
+			return err
 		}
 		return nil
 	})
@@ -182,6 +179,7 @@ func (a *GORMArticleDAO) Upsert(ctx context.Context, article PublishedArticle) e
 		DoUpdates: clause.Assignments(map[string]interface{}{
 			"title":   article.Title,
 			"content": article.Content,
+			"status":  article.Status,
 			"utime":   now,
 		}),
 	}).Create(&article)

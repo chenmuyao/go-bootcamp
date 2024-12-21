@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"github.com/chenmuyao/go-bootcamp/internal/integration/startup"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
 	"github.com/chenmuyao/go-bootcamp/internal/web"
@@ -71,11 +72,17 @@ func (s *ArticleHandlerSuite) TestEdit() {
 				var article dao.Article
 				err := s.db.Where("author_id=?", 123).First(&article).Error
 				assert.NoError(t, err)
-				assert.True(t, article.Ctime > 0)
-				assert.True(t, article.Utime > 0)
-				assert.True(t, article.ID > 0)
-				assert.Equal(t, "my super title", article.Title)
-				assert.Equal(t, "my content", article.Content)
+				assert.True(t, article.Ctime > 789)
+				article.Ctime = 0
+				assert.True(t, article.Utime > 789)
+				article.Utime = 0
+				assert.Equal(t, dao.Article{
+					ID:       1,
+					Title:    "my super title",
+					Content:  "my content",
+					AuthorID: 123,
+					Status:   domain.ArticleStatusUnpublished,
+				}, article)
 			},
 			article: web.ArticleEditReq{
 				Title:   "my super title",
@@ -95,7 +102,7 @@ func (s *ArticleHandlerSuite) TestEdit() {
 					Title:    "my title",
 					Content:  "my content",
 					AuthorID: 123,
-					Status:   1,
+					Status:   domain.ArticleStatusPublished,
 					Ctime:    456,
 					Utime:    789,
 				}).Error
@@ -113,7 +120,7 @@ func (s *ArticleHandlerSuite) TestEdit() {
 					Title:    "new title",
 					Content:  "new content",
 					AuthorID: 123,
-					Status:   1,
+					Status:   domain.ArticleStatusUnpublished,
 					Ctime:    456,
 				}, article)
 			},
@@ -136,7 +143,7 @@ func (s *ArticleHandlerSuite) TestEdit() {
 					Title:    "my title",
 					Content:  "my content",
 					AuthorID: 234,
-					Status:   1,
+					Status:   domain.ArticleStatusPublished,
 					Ctime:    456,
 					Utime:    789,
 				}).Error
@@ -152,7 +159,7 @@ func (s *ArticleHandlerSuite) TestEdit() {
 					Title:    "my title",
 					Content:  "my content",
 					AuthorID: 234,
-					Status:   1,
+					Status:   domain.ArticleStatusPublished,
 					Ctime:    456,
 					Utime:    789,
 				}, article)

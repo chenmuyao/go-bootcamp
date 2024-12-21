@@ -15,6 +15,12 @@ type ArticleRepository interface {
 	Create(ctx context.Context, article domain.Article) (int64, error)
 	Update(ctx context.Context, article domain.Article) error
 	Sync(ctx context.Context, article domain.Article) (int64, error)
+	SyncStatus(
+		ctx context.Context,
+		userID int64,
+		articleID int64,
+		status domain.ArticleStatus,
+	) error
 }
 
 type CachedArticleRepository struct {
@@ -159,6 +165,33 @@ func (c *CachedArticleRepository) SyncV1(
 	return id, nil
 }
 
+func (c *CachedArticleRepository) SyncStatus(
+	ctx context.Context,
+	userID int64,
+	articleID int64,
+	status domain.ArticleStatus,
+) error {
+	_, err := c.dao.Transaction(ctx, func(ctx context.Context, tx any) (any, error) {
+		daoTx := tx.(dao.ArticleDAO)
+		err := daoTx.UpdateStatusByID(ctx, &dao.Article{}, userID, articleID, uint8(status))
+		if err != nil {
+			return nil, err
+		}
+
+		err = daoTx.UpdateStatusByID(ctx, &dao.PublishedArticle{}, userID, articleID, uint8(status))
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, nil
+	})
+	if err != nil {
+		// TODO: log and retry
+		return err
+	}
+	return nil
+}
+
 // func (c *CachedArticleRepository) toDAO(article dao.Article) domain.Article {
 // 	return domain.Article{
 // 		Title:   article.Title,
@@ -172,5 +205,6 @@ func (c *CachedArticleRepository) toEntity(article domain.Article) dao.Article {
 		Title:    article.Title,
 		Content:  article.Content,
 		AuthorID: article.Author.ID,
+		Status:   uint8(article.Status),
 	}
 }

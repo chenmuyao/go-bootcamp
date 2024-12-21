@@ -19,6 +19,7 @@ var (
 type ArticleService interface {
 	Save(ctx context.Context, article domain.Article) (int64, error)
 	Publish(ctx context.Context, article domain.Article) (int64, error)
+	Withdraw(ctx context.Context, userID int64, articleID int64) error
 }
 
 type articleService struct {
@@ -49,6 +50,7 @@ func NewArticleService(repo repository.ArticleRepository) ArticleService {
 }
 
 func (a *articleService) Save(ctx context.Context, article domain.Article) (int64, error) {
+	article.Status = domain.ArticleStatusUnpublished
 	if article.ID > 0 {
 		return article.ID, a.repo.Update(ctx, article)
 	} else {
@@ -57,10 +59,12 @@ func (a *articleService) Save(ctx context.Context, article domain.Article) (int6
 }
 
 func (a *articleService) Publish(ctx context.Context, article domain.Article) (int64, error) {
+	article.Status = domain.ArticleStatusPublished
 	return a.repo.Sync(ctx, article)
 }
 
 func (a *articleService) PublishV1(ctx context.Context, article domain.Article) (int64, error) {
+	article.Status = domain.ArticleStatusPublished
 	// first change author repo
 	id := article.ID
 	var err error
@@ -91,4 +95,8 @@ func (a *articleService) PublishV1(ctx context.Context, article domain.Article) 
 		}
 	}
 	return id, ErrPublish
+}
+
+func (a *articleService) Withdraw(ctx context.Context, userID int64, articleID int64) error {
+	return a.repo.SyncStatus(ctx, userID, articleID, domain.ArticleStatusPrivate)
 }

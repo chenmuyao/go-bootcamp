@@ -45,6 +45,7 @@ func (h *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 
 	g.POST("edit", ginx.WrapBodyAndClaims(h.l, h.Edit))
 	g.POST("publish", ginx.WrapBodyAndClaims(h.l, h.Publish))
+	g.POST("withdraw", ginx.WrapBodyAndClaims(h.l, h.Withdraw))
 }
 
 func (h *ArticleHandler) Edit(
@@ -102,6 +103,31 @@ func (h *ArticleHandler) Publish(
 		}, nil
 	default:
 		return ginx.InternalServerErrorResult, fmt.Errorf("Publish article failed: %w", err)
+	}
+}
+
+func (h *ArticleHandler) Withdraw(
+	ctx *gin.Context,
+	req ArticleWithdrawReq,
+	uc ijwt.UserClaims,
+) (ginx.Result, error) {
+	err := h.svc.Withdraw(ctx, uc.UID, req.ID)
+	switch err {
+	case nil:
+		return ginx.Result{
+			Code: ginx.CodeOK,
+		}, nil
+	case service.ErrArticleNotFound:
+		return ginx.Result{
+			Code: ginx.CodeUserSide,
+			Msg:  "article not found",
+		}, nil
+	default:
+		return ginx.InternalServerErrorResult, fmt.Errorf(
+			"Withdraw article %d failed: %w",
+			req.ID,
+			err,
+		)
 	}
 }
 

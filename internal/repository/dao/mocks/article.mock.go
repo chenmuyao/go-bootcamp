@@ -71,6 +71,21 @@ func (mr *MockArticleDAOMockRecorder) Sync(ctx, article any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Sync", reflect.TypeOf((*MockArticleDAO)(nil).Sync), ctx, article)
 }
 
+// Transaction mocks base method.
+func (m *MockArticleDAO) Transaction(ctx context.Context, fn func(context.Context, any) (any, error)) (any, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Transaction", ctx, fn)
+	ret0, _ := ret[0].(any)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Transaction indicates an expected call of Transaction.
+func (mr *MockArticleDAOMockRecorder) Transaction(ctx, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Transaction", reflect.TypeOf((*MockArticleDAO)(nil).Transaction), ctx, fn)
+}
+
 // UpdateByID mocks base method.
 func (m *MockArticleDAO) UpdateByID(ctx context.Context, article dao.Article) error {
 	m.ctrl.T.Helper()
@@ -83,4 +98,32 @@ func (m *MockArticleDAO) UpdateByID(ctx context.Context, article dao.Article) er
 func (mr *MockArticleDAOMockRecorder) UpdateByID(ctx, article any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateByID", reflect.TypeOf((*MockArticleDAO)(nil).UpdateByID), ctx, article)
+}
+
+// UpdateStatusByID mocks base method.
+func (m *MockArticleDAO) UpdateStatusByID(ctx context.Context, model any, userID, articleID int64, status uint8) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateStatusByID", ctx, model, userID, articleID, status)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateStatusByID indicates an expected call of UpdateStatusByID.
+func (mr *MockArticleDAOMockRecorder) UpdateStatusByID(ctx, model, userID, articleID, status any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatusByID", reflect.TypeOf((*MockArticleDAO)(nil).UpdateStatusByID), ctx, model, userID, articleID, status)
+}
+
+// Upsert mocks base method.
+func (m *MockArticleDAO) Upsert(ctx context.Context, article dao.PublishedArticle) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Upsert", ctx, article)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Upsert indicates an expected call of Upsert.
+func (mr *MockArticleDAOMockRecorder) Upsert(ctx, article any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockArticleDAO)(nil).Upsert), ctx, article)
 }

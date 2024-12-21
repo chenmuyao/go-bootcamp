@@ -34,6 +34,7 @@ func Test_articleService_Publish(t *testing.T) {
 					Author: domain.Author{
 						ID: 123,
 					},
+					Status: domain.ArticleStatusPublished,
 				}).Return(int64(1), nil)
 				readerRepo := repomocks.NewMockArticleReaderRepository(ctrl)
 				readerRepo.EXPECT().Save(gomock.Any(), domain.Article{
@@ -43,6 +44,7 @@ func Test_articleService_Publish(t *testing.T) {
 					Author: domain.Author{
 						ID: 123,
 					},
+					Status: domain.ArticleStatusPublished,
 				})
 
 				return readerRepo, authorRepo
@@ -67,6 +69,7 @@ func Test_articleService_Publish(t *testing.T) {
 					Author: domain.Author{
 						ID: 123,
 					},
+					Status: domain.ArticleStatusPublished,
 				})
 				readerRepo := repomocks.NewMockArticleReaderRepository(ctrl)
 				readerRepo.EXPECT().Save(gomock.Any(), domain.Article{
@@ -76,6 +79,7 @@ func Test_articleService_Publish(t *testing.T) {
 					Author: domain.Author{
 						ID: 123,
 					},
+					Status: domain.ArticleStatusPublished,
 				})
 
 				return readerRepo, authorRepo
@@ -87,6 +91,7 @@ func Test_articleService_Publish(t *testing.T) {
 				Author: domain.Author{
 					ID: 123,
 				},
+				Status: domain.ArticleStatusPublished,
 			},
 			wantId: 2,
 		},
@@ -100,6 +105,7 @@ func Test_articleService_Publish(t *testing.T) {
 					Author: domain.Author{
 						ID: 123,
 					},
+					Status: domain.ArticleStatusPublished,
 				}).Return(int64(1), nil)
 				readerRepo := repomocks.NewMockArticleReaderRepository(ctrl)
 				readerRepo.EXPECT().Save(gomock.Any(), domain.Article{
@@ -109,6 +115,7 @@ func Test_articleService_Publish(t *testing.T) {
 					Author: domain.Author{
 						ID: 123,
 					},
+					Status: domain.ArticleStatusPublished,
 				}).Return(errors.New("publish error"))
 				readerRepo.EXPECT().Save(gomock.Any(), domain.Article{
 					ID:      1,
@@ -117,6 +124,7 @@ func Test_articleService_Publish(t *testing.T) {
 					Author: domain.Author{
 						ID: 123,
 					},
+					Status: domain.ArticleStatusPublished,
 				})
 
 				return readerRepo, authorRepo
@@ -141,6 +149,7 @@ func Test_articleService_Publish(t *testing.T) {
 					Author: domain.Author{
 						ID: 123,
 					},
+					Status: domain.ArticleStatusPublished,
 				}).Return(int64(1), nil)
 				readerRepo := repomocks.NewMockArticleReaderRepository(ctrl)
 				readerRepo.EXPECT().Save(gomock.Any(), domain.Article{
@@ -150,6 +159,7 @@ func Test_articleService_Publish(t *testing.T) {
 					Author: domain.Author{
 						ID: 123,
 					},
+					Status: domain.ArticleStatusPublished,
 				}).Return(errors.New("publish error")).Times(publishMaxRetry)
 
 				return readerRepo, authorRepo
@@ -174,6 +184,7 @@ func Test_articleService_Publish(t *testing.T) {
 					Author: domain.Author{
 						ID: 123,
 					},
+					Status: domain.ArticleStatusPublished,
 				}).Return(int64(1), errors.New("create new article error"))
 				readerRepo := repomocks.NewMockArticleReaderRepository(ctrl)
 
