@@ -62,11 +62,15 @@ func (c *CachedArticleRepository) Create(
 	return c.dao.Insert(ctx, c.toEntity(article))
 }
 
-func (c *CachedArticleRepository) Sync(ctx context.Context, article domain.Article) (int64, error) {
+func (c *CachedArticleRepository) SyncV0(
+	ctx context.Context,
+	article domain.Article,
+) (int64, error) {
+	// Distribute at DAO level
 	return c.dao.Sync(ctx, c.toEntity(article))
 }
 
-func (c *CachedArticleRepository) SyncV3(
+func (c *CachedArticleRepository) Sync(
 	ctx context.Context,
 	article domain.Article,
 ) (int64, error) {
@@ -78,6 +82,9 @@ func (c *CachedArticleRepository) SyncV3(
 		articleEntity := c.toEntity(article)
 		if id > 0 {
 			err = daoTx.UpdateByID(ctx, articleEntity)
+			if err != nil {
+				return 0, err
+			}
 		} else {
 			id, err = daoTx.Insert(ctx, articleEntity)
 			if err != nil {
