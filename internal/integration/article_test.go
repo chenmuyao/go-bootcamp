@@ -39,9 +39,9 @@ func (s *ArticleHandlerSuite) SetupSuite() {
 			UID: 123,
 		})
 	})
-	hdl := startup.InitArticleHandler()
-	hdl.RegisterRoutes(s.server)
 	s.db = startup.InitDB()
+	hdl := startup.InitArticleHandler(dao.NewArticleDAO(s.db))
+	hdl.RegisterRoutes(s.server)
 	// s.rdb = startup.InitRedis()
 }
 
@@ -252,7 +252,7 @@ func (s *ArticleHandlerSuite) TestPublish() {
 			name: "Edit and publish a post",
 			before: func(t *testing.T) {
 				err := s.db.Create(dao.Article{
-					ID:       2,
+					ID:       22,
 					Title:    "my title",
 					Content:  "my content",
 					AuthorID: 123,
@@ -265,12 +265,12 @@ func (s *ArticleHandlerSuite) TestPublish() {
 			after: func(t *testing.T) {
 				// check that the article is saved into the DB
 				var article dao.Article
-				err := s.db.Where("id = ?", 2).First(&article).Error
+				err := s.db.Where("id = ?", 22).First(&article).Error
 				assert.NoError(t, err)
 				assert.True(t, article.Utime > 789)
 				article.Utime = 0
 				assert.Equal(t, dao.Article{
-					ID:       2,
+					ID:       22,
 					Title:    "new title",
 					Content:  "new content",
 					AuthorID: 123,
@@ -279,21 +279,21 @@ func (s *ArticleHandlerSuite) TestPublish() {
 				}, article)
 			},
 			article: web.ArticlePublishReq{
-				ID:      2,
+				ID:      22,
 				Title:   "new title",
 				Content: "new content",
 			},
 			wantCode: http.StatusOK,
 			wantRes: Result[int64]{
 				Code: ginx.CodeOK,
-				Data: 2,
+				Data: 22,
 			},
 		},
 		{
 			name: "Publish a post of someone else",
 			before: func(t *testing.T) {
 				err := s.db.Create(dao.Article{
-					ID:       3,
+					ID:       23,
 					Title:    "my title",
 					Content:  "my content",
 					AuthorID: 234,
@@ -306,10 +306,10 @@ func (s *ArticleHandlerSuite) TestPublish() {
 			after: func(t *testing.T) {
 				// check that the article is saved into the DB
 				var article dao.Article
-				err := s.db.Where("id = ?", 3).First(&article).Error
+				err := s.db.Where("id = ?", 23).First(&article).Error
 				assert.NoError(t, err)
 				assert.Equal(t, dao.Article{
-					ID:       3,
+					ID:       23,
 					Title:    "my title",
 					Content:  "my content",
 					AuthorID: 234,
@@ -319,7 +319,7 @@ func (s *ArticleHandlerSuite) TestPublish() {
 				}, article)
 			},
 			article: web.ArticlePublishReq{
-				ID:      3,
+				ID:      23,
 				Title:   "new title",
 				Content: "new content",
 			},

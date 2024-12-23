@@ -38,14 +38,14 @@ func NewArticleDAO(db *gorm.DB) ArticleDAO {
 }
 
 type Article struct {
-	ID      int64  `gorm:"primaryKey,autoIncrement"`
-	Title   string `gorm:"type=varchar(4096)"`
-	Content string `gorm:"type=BLOB"`
+	ID      int64  `gorm:"primaryKey,autoIncrement" bson:"id,omitempty"`
+	Title   string `gorm:"type=varchar(4096)"       bson:"title,omitempty"`
+	Content string `gorm:"type=BLOB"                bson:"content,omitempty"`
 
-	AuthorID int64 `gorm:"index"`
-	Status   uint8
-	Ctime    int64
-	Utime    int64
+	AuthorID int64 `gorm:"index" bson:"author_id,omitempty"`
+	Status   uint8 `             bson:"status,omitempty"`
+	Ctime    int64 `             bson:"ctime,omitempty"`
+	Utime    int64 `             bson:"utime,omitempty"`
 }
 
 // same DB, different tables
