@@ -117,6 +117,9 @@ func (a *GORMArticleDAO) SyncV1(ctx context.Context, article Article) (int64, er
 
 	if id > 0 {
 		err = txDAO.UpdateByID(ctx, article)
+		if err != nil {
+			return 0, err
+		}
 	} else {
 		id, err = txDAO.Insert(ctx, article)
 		if err != nil {
@@ -141,6 +144,9 @@ func (a *GORMArticleDAO) Sync(ctx context.Context, article Article) (int64, erro
 		var err error
 		if id > 0 {
 			err = txDAO.UpdateByID(ctx, article)
+			if err != nil {
+				return err
+			}
 		} else {
 			id, err = txDAO.Insert(ctx, article)
 			if err != nil {
@@ -173,14 +179,13 @@ func (a *GORMArticleDAO) Transaction(
 }
 
 func (a *GORMArticleDAO) Upsert(ctx context.Context, article PublishedArticle) error {
-	now := time.Now().UnixMilli()
 	res := a.db.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "id"}},
 		DoUpdates: clause.Assignments(map[string]interface{}{
 			"title":   article.Title,
 			"content": article.Content,
 			"status":  article.Status,
-			"utime":   now,
+			"utime":   article.Utime,
 		}),
 	}).Create(&article)
 	if res.Error != nil {

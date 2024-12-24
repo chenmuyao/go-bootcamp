@@ -95,6 +95,7 @@ func (c *CachedArticleRepository) Sync(
 		now := time.Now().UnixMilli()
 		publishedArticle := dao.PublishedArticle(articleEntity)
 		publishedArticle.Utime = now
+		publishedArticle.Ctime = now
 		err = daoTx.Upsert(ctx, publishedArticle)
 		if err != nil {
 			return 0, err

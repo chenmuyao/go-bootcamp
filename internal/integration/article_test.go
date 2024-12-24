@@ -48,6 +48,7 @@ func (s *ArticleHandlerSuite) SetupSuite() {
 func (s *ArticleHandlerSuite) TearDownTest() {
 	log.Println("TRUNCATE")
 	s.db.Exec("TRUNCATE articles")
+	s.db.Exec("TRUNCATE published_articles")
 }
 
 func (s *ArticleHandlerSuite) TestEdit() {
@@ -237,6 +238,21 @@ func (s *ArticleHandlerSuite) TestPublish() {
 					AuthorID: 123,
 					Status:   domain.ArticleStatusPublished,
 				}, article)
+
+				var articlePub dao.PublishedArticle
+				err = s.db.Where("author_id=?", 123).First(&articlePub).Error
+				assert.NoError(t, err)
+				assert.True(t, articlePub.Ctime > 789)
+				articlePub.Ctime = 0
+				assert.True(t, articlePub.Utime > 789)
+				articlePub.Utime = 0
+				assert.Equal(t, dao.PublishedArticle{
+					ID:       1,
+					Title:    "my super title",
+					Content:  "my content",
+					AuthorID: 123,
+					Status:   domain.ArticleStatusPublished,
+				}, articlePub)
 			},
 			article: web.ArticlePublishReq{
 				Title:   "my super title",
@@ -252,6 +268,16 @@ func (s *ArticleHandlerSuite) TestPublish() {
 			name: "Edit and publish a post",
 			before: func(t *testing.T) {
 				err := s.db.Create(dao.Article{
+					ID:       22,
+					Title:    "my title",
+					Content:  "my content",
+					AuthorID: 123,
+					Status:   domain.ArticleStatusPublished,
+					Ctime:    456,
+					Utime:    789,
+				}).Error
+				assert.NoError(t, err)
+				err = s.db.Create(dao.PublishedArticle{
 					ID:       22,
 					Title:    "my title",
 					Content:  "my content",
@@ -277,6 +303,20 @@ func (s *ArticleHandlerSuite) TestPublish() {
 					Status:   domain.ArticleStatusPublished,
 					Ctime:    456,
 				}, article)
+
+				var pubArticle dao.PublishedArticle
+				err = s.db.Where("id = ?", 22).First(&pubArticle).Error
+				assert.NoError(t, err)
+				assert.True(t, pubArticle.Utime > 789)
+				pubArticle.Utime = 0
+				assert.Equal(t, dao.PublishedArticle{
+					ID:       22,
+					Title:    "new title",
+					Content:  "new content",
+					AuthorID: 123,
+					Status:   domain.ArticleStatusPublished,
+					Ctime:    456,
+				}, pubArticle)
 			},
 			article: web.ArticlePublishReq{
 				ID:      22,
@@ -302,6 +342,16 @@ func (s *ArticleHandlerSuite) TestPublish() {
 					Utime:    789,
 				}).Error
 				assert.NoError(t, err)
+				err = s.db.Create(dao.PublishedArticle{
+					ID:       23,
+					Title:    "my title",
+					Content:  "my content",
+					AuthorID: 234,
+					Status:   domain.ArticleStatusPublished,
+					Ctime:    456,
+					Utime:    789,
+				}).Error
+				assert.NoError(t, err)
 			},
 			after: func(t *testing.T) {
 				// check that the article is saved into the DB
@@ -317,6 +367,19 @@ func (s *ArticleHandlerSuite) TestPublish() {
 					Ctime:    456,
 					Utime:    789,
 				}, article)
+
+				var pubArticle dao.Article
+				err = s.db.Where("id = ?", 23).First(&pubArticle).Error
+				assert.NoError(t, err)
+				assert.Equal(t, dao.Article{
+					ID:       23,
+					Title:    "my title",
+					Content:  "my content",
+					AuthorID: 234,
+					Status:   domain.ArticleStatusPublished,
+					Ctime:    456,
+					Utime:    789,
+				}, pubArticle)
 			},
 			article: web.ArticlePublishReq{
 				ID:      23,
