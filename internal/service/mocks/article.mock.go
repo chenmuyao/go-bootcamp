@@ -41,6 +41,21 @@ func (m *MockArticleService) EXPECT() *MockArticleServiceMockRecorder {
 	return m.recorder
 }
 
+// GetByAuthor mocks base method.
+func (m *MockArticleService) GetByAuthor(ctx context.Context, uid int64, offset, limit int) ([]domain.Article, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByAuthor", ctx, uid, offset, limit)
+	ret0, _ := ret[0].([]domain.Article)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByAuthor indicates an expected call of GetByAuthor.
+func (mr *MockArticleServiceMockRecorder) GetByAuthor(ctx, uid, offset, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByAuthor", reflect.TypeOf((*MockArticleService)(nil).GetByAuthor), ctx, uid, offset, limit)
+}
+
 // Publish mocks base method.
 func (m *MockArticleService) Publish(ctx context.Context, article domain.Article) (int64, error) {
 	m.ctrl.T.Helper()

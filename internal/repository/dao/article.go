@@ -25,16 +25,11 @@ type ArticleDAO interface {
 		articleID int64,
 		status uint8,
 	) error
+	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]Article, error)
 }
 
 type GORMArticleDAO struct {
 	db *gorm.DB
-}
-
-func NewArticleDAO(db *gorm.DB) ArticleDAO {
-	return &GORMArticleDAO{
-		db: db,
-	}
 }
 
 type Article struct {
@@ -196,4 +191,28 @@ func (a *GORMArticleDAO) Upsert(ctx context.Context, article PublishedArticle) e
 		return ErrArticleNotFound
 	}
 	return nil
+}
+
+// GetByAuthor implements ArticleDAO.
+func (a *GORMArticleDAO) GetByAuthor(
+	ctx context.Context,
+	uid int64,
+	offset int,
+	limit int,
+) ([]Article, error) {
+	var articles []Article
+	err := a.db.WithContext(ctx).
+		Where("author_id = ?", uid).
+		Offset(offset).
+		Limit(limit).
+		Order("utime DESC").
+		Find(&articles).
+		Error
+	return articles, err
+}
+
+func NewArticleDAO(db *gorm.DB) ArticleDAO {
+	return &GORMArticleDAO{
+		db: db,
+	}
 }

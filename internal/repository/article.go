@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/chenmuyao/generique/gslice"
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
 	"gorm.io/gorm"
@@ -21,6 +22,7 @@ type ArticleRepository interface {
 		articleID int64,
 		status domain.ArticleStatus,
 	) error
+	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article, error)
 }
 
 type CachedArticleRepository struct {
@@ -33,6 +35,23 @@ type CachedArticleRepository struct {
 
 	// V2 repository level transaction
 	db *gorm.DB
+}
+
+// GetByAuthor implements ArticleRepository.
+func (c *CachedArticleRepository) GetByAuthor(
+	ctx context.Context,
+	uid int64,
+	offset int,
+	limit int,
+) ([]domain.Article, error) {
+	articlesDAO, err := c.dao.GetByAuthor(ctx, uid, offset, limit)
+	if err != nil {
+		return nil, err
+	}
+	return gslice.Map(
+		articlesDAO,
+		func(id int, src dao.Article) domain.Article { return c.toDomain(src) },
+	), nil
 }
 
 func NewArticleRepository(dao dao.ArticleDAO) ArticleRepository {
@@ -200,12 +219,19 @@ func (c *CachedArticleRepository) SyncStatus(
 	return nil
 }
 
-// func (c *CachedArticleRepository) toDAO(article dao.Article) domain.Article {
-// 	return domain.Article{
-// 		Title:   article.Title,
-// 		Content: article.Content,
-// 	}
-// }
+func (c *CachedArticleRepository) toDomain(article dao.Article) domain.Article {
+	return domain.Article{
+		ID:      article.ID,
+		Title:   article.Title,
+		Content: article.Content,
+		Author: domain.Author{
+			ID: article.AuthorID,
+		},
+		Status: domain.ArticleStatus(article.Status),
+		Ctime:  time.UnixMilli(article.Ctime),
+		Utime:  time.UnixMilli(article.Utime),
+	}
+}
 
 func (c *CachedArticleRepository) toEntity(article domain.Article) dao.Article {
 	return dao.Article{

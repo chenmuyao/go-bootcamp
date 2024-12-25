@@ -23,6 +23,16 @@ type MongoDBArticleDAO struct {
 	client   *mongo.Client
 }
 
+// GetByAuthor implements ArticleDAO.
+func (m *MongoDBArticleDAO) GetByAuthor(
+	ctx context.Context,
+	uid int64,
+	offset int,
+	limit int,
+) ([]Article, error) {
+	panic("unimplemented")
+}
+
 // Insert implements ArticleDAO.
 func (m *MongoDBArticleDAO) Insert(ctx context.Context, article Article) (int64, error) {
 	article.ID = m.node.Generate().Int64()

@@ -20,6 +20,7 @@ type ArticleService interface {
 	Save(ctx context.Context, article domain.Article) (int64, error)
 	Publish(ctx context.Context, article domain.Article) (int64, error)
 	Withdraw(ctx context.Context, userID int64, articleID int64) error
+	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article, error)
 }
 
 type articleService struct {
@@ -29,6 +30,16 @@ type articleService struct {
 	// v1: separate reader and author at repo level
 	readerRepo repository.ArticleReaderRepository
 	authorRepo repository.ArticleAuthorRepository
+}
+
+// GetByAuthor implements ArticleService.
+func (a *articleService) GetByAuthor(
+	ctx context.Context,
+	uid int64,
+	offset int,
+	limit int,
+) ([]domain.Article, error) {
+	return a.repo.GetByAuthor(ctx, uid, offset, limit)
 }
 
 func NewArticleServiceV1(

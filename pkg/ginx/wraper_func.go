@@ -36,7 +36,9 @@ func WrapBodyAndClaims[Req any, Claims jwt.Claims](
 		}
 
 		res, err := bizFn(ctx, req, uc)
-		if err != nil {
+		if logError, ok := err.(*logger.LogError); ok {
+			l.Error(logError.Msg, logError.Fields...)
+		} else if err != nil {
 			l.Error("failed to handle request", logger.Error(err))
 		}
 
@@ -67,7 +69,9 @@ func WrapBody[Req any](
 		})
 
 		res, err := bizFn(ctx, req)
-		if err != nil {
+		if logError, ok := err.(*logger.LogError); ok {
+			l.Error(logError.Msg, logError.Fields...)
+		} else if err != nil {
 			l.Error("failed to handle request", logger.Error(err))
 		}
 
@@ -94,7 +98,9 @@ func WrapClaims[Claims jwt.Claims](
 		}
 
 		res, err := bizFn(ctx, uc)
-		if err != nil {
+		if logError, ok := err.(*logger.LogError); ok {
+			l.Error(logError.Msg, logError.Fields...)
+		} else if err != nil {
 			l.Error("failed to handle request", logger.Error(err))
 		}
 
@@ -108,7 +114,9 @@ func WrapClaims[Claims jwt.Claims](
 func WrapLog(l logger.Logger, bizFn func(ctx *gin.Context) (Result, error)) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		res, err := bizFn(ctx)
-		if err != nil {
+		if logError, ok := err.(*logger.LogError); ok {
+			l.Error(logError.Msg, logError.Fields...)
+		} else if err != nil {
 			l.Error("failed to handle request", logger.Error(err))
 		}
 

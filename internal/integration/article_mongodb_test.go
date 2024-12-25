@@ -54,7 +54,7 @@ func (s *MongoDBArticleHandlerSuite) TearDownTest() {
 
 	_, err := s.coll.DeleteMany(ctx, bson.D{})
 	assert.NoError(s.T(), err)
-	s.liveColl.DeleteMany(ctx, bson.D{})
+	_, err = s.liveColl.DeleteMany(ctx, bson.D{})
 	assert.NoError(s.T(), err)
 }
 
