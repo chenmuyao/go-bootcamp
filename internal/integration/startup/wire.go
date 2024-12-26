@@ -32,6 +32,7 @@ func InitWebServer() *gin.Engine {
 		// Cache
 		rediscache.NewCodeRedisCache,
 		rediscache.NewUserRedisCache,
+		rediscache.NewArticleRedisCache,
 		// ioc.InitCodeLocalCache,
 		// ioc.InitUserLocalCache,
 
@@ -62,6 +63,7 @@ func InitWebServer() *gin.Engine {
 func InitArticleHandler(dao dao.ArticleDAO) *web.ArticleHandler {
 	wire.Build(
 		thirdPartySet,
+		rediscache.NewArticleRedisCache,
 		repository.NewArticleRepository,
 		service.NewArticleService,
 		web.NewArticleHandler,

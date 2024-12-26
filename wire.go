@@ -30,6 +30,7 @@ func InitWebServer() *gin.Engine {
 		// Cache
 		rediscache.NewCodeRedisCache,
 		rediscache.NewUserRedisCache,
+        rediscache.NewArticleRedisCache,
 		// ioc.InitCodeLocalCache,
 		// ioc.InitUserLocalCache,
 

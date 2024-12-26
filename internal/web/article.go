@@ -153,12 +153,13 @@ func (h *ArticleHandler) List(
 			Code: ginx.CodeOK,
 			Data: gslice.Map(articles, func(id int, src domain.Article) ArticleVO {
 				return ArticleVO{
-					ID:      src.ID,
-					Title:   src.Title,
-					Content: src.Content,
-					Status:  uint8(src.Status),
-					Ctime:   src.Ctime.Format(time.DateTime),
-					Utime:   src.Ctime.Format(time.DateTime),
+					ID:       src.ID,
+					Title:    src.Title,
+					Abstract: src.Abstract(),
+					Content:  src.Content,
+					Status:   uint8(src.Status),
+					Ctime:    src.Ctime.Format(time.DateTime),
+					Utime:    src.Ctime.Format(time.DateTime),
 				}
 			}),
 		}, nil

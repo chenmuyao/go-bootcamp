@@ -33,12 +33,20 @@ type UserCache interface {
 	Set(ctx context.Context, user domain.User) error
 }
 
+type ArticleCache interface {
+	GetFirstPage(ctx context.Context, uid int64) ([]domain.Article, error)
+	SetFirstPage(ctx context.Context, uid int64, articles []domain.Article) error
+	DelFirstPage(ctx context.Context, uid int64) error
+}
+
 // }}}
 // {{{ Struct
 
 type BaseCodeCache struct{}
 
 type BaseUserCache struct{}
+
+type BaseArticleCache struct{}
 
 // }}}
 // {{{ Other structs
@@ -52,6 +60,10 @@ func (b *BaseCodeCache) Key(biz, phone string) string {
 
 func (c *BaseUserCache) Key(uid int64) string {
 	return fmt.Sprintf("user:info:%d", uid)
+}
+
+func (c *BaseArticleCache) Key(uid int64) string {
+	return fmt.Sprintf("article:first_page:%d", uid)
 }
 
 // }}}

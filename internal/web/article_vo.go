@@ -15,6 +15,7 @@ type ArticleWithdrawReq struct {
 type ArticleVO struct {
 	ID         int64  `json:"id,omitempty"`
 	Title      string `json:"title,omitempty"`
+	Abstract   string `json:"abstract,omitempty"`
 	Content    string `json:"content,omitempty"`
 	AuthorID   int64  `json:"author_id,omitempty"`
 	AuthorName string `json:"author_name,omitempty"`

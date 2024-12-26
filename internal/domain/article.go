@@ -25,3 +25,13 @@ const (
 	ArticleStatusPublished
 	ArticleStatusPrivate
 )
+
+const AbstractLen = 128
+
+func (a Article) Abstract() string {
+	str := []rune(a.Content)
+	if len(str) > AbstractLen {
+		str = str[:AbstractLen]
+	}
+	return string(str)
+}

@@ -39,7 +39,8 @@ func InitWebServer() *gin.Engine {
 	userHandler := web.NewUserHandler(logger, userService, codeService, handler)
 	oAuth2GiteaHandler := NewDummyGiteaHandler(userService, handler, logger)
 	articleDAO := dao.NewArticleDAO(db)
-	articleRepository := repository.NewArticleRepository(articleDAO)
+	articleCache := rediscache.NewArticleRedisCache(cmdable)
+	articleRepository := repository.NewArticleRepository(logger, articleDAO, articleCache)
 	articleService := service.NewArticleService(articleRepository)
 	articleHandler := web.NewArticleHandler(logger, articleService)
 	engine := ioc.InitWebServer(v, userHandler, oAuth2GiteaHandler, articleHandler)
@@ -48,7 +49,9 @@ func InitWebServer() *gin.Engine {
 
 func InitArticleHandler(dao2 dao.ArticleDAO) *web.ArticleHandler {
 	logger := InitLogger()
-	articleRepository := repository.NewArticleRepository(dao2)
+	cmdable := InitRedis()
+	articleCache := rediscache.NewArticleRedisCache(cmdable)
+	articleRepository := repository.NewArticleRepository(logger, dao2, articleCache)
 	articleService := service.NewArticleService(articleRepository)
 	articleHandler := web.NewArticleHandler(logger, articleService)
 	return articleHandler

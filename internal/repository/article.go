@@ -6,9 +6,13 @@ import (
 
 	"github.com/chenmuyao/generique/gslice"
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
+	"github.com/chenmuyao/go-bootcamp/internal/repository/cache"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
+	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 	"gorm.io/gorm"
 )
+
+const pageSize = 100
 
 var ErrArticleNotFound = dao.ErrArticleNotFound
 
@@ -26,6 +30,8 @@ type ArticleRepository interface {
 }
 
 type CachedArticleRepository struct {
+	l     logger.Logger
+	cache cache.ArticleCache
 	// 1 DB 1 table
 	dao dao.ArticleDAO
 
@@ -35,29 +41,6 @@ type CachedArticleRepository struct {
 
 	// V2 repository level transaction
 	db *gorm.DB
-}
-
-// GetByAuthor implements ArticleRepository.
-func (c *CachedArticleRepository) GetByAuthor(
-	ctx context.Context,
-	uid int64,
-	offset int,
-	limit int,
-) ([]domain.Article, error) {
-	articlesDAO, err := c.dao.GetByAuthor(ctx, uid, offset, limit)
-	if err != nil {
-		return nil, err
-	}
-	return gslice.Map(
-		articlesDAO,
-		func(id int, src dao.Article) domain.Article { return c.toDomain(src) },
-	), nil
-}
-
-func NewArticleRepository(dao dao.ArticleDAO) ArticleRepository {
-	return &CachedArticleRepository{
-		dao: dao,
-	}
 }
 
 func NewArticleRepositoryV2(
@@ -71,14 +54,30 @@ func NewArticleRepositoryV2(
 }
 
 func (c *CachedArticleRepository) Update(ctx context.Context, article domain.Article) error {
-	return c.dao.UpdateByID(ctx, c.toEntity(article))
+	err := c.dao.UpdateByID(ctx, c.toEntity(article))
+	if err != nil {
+		return err
+	}
+	errCache := c.cache.DelFirstPage(ctx, article.Author.ID)
+	if errCache != nil {
+		c.l.Warn("delete first page cache error", logger.Error(errCache))
+	}
+	return nil
 }
 
 func (c *CachedArticleRepository) Create(
 	ctx context.Context,
 	article domain.Article,
 ) (int64, error) {
-	return c.dao.Insert(ctx, c.toEntity(article))
+	id, err := c.dao.Insert(ctx, c.toEntity(article))
+	if err != nil {
+		return 0, err
+	}
+	errCache := c.cache.DelFirstPage(ctx, article.Author.ID)
+	if errCache != nil {
+		c.l.Warn("delete first page cache error", logger.Error(errCache))
+	}
+	return id, nil
 }
 
 func (c *CachedArticleRepository) SyncV0(
@@ -126,6 +125,10 @@ func (c *CachedArticleRepository) Sync(
 		return 0, err
 	}
 	id := ret.(int64)
+	errCache := c.cache.DelFirstPage(ctx, article.Author.ID)
+	if errCache != nil {
+		c.l.Warn("delete first page cache error", logger.Error(errCache))
+	}
 	return id, nil
 }
 
@@ -216,6 +219,10 @@ func (c *CachedArticleRepository) SyncStatus(
 		// TODO: log and retry
 		return err
 	}
+	errCache := c.cache.DelFirstPage(ctx, userID)
+	if errCache != nil {
+		c.l.Warn("delete first page cache error", logger.Error(errCache))
+	}
 	return nil
 }
 
@@ -240,5 +247,62 @@ func (c *CachedArticleRepository) toEntity(article domain.Article) dao.Article {
 		Content:  article.Content,
 		AuthorID: article.Author.ID,
 		Status:   uint8(article.Status),
+	}
+}
+
+// GetByAuthor implements ArticleRepository.
+func (c *CachedArticleRepository) GetByAuthor(
+	ctx context.Context,
+	uid int64,
+	offset int,
+	limit int,
+) ([]domain.Article, error) {
+	// check if query the cache
+	if offset == 0 && limit <= pageSize {
+		cachedArticles, err := c.cache.GetFirstPage(ctx, uid)
+		switch err {
+		case nil:
+			return cachedArticles[:limit], nil
+		case cache.ErrKeyNotExist:
+			// ignore
+			break
+		default:
+			// log error and monitor
+			c.l.Warn("article cache get error", logger.Error(err))
+		}
+	}
+	articlesDAO, err := c.dao.GetByAuthor(ctx, uid, offset, limit)
+	if err != nil {
+		return nil, err
+	}
+	res := gslice.Map(
+		articlesDAO,
+		func(id int, src dao.Article) domain.Article { return c.toDomain(src) },
+	)
+
+	go func() {
+		if offset == 0 && limit <= pageSize {
+			err = c.cache.SetFirstPage(ctx, uid, res)
+			// err 1: network issue, maybe temporary
+			// err 2: redis down
+			if err != nil {
+				// WARN: Monitor here
+				c.l.Warn("article cache set error", logger.Error(err))
+			}
+		}
+	}()
+
+	return res, nil
+}
+
+func NewArticleRepository(
+	l logger.Logger,
+	dao dao.ArticleDAO,
+	cache cache.ArticleCache,
+) ArticleRepository {
+	return &CachedArticleRepository{
+		l:     l,
+		dao:   dao,
+		cache: cache,
 	}
 }
