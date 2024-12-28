@@ -71,6 +71,21 @@ func (mr *MockArticleDAOMockRecorder) GetByID(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockArticleDAO)(nil).GetByID), ctx, id)
 }
 
+// GetPubByID mocks base method.
+func (m *MockArticleDAO) GetPubByID(ctx context.Context, id int64) (dao.PublishedArticle, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPubByID", ctx, id)
+	ret0, _ := ret[0].(dao.PublishedArticle)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPubByID indicates an expected call of GetPubByID.
+func (mr *MockArticleDAOMockRecorder) GetPubByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPubByID", reflect.TypeOf((*MockArticleDAO)(nil).GetPubByID), ctx, id)
+}
+
 // Insert mocks base method.
 func (m *MockArticleDAO) Insert(ctx context.Context, article dao.Article) (int64, error) {
 	m.ctrl.T.Helper()

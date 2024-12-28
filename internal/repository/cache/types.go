@@ -39,6 +39,8 @@ type ArticleCache interface {
 	DelFirstPage(ctx context.Context, uid int64) error
 	Get(ctx context.Context, id int64) (domain.Article, error)
 	Set(ctx context.Context, article domain.Article) error
+	GetPub(ctx context.Context, id int64) (domain.Article, error)
+	SetPub(ctx context.Context, article domain.Article) error
 }
 
 // }}}

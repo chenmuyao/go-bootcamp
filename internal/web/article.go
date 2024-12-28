@@ -52,7 +52,12 @@ func (h *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 
 	// author
 	g.GET("/detail/:id", ginx.WrapClaims(h.l, h.Detail))
+	// normally: /list?offset=?&limit=?
 	g.POST("/list", ginx.WrapBodyAndClaims(h.l, h.List))
+
+	// get published article (reader)
+	pub := g.Group("/pub")
+	pub.GET("/:id", ginx.WrapLog(h.l, h.PubDetail))
 }
 
 func (h *ArticleHandler) Edit(
@@ -80,7 +85,10 @@ func (h *ArticleHandler) Edit(
 			Msg:  "article not found",
 		}, nil
 	default:
-		return ginx.InternalServerErrorResult, fmt.Errorf("Save article failed: %w", err)
+		return ginx.InternalServerErrorResult, logger.LError(
+			"Save article failed: %w",
+			logger.Error(err),
+		)
 	}
 }
 
@@ -157,13 +165,10 @@ func (h *ArticleHandler) Detail(ctx *gin.Context, uc ijwt.UserClaims) (ginx.Resu
 		return ginx.Result{
 				Code: ginx.CodeUserSide,
 				Msg:  "article not found",
-			}, &logger.LogError{
-				Msg: "invalid article query",
-				Fields: []logger.Field{
-					logger.Int64("id", id),
-					logger.Int64("uid", uc.UID),
-				},
-			}
+			}, logger.LError("invalid article query",
+				logger.Int64("id", id),
+				logger.Int64("uid", uc.UID),
+			)
 	}
 	return ginx.Result{
 		Code: ginx.CodeOK,
@@ -207,15 +212,46 @@ func (h *ArticleHandler) List(
 			Msg:  "article not found",
 		}, nil
 	default:
-		return ginx.InternalServerErrorResult, &logger.LogError{
-			Msg: "Get articles by author failed",
-			Fields: []logger.Field{
+		return ginx.InternalServerErrorResult,
+			logger.LError("Get articles by author failed",
 				logger.Int64("uid", uc.UID),
 				logger.Int("offset", page.Offset),
 				logger.Int("limit", page.Limit),
-			},
-		}
+			)
 	}
+}
+
+func (h *ArticleHandler) PubDetail(
+	ctx *gin.Context,
+) (ginx.Result, error) {
+	idStr := ctx.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		h.l.Warn("wrong id", logger.String("id", idStr), logger.Error(err))
+		return ginx.InternalServerErrorResult, nil
+	}
+	article, err := h.svc.GetPubByID(ctx, id)
+	if err != nil {
+		return ginx.InternalServerErrorResult, logger.LError(
+			"Get published article detail failed",
+			logger.Int64("id", id),
+			logger.Error(err),
+		)
+	}
+	return ginx.Result{
+		Code: ginx.CodeOK,
+		Data: ArticleVO{
+			ID:    article.ID,
+			Title: article.Title,
+			// Abstract: article.Abstract(),
+			Content:    article.Content,
+			AuthorID:   article.Author.ID,
+			AuthorName: article.Author.Name,
+			Status:     uint8(article.Status),
+			Ctime:      article.Ctime.Format(time.DateTime),
+			Utime:      article.Ctime.Format(time.DateTime),
+		},
+	}, nil
 }
 
 // }}}

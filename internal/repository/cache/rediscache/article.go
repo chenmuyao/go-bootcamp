@@ -11,15 +11,39 @@ import (
 )
 
 const (
-	motifFirstPage                   = "first_page"
-	motifContent                     = "content"
-	articleFirstPageExpiryTime       = time.Minute
-	articleContentPreCacheExpiryTime = 10 * time.Second
+	motifFirstPage                    = "first_page"
+	motifContent                      = "content"
+	motifPublishedContent             = "published_content"
+	articleFirstPageExpiryTime        = time.Minute
+	articleContentPreCacheExpiryTime  = 10 * time.Second
+	articlePublishedContentExpiryTime = 10 * time.Minute
 )
 
 type ArticleRedisCache struct {
 	cache.BaseArticleCache
 	client redis.Cmdable
+}
+
+// GetPub implements cache.ArticleCache.
+func (a *ArticleRedisCache) GetPub(ctx context.Context, id int64) (domain.Article, error) {
+	key := a.Key(motifPublishedContent, id)
+	val, err := a.client.Get(ctx, key).Bytes()
+	if err != nil {
+		return domain.Article{}, err
+	}
+	var res domain.Article
+	err = json.Unmarshal(val, &res)
+	return res, err
+}
+
+// SetPub implements cache.ArticleCache.
+func (a *ArticleRedisCache) SetPub(ctx context.Context, article domain.Article) error {
+	key := a.Key(motifPublishedContent, article.ID)
+	val, err := json.Marshal(article)
+	if err != nil {
+		return err
+	}
+	return a.client.Set(ctx, key, val, articlePublishedContentExpiryTime).Err()
 }
 
 // Get implements cache.ArticleCache.

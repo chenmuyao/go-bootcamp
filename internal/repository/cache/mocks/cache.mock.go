@@ -191,6 +191,21 @@ func (mr *MockArticleCacheMockRecorder) GetFirstPage(ctx, uid any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFirstPage", reflect.TypeOf((*MockArticleCache)(nil).GetFirstPage), ctx, uid)
 }
 
+// GetPub mocks base method.
+func (m *MockArticleCache) GetPub(ctx context.Context, id int64) (domain.Article, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPub", ctx, id)
+	ret0, _ := ret[0].(domain.Article)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPub indicates an expected call of GetPub.
+func (mr *MockArticleCacheMockRecorder) GetPub(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPub", reflect.TypeOf((*MockArticleCache)(nil).GetPub), ctx, id)
+}
+
 // Set mocks base method.
 func (m *MockArticleCache) Set(ctx context.Context, article domain.Article) error {
 	m.ctrl.T.Helper()
@@ -217,4 +232,18 @@ func (m *MockArticleCache) SetFirstPage(ctx context.Context, uid int64, articles
 func (mr *MockArticleCacheMockRecorder) SetFirstPage(ctx, uid, articles any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetFirstPage", reflect.TypeOf((*MockArticleCache)(nil).SetFirstPage), ctx, uid, articles)
+}
+
+// SetPub mocks base method.
+func (m *MockArticleCache) SetPub(ctx context.Context, article domain.Article) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetPub", ctx, article)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetPub indicates an expected call of SetPub.
+func (mr *MockArticleCacheMockRecorder) SetPub(ctx, article any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPub", reflect.TypeOf((*MockArticleCache)(nil).SetPub), ctx, article)
 }

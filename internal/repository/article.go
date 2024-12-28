@@ -31,11 +31,14 @@ type ArticleRepository interface {
 	) error
 	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article, error)
 	GetByID(ctx context.Context, id int64) (domain.Article, error)
+	GetPubByID(ctx context.Context, id int64) (domain.Article, error)
 }
 
 type CachedArticleRepository struct {
-	l     logger.Logger
-	cache cache.ArticleCache
+	l        logger.Logger
+	cache    cache.ArticleCache
+	userRepo UserRepository
+
 	// 1 DB 1 table
 	dao dao.ArticleDAO
 
@@ -45,6 +48,39 @@ type CachedArticleRepository struct {
 
 	// V2 repository level transaction
 	db *gorm.DB
+}
+
+// GetPubByID implements ArticleRepository.
+func (c *CachedArticleRepository) GetPubByID(
+	ctx context.Context,
+	id int64,
+) (domain.Article, error) {
+	cached, err := c.cache.GetPub(ctx, id)
+	switch err {
+	case nil:
+		return cached, nil
+	case cache.ErrKeyNotExist:
+		break
+	default:
+		c.l.Warn("Get published cache error", logger.Error(err))
+	}
+	daoArticle, err := c.dao.GetPubByID(ctx, id)
+	if err != nil {
+		return domain.Article{}, err
+	}
+
+	author, err := c.userRepo.FindByID(ctx, daoArticle.AuthorID)
+	if err != nil {
+		return domain.Article{}, err
+	}
+	domainArticle := c.toDomain(dao.Article(daoArticle))
+	domainArticle.Author.Name = author.Name
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		c.cachePub(ctx, domainArticle)
+	}()
+	return domainArticle, nil
 }
 
 // GetByID implements ArticleRepository.
@@ -64,12 +100,14 @@ func (c *CachedArticleRepository) GetByID(ctx context.Context, id int64) (domain
 	}
 	domainArticle := c.toDomain(daoArticle)
 	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
 		cacheErr := c.cache.Set(ctx, domainArticle)
 		if cacheErr != nil {
 			c.l.Warn("Set cache error", logger.Error(err))
 		}
 	}()
-	return domainArticle, err
+	return domainArticle, nil
 }
 
 func NewArticleRepositoryV2(
@@ -158,6 +196,19 @@ func (c *CachedArticleRepository) Sync(
 	if errCache != nil {
 		c.l.Warn("delete first page cache error", logger.Error(errCache))
 	}
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		author, err := c.userRepo.FindByID(ctx, article.Author.ID)
+		if err != nil {
+			c.l.Error("failed to get user info", logger.Int64("uid", article.Author.ID))
+		}
+		article.Author = domain.Author{
+			ID:   author.ID,
+			Name: author.Name,
+		}
+		c.cachePub(ctx, article)
+	}()
 	return id, nil
 }
 
@@ -347,14 +398,23 @@ func (c *CachedArticleRepository) preCache(ctx context.Context, articles []domai
 	}
 }
 
+func (c *CachedArticleRepository) cachePub(ctx context.Context, article domain.Article) {
+	err := c.cache.SetPub(ctx, article)
+	if err != nil {
+		c.l.Warn("Set published cache error", logger.Error(err))
+	}
+}
+
 func NewArticleRepository(
 	l logger.Logger,
 	dao dao.ArticleDAO,
 	cache cache.ArticleCache,
+	userRepo UserRepository,
 ) ArticleRepository {
 	return &CachedArticleRepository{
-		l:     l,
-		dao:   dao,
-		cache: cache,
+		l:        l,
+		dao:      dao,
+		cache:    cache,
+		userRepo: userRepo,
 	}
 }
