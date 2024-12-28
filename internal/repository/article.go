@@ -12,7 +12,10 @@ import (
 	"gorm.io/gorm"
 )
 
-const pageSize = 100
+const (
+	pageSize           = 100
+	maxCacheArticleLen = 1024 * 1024
+)
 
 var ErrArticleNotFound = dao.ErrArticleNotFound
 
@@ -27,6 +30,7 @@ type ArticleRepository interface {
 		status domain.ArticleStatus,
 	) error
 	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article, error)
+	GetByID(ctx context.Context, id int64) (domain.Article, error)
 }
 
 type CachedArticleRepository struct {
@@ -41,6 +45,31 @@ type CachedArticleRepository struct {
 
 	// V2 repository level transaction
 	db *gorm.DB
+}
+
+// GetByID implements ArticleRepository.
+func (c *CachedArticleRepository) GetByID(ctx context.Context, id int64) (domain.Article, error) {
+	cached, err := c.cache.Get(ctx, id)
+	switch err {
+	case nil:
+		return cached, nil
+	case cache.ErrKeyNotExist:
+		break
+	default:
+		c.l.Warn("Get cache error", logger.Error(err))
+	}
+	daoArticle, err := c.dao.GetByID(ctx, id)
+	if err != nil {
+		return domain.Article{}, err
+	}
+	domainArticle := c.toDomain(daoArticle)
+	go func() {
+		cacheErr := c.cache.Set(ctx, domainArticle)
+		if cacheErr != nil {
+			c.l.Warn("Set cache error", logger.Error(err))
+		}
+	}()
+	return domainArticle, err
 }
 
 func NewArticleRepositoryV2(
@@ -281,6 +310,8 @@ func (c *CachedArticleRepository) GetByAuthor(
 	)
 
 	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
 		if offset == 0 && limit <= pageSize {
 			err = c.cache.SetFirstPage(ctx, uid, res)
 			// err 1: network issue, maybe temporary
@@ -292,7 +323,28 @@ func (c *CachedArticleRepository) GetByAuthor(
 		}
 	}()
 
+	// NOTE: Preload the first article into cache
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		c.preCache(ctx, res)
+	}()
+
 	return res, nil
+}
+
+func (c *CachedArticleRepository) preCache(ctx context.Context, articles []domain.Article) {
+	if len(articles) <= 0 {
+		return
+	}
+	if len(articles[0].Content) > maxCacheArticleLen {
+		// NOTE: Ignore large content
+		return
+	}
+	err := c.cache.Set(ctx, articles[0])
+	if err != nil {
+		c.l.Warn("article cache set error", logger.Error(err))
+	}
 }
 
 func NewArticleRepository(

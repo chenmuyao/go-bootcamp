@@ -71,6 +71,21 @@ func (mr *MockArticleRepositoryMockRecorder) GetByAuthor(ctx, uid, offset, limit
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByAuthor", reflect.TypeOf((*MockArticleRepository)(nil).GetByAuthor), ctx, uid, offset, limit)
 }
 
+// GetByID mocks base method.
+func (m *MockArticleRepository) GetByID(ctx context.Context, id int64) (domain.Article, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByID", ctx, id)
+	ret0, _ := ret[0].(domain.Article)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByID indicates an expected call of GetByID.
+func (mr *MockArticleRepositoryMockRecorder) GetByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockArticleRepository)(nil).GetByID), ctx, id)
+}
+
 // Sync mocks base method.
 func (m *MockArticleRepository) Sync(ctx context.Context, article domain.Article) (int64, error) {
 	m.ctrl.T.Helper()

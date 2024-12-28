@@ -161,6 +161,21 @@ func (mr *MockArticleCacheMockRecorder) DelFirstPage(ctx, uid any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DelFirstPage", reflect.TypeOf((*MockArticleCache)(nil).DelFirstPage), ctx, uid)
 }
 
+// Get mocks base method.
+func (m *MockArticleCache) Get(ctx context.Context, id int64) (domain.Article, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", ctx, id)
+	ret0, _ := ret[0].(domain.Article)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockArticleCacheMockRecorder) Get(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockArticleCache)(nil).Get), ctx, id)
+}
+
 // GetFirstPage mocks base method.
 func (m *MockArticleCache) GetFirstPage(ctx context.Context, uid int64) ([]domain.Article, error) {
 	m.ctrl.T.Helper()
@@ -174,6 +189,20 @@ func (m *MockArticleCache) GetFirstPage(ctx context.Context, uid int64) ([]domai
 func (mr *MockArticleCacheMockRecorder) GetFirstPage(ctx, uid any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFirstPage", reflect.TypeOf((*MockArticleCache)(nil).GetFirstPage), ctx, uid)
+}
+
+// Set mocks base method.
+func (m *MockArticleCache) Set(ctx context.Context, article domain.Article) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Set", ctx, article)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Set indicates an expected call of Set.
+func (mr *MockArticleCacheMockRecorder) Set(ctx, article any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockArticleCache)(nil).Set), ctx, article)
 }
 
 // SetFirstPage mocks base method.

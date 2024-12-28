@@ -21,6 +21,7 @@ type ArticleService interface {
 	Publish(ctx context.Context, article domain.Article) (int64, error)
 	Withdraw(ctx context.Context, userID int64, articleID int64) error
 	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article, error)
+	GetByID(ctx context.Context, id int64) (domain.Article, error)
 }
 
 type articleService struct {
@@ -32,6 +33,11 @@ type articleService struct {
 	authorRepo repository.ArticleAuthorRepository
 }
 
+// GetByID implements ArticleService.
+func (a *articleService) GetByID(ctx context.Context, id int64) (domain.Article, error) {
+	return a.repo.GetByID(ctx, id)
+}
+
 // GetByAuthor implements ArticleService.
 func (a *articleService) GetByAuthor(
 	ctx context.Context,
@@ -40,24 +46,6 @@ func (a *articleService) GetByAuthor(
 	limit int,
 ) ([]domain.Article, error) {
 	return a.repo.GetByAuthor(ctx, uid, offset, limit)
-}
-
-func NewArticleServiceV1(
-	l logger.Logger,
-	readerRepo repository.ArticleReaderRepository,
-	authorRepo repository.ArticleAuthorRepository,
-) *articleService {
-	return &articleService{
-		l:          l,
-		readerRepo: readerRepo,
-		authorRepo: authorRepo,
-	}
-}
-
-func NewArticleService(repo repository.ArticleRepository) ArticleService {
-	return &articleService{
-		repo: repo,
-	}
 }
 
 func (a *articleService) Save(ctx context.Context, article domain.Article) (int64, error) {
@@ -110,4 +98,22 @@ func (a *articleService) PublishV1(ctx context.Context, article domain.Article) 
 
 func (a *articleService) Withdraw(ctx context.Context, userID int64, articleID int64) error {
 	return a.repo.SyncStatus(ctx, userID, articleID, domain.ArticleStatusPrivate)
+}
+
+func NewArticleServiceV1(
+	l logger.Logger,
+	readerRepo repository.ArticleReaderRepository,
+	authorRepo repository.ArticleAuthorRepository,
+) *articleService {
+	return &articleService{
+		l:          l,
+		readerRepo: readerRepo,
+		authorRepo: authorRepo,
+	}
+}
+
+func NewArticleService(repo repository.ArticleRepository) ArticleService {
+	return &articleService{
+		repo: repo,
+	}
 }

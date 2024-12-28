@@ -57,4 +57,11 @@ func Int(key string, val int) Field {
 	}
 }
 
+func String(key string, val string) Field {
+	return Field{
+		Key:   key,
+		Value: val,
+	}
+}
+
 // }}}

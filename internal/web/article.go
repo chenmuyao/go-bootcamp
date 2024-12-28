@@ -2,6 +2,7 @@ package web
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/chenmuyao/generique/gslice"
@@ -138,7 +139,44 @@ func (h *ArticleHandler) Withdraw(
 }
 
 func (h *ArticleHandler) Detail(ctx *gin.Context, uc ijwt.UserClaims) (ginx.Result, error) {
-	return ginx.Result{}, nil
+	idStr := ctx.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		h.l.Warn("wrong id", logger.String("id", idStr), logger.Error(err))
+		return ginx.InternalServerErrorResult, nil
+	}
+	article, err := h.svc.GetByID(ctx, id)
+	if err != nil {
+		return ginx.InternalServerErrorResult, fmt.Errorf(
+			"Get article %d detail failed: %w",
+			id,
+			err,
+		)
+	}
+	if article.ID != uc.UID {
+		return ginx.Result{
+				Code: ginx.CodeUserSide,
+				Msg:  "article not found",
+			}, &logger.LogError{
+				Msg: "invalid article query",
+				Fields: []logger.Field{
+					logger.Int64("id", id),
+					logger.Int64("uid", uc.UID),
+				},
+			}
+	}
+	return ginx.Result{
+		Code: ginx.CodeOK,
+		Data: ArticleVO{
+			ID:    article.ID,
+			Title: article.Title,
+			// Abstract: article.Abstract(),
+			Content: article.Content,
+			Status:  uint8(article.Status),
+			Ctime:   article.Ctime.Format(time.DateTime),
+			Utime:   article.Ctime.Format(time.DateTime),
+		},
+	}, nil
 }
 
 func (h *ArticleHandler) List(
@@ -156,10 +194,10 @@ func (h *ArticleHandler) List(
 					ID:       src.ID,
 					Title:    src.Title,
 					Abstract: src.Abstract(),
-					Content:  src.Content,
-					Status:   uint8(src.Status),
-					Ctime:    src.Ctime.Format(time.DateTime),
-					Utime:    src.Ctime.Format(time.DateTime),
+					// Content:  src.Content,
+					Status: uint8(src.Status),
+					Ctime:  src.Ctime.Format(time.DateTime),
+					Utime:  src.Ctime.Format(time.DateTime),
 				}
 			}),
 		}, nil

@@ -37,6 +37,8 @@ type ArticleCache interface {
 	GetFirstPage(ctx context.Context, uid int64) ([]domain.Article, error)
 	SetFirstPage(ctx context.Context, uid int64, articles []domain.Article) error
 	DelFirstPage(ctx context.Context, uid int64) error
+	Get(ctx context.Context, id int64) (domain.Article, error)
+	Set(ctx context.Context, article domain.Article) error
 }
 
 // }}}
@@ -62,8 +64,8 @@ func (c *BaseUserCache) Key(uid int64) string {
 	return fmt.Sprintf("user:info:%d", uid)
 }
 
-func (c *BaseArticleCache) Key(uid int64) string {
-	return fmt.Sprintf("article:first_page:%d", uid)
+func (c *BaseArticleCache) Key(motif string, uid int64) string {
+	return fmt.Sprintf("article:%s:%d", motif, uid)
 }
 
 // }}}

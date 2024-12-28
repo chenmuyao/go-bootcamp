@@ -23,6 +23,11 @@ type MongoDBArticleDAO struct {
 	client   *mongo.Client
 }
 
+// GetByID implements ArticleDAO.
+func (m *MongoDBArticleDAO) GetByID(ctx context.Context, id int64) (Article, error) {
+	panic("unimplemented")
+}
+
 // GetByAuthor implements ArticleDAO.
 func (m *MongoDBArticleDAO) GetByAuthor(
 	ctx context.Context,

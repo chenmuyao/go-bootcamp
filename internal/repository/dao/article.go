@@ -26,10 +26,18 @@ type ArticleDAO interface {
 		status uint8,
 	) error
 	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]Article, error)
+	GetByID(ctx context.Context, id int64) (Article, error)
 }
 
 type GORMArticleDAO struct {
 	db *gorm.DB
+}
+
+// GetByID implements ArticleDAO.
+func (a *GORMArticleDAO) GetByID(ctx context.Context, id int64) (Article, error) {
+	var article Article
+	err := a.db.WithContext(ctx).Where("id = ?", id).First(&article).Error
+	return article, err
 }
 
 type Article struct {
