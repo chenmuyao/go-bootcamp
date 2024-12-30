@@ -161,7 +161,7 @@ func (h *ArticleHandler) Detail(ctx *gin.Context, uc ijwt.UserClaims) (ginx.Resu
 			err,
 		)
 	}
-	if article.ID != uc.UID {
+	if article.Author.ID != uc.UID {
 		return ginx.Result{
 				Code: ginx.CodeUserSide,
 				Msg:  "article not found",

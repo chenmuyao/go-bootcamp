@@ -2,11 +2,14 @@ package integration
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"github.com/chenmuyao/go-bootcamp/internal/integration/startup"
@@ -15,6 +18,7 @@ import (
 	ijwt "github.com/chenmuyao/go-bootcamp/internal/web/jwt"
 	"github.com/chenmuyao/go-bootcamp/pkg/ginx"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
@@ -29,6 +33,7 @@ type Result[T any] struct {
 type ArticleHandlerSuite struct {
 	suite.Suite
 	db     *gorm.DB
+	rdb    redis.Cmdable
 	server *gin.Engine
 }
 
@@ -42,13 +47,17 @@ func (s *ArticleHandlerSuite) SetupSuite() {
 	s.db = startup.InitDB()
 	hdl := startup.InitArticleHandler(dao.NewArticleDAO(s.db))
 	hdl.RegisterRoutes(s.server)
-	// s.rdb = startup.InitRedis()
+	s.rdb = startup.InitRedis()
 }
 
 func (s *ArticleHandlerSuite) TearDownTest() {
 	log.Println("TRUNCATE")
 	s.db.Exec("TRUNCATE articles")
 	s.db.Exec("TRUNCATE published_articles")
+	s.db.Exec("TRUNCATE users")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	s.rdb.Del(ctx, "article:*")
 }
 
 func (s *ArticleHandlerSuite) TestEdit() {
@@ -417,6 +426,555 @@ func (s *ArticleHandlerSuite) TestPublish() {
 			err = json.NewDecoder(rec.Body).Decode(&res)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.wantRes, res)
+		})
+	}
+}
+
+func (s *ArticleHandlerSuite) TestWithdraw() {
+	t := s.T()
+
+	testCases := []struct {
+		name   string
+		before func(t *testing.T)
+		after  func(t *testing.T)
+
+		// json article from frontend
+		article web.ArticleWithdrawReq
+
+		wantCode int
+		wantRes  Result[int64]
+	}{
+		{
+			name: "Withdraw a published post",
+			before: func(t *testing.T) {
+				err := s.db.Create(dao.Article{
+					ID:       31,
+					Title:    "my title",
+					Content:  "my content",
+					AuthorID: 123,
+					Status:   domain.ArticleStatusPublished,
+					Ctime:    456,
+					Utime:    789,
+				}).Error
+				assert.NoError(t, err)
+				err = s.db.Create(dao.PublishedArticle{
+					ID:       31,
+					Title:    "my title",
+					Content:  "my content",
+					AuthorID: 123,
+					Status:   domain.ArticleStatusPublished,
+					Ctime:    456,
+					Utime:    789,
+				}).Error
+				assert.NoError(t, err)
+			},
+			after: func(t *testing.T) {
+				// check that the article is saved into the DB
+				var article dao.Article
+				err := s.db.Where("id = ?", 31).First(&article).Error
+				assert.NoError(t, err)
+				assert.True(t, domain.ArticleStatusPrivate == article.Status)
+				var pub dao.PublishedArticle
+				err = s.db.Where("id = ?", 31).First(&pub).Error
+				assert.NoError(t, err)
+			},
+			article: web.ArticleWithdrawReq{
+				ID: 31,
+			},
+			wantCode: http.StatusOK,
+			wantRes: Result[int64]{
+				Code: ginx.CodeOK,
+			},
+		},
+		{
+			name: "Edit a post of someone else",
+			before: func(t *testing.T) {
+				err := s.db.Create(dao.Article{
+					ID:       32,
+					Title:    "my title",
+					Content:  "my content",
+					AuthorID: 234,
+					Status:   domain.ArticleStatusPublished,
+					Ctime:    456,
+					Utime:    789,
+				}).Error
+				assert.NoError(t, err)
+				err = s.db.Create(dao.PublishedArticle{
+					ID:       32,
+					Title:    "my title",
+					Content:  "my content",
+					AuthorID: 234,
+					Status:   domain.ArticleStatusPublished,
+					Ctime:    456,
+					Utime:    789,
+				}).Error
+				assert.NoError(t, err)
+			},
+			after: func(t *testing.T) {
+				// check that the article is saved into the DB
+				var article dao.Article
+				err := s.db.Where("id = ?", 32).First(&article).Error
+				assert.NoError(t, err)
+				assert.Equal(t, dao.Article{
+					ID:       32,
+					Title:    "my title",
+					Content:  "my content",
+					AuthorID: 234,
+					Status:   domain.ArticleStatusPublished,
+					Ctime:    456,
+					Utime:    789,
+				}, article)
+			},
+			article: web.ArticleWithdrawReq{
+				ID: 32,
+			},
+			wantCode: http.StatusBadRequest,
+			wantRes: Result[int64]{
+				Code: ginx.CodeUserSide,
+				Msg:  "article not found",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.before(t)
+			defer tc.after(t)
+
+			reqBody, err := json.Marshal(tc.article)
+			assert.NoError(t, err)
+			req, err := http.NewRequest(
+				http.MethodPost,
+				"/articles/withdraw",
+				bytes.NewReader(reqBody),
+			)
+			req.Header.Set("Content-Type", "application/json")
+			assert.NoError(t, err)
+			rec := httptest.NewRecorder()
+
+			s.server.ServeHTTP(rec, req)
+
+			assert.Equal(t, tc.wantCode, rec.Code)
+			var res Result[int64]
+			err = json.NewDecoder(rec.Body).Decode(&res)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.wantRes, res)
+		})
+	}
+}
+
+func (s *ArticleHandlerSuite) TestDetail() {
+	t := s.T()
+
+	testCases := []struct {
+		name   string
+		before func(t *testing.T)
+		after  func(t *testing.T)
+
+		param string
+
+		wantCode int
+		wantRes  Result[web.ArticleVO]
+	}{
+		{
+			name: "authors see detail of an article from db",
+			before: func(t *testing.T) {
+				err := s.db.Create(dao.Article{
+					ID:       41,
+					Title:    "my title",
+					Content:  "my content",
+					AuthorID: 123,
+					Status:   domain.ArticleStatusUnpublished,
+					Ctime:    456,
+					Utime:    789,
+				}).Error
+				assert.NoError(t, err)
+			},
+			after: func(t *testing.T) {
+				// check that the cache is set
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+				defer cancel()
+				val, err := s.rdb.Get(ctx, "article:content:41").Bytes()
+				assert.NoError(t, err)
+				var res domain.Article
+				err = json.Unmarshal(val, &res)
+				assert.NoError(t, err)
+				assert.Equal(t, domain.Article{
+					ID:      41,
+					Title:   "my title",
+					Content: "my content",
+					Author:  domain.Author{ID: 123},
+					Status:  domain.ArticleStatusUnpublished,
+					Ctime:   time.UnixMilli(456),
+					Utime:   time.UnixMilli(789),
+				}, res)
+			},
+			param:    "41",
+			wantCode: http.StatusOK,
+			wantRes: Result[web.ArticleVO]{
+				Code: ginx.CodeOK,
+				Data: web.ArticleVO{
+					ID:      41,
+					Title:   "my title",
+					Content: "my content",
+					Status:  domain.ArticleStatusUnpublished,
+					Ctime:   time.UnixMilli(456).Format(time.DateTime),
+					Utime:   time.UnixMilli(789).Format(time.DateTime),
+				},
+			},
+		},
+		{
+			name: "authors see detail of an article from cache",
+			before: func(t *testing.T) {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+				defer cancel()
+				val, err := json.Marshal(domain.Article{
+					ID:      42,
+					Title:   "my title",
+					Content: "my content",
+					Author:  domain.Author{ID: 123},
+					Status:  domain.ArticleStatusUnpublished,
+					Ctime:   time.UnixMilli(456),
+					Utime:   time.UnixMilli(789),
+				})
+				assert.NoError(t, err)
+				err = s.rdb.Set(ctx, "article:content:42", val, time.Second).Err()
+				assert.NoError(t, err)
+			},
+			after: func(t *testing.T) {
+			},
+			param:    "42",
+			wantCode: http.StatusOK,
+			wantRes: Result[web.ArticleVO]{
+				Code: ginx.CodeOK,
+				Data: web.ArticleVO{
+					ID:      42,
+					Title:   "my title",
+					Content: "my content",
+					Status:  domain.ArticleStatusUnpublished,
+					Ctime:   time.UnixMilli(456).Format(time.DateTime),
+					Utime:   time.UnixMilli(789).Format(time.DateTime),
+				},
+			},
+		},
+		{
+			name: "get detail of a post of someone else",
+			before: func(t *testing.T) {
+				err := s.db.Create(dao.Article{
+					ID:       43,
+					Title:    "my title",
+					Content:  "my content",
+					AuthorID: 234,
+					Status:   domain.ArticleStatusPublished,
+					Ctime:    456,
+					Utime:    789,
+				}).Error
+				assert.NoError(t, err)
+			},
+			after: func(t *testing.T) {
+				// check that the article is saved into the DB
+			},
+			param:    "43",
+			wantCode: http.StatusBadRequest,
+			wantRes: Result[web.ArticleVO]{
+				Code: ginx.CodeUserSide,
+				Data: web.ArticleVO{},
+				Msg:  "article not found",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.before(t)
+			defer tc.after(t)
+
+			req, err := http.NewRequest(
+				http.MethodGet,
+				fmt.Sprintf("/articles/detail/%s", tc.param),
+				nil,
+			)
+			req.Header.Set("Content-Type", "application/json")
+			assert.NoError(t, err)
+			rec := httptest.NewRecorder()
+
+			s.server.ServeHTTP(rec, req)
+
+			assert.Equal(t, tc.wantCode, rec.Code)
+			var res Result[web.ArticleVO]
+			err = json.NewDecoder(rec.Body).Decode(&res)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.wantRes, res)
+
+			time.Sleep(100 * time.Millisecond) // wait for goroutines
+		})
+	}
+}
+
+func (s *ArticleHandlerSuite) TestList() {
+	t := s.T()
+
+	testCases := []struct {
+		name   string
+		before func(t *testing.T)
+		after  func(t *testing.T)
+
+		page web.Page
+
+		wantCode int
+		wantRes  Result[[]web.ArticleVO]
+	}{
+		{
+			name: "authors see list of their articles from db",
+			before: func(t *testing.T) {
+				err := s.db.Create(dao.Article{
+					ID:       51,
+					Title:    "my title",
+					Content:  "my content",
+					AuthorID: 123,
+					Status:   domain.ArticleStatusUnpublished,
+					Ctime:    456,
+					Utime:    789,
+				}).Error
+				assert.NoError(t, err)
+			},
+			after: func(t *testing.T) {
+				// check that the cache is set
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+				defer cancel()
+				val, err := s.rdb.Get(ctx, "article:first_page:123").Bytes()
+				assert.NoError(t, err)
+				var res []domain.Article
+				err = json.Unmarshal(val, &res)
+				assert.NoError(t, err)
+				assert.Equal(t, []domain.Article{{
+					ID:      51,
+					Title:   "my title",
+					Content: "my content",
+					Author:  domain.Author{ID: 123},
+					Status:  domain.ArticleStatusUnpublished,
+					Ctime:   time.UnixMilli(456),
+					Utime:   time.UnixMilli(789),
+				}}, res)
+			},
+			page: web.Page{
+				Limit:  1,
+				Offset: 0,
+			},
+			wantCode: http.StatusOK,
+			wantRes: Result[[]web.ArticleVO]{
+				Code: ginx.CodeOK,
+				Data: []web.ArticleVO{{
+					ID:       51,
+					Title:    "my title",
+					Abstract: "my content",
+					Status:   domain.ArticleStatusUnpublished,
+					Ctime:    time.UnixMilli(456).Format(time.DateTime),
+					Utime:    time.UnixMilli(789).Format(time.DateTime),
+				}},
+			},
+		},
+		{
+			name: "authors see list of their articles from cache",
+			before: func(t *testing.T) {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+				defer cancel()
+				val, err := json.Marshal([]domain.Article{{
+					ID:      52,
+					Title:   "my title",
+					Content: "my content",
+					Author:  domain.Author{ID: 123},
+					Status:  domain.ArticleStatusUnpublished,
+					Ctime:   time.UnixMilli(456),
+					Utime:   time.UnixMilli(789),
+				}})
+				assert.NoError(t, err)
+				err = s.rdb.Set(ctx, "article:first_page:123", val, time.Second).Err()
+				assert.NoError(t, err)
+			},
+			after: func(t *testing.T) {
+			},
+			page: web.Page{
+				Limit:  1,
+				Offset: 0,
+			},
+			wantCode: http.StatusOK,
+			wantRes: Result[[]web.ArticleVO]{
+				Code: ginx.CodeOK,
+				Data: []web.ArticleVO{{
+					ID:       52,
+					Title:    "my title",
+					Abstract: "my content",
+					Status:   domain.ArticleStatusUnpublished,
+					Ctime:    time.UnixMilli(456).Format(time.DateTime),
+					Utime:    time.UnixMilli(789).Format(time.DateTime),
+				}},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.before(t)
+			defer tc.after(t)
+
+			reqBody, err := json.Marshal(tc.page)
+			req, err := http.NewRequest(
+				http.MethodPost,
+				"/articles/list",
+				bytes.NewReader(reqBody),
+			)
+			req.Header.Set("Content-Type", "application/json")
+			assert.NoError(t, err)
+			rec := httptest.NewRecorder()
+
+			s.server.ServeHTTP(rec, req)
+
+			assert.Equal(t, tc.wantCode, rec.Code)
+			var res Result[[]web.ArticleVO]
+			err = json.NewDecoder(rec.Body).Decode(&res)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.wantRes, res)
+
+			time.Sleep(100 * time.Millisecond) // wait for goroutines
+		})
+	}
+}
+
+func (s *ArticleHandlerSuite) TestPubDetail() {
+	t := s.T()
+
+	testCases := []struct {
+		name   string
+		before func(t *testing.T)
+		after  func(t *testing.T)
+
+		param string
+
+		wantCode int
+		wantRes  Result[web.ArticleVO]
+	}{
+		{
+			name: "readers see detail of an article from db",
+			before: func(t *testing.T) {
+				err := s.db.Create(dao.PublishedArticle{
+					ID:       61,
+					Title:    "my title",
+					Content:  "my content",
+					AuthorID: 123,
+					Status:   domain.ArticleStatusPublished,
+					Ctime:    456,
+					Utime:    789,
+				}).Error
+				assert.NoError(t, err)
+				err = s.db.Create(dao.User{
+					ID:   123,
+					Name: "user",
+				}).Error
+				assert.NoError(t, err)
+			},
+			after: func(t *testing.T) {
+				// check that the cache is set
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+				defer cancel()
+				val, err := s.rdb.Get(ctx, "article:published_content:61").Bytes()
+				assert.NoError(t, err)
+				var res domain.Article
+				err = json.Unmarshal(val, &res)
+				assert.NoError(t, err)
+				assert.Equal(t, domain.Article{
+					ID:      61,
+					Title:   "my title",
+					Content: "my content",
+					Author: domain.Author{
+						ID:   123,
+						Name: "user",
+					},
+					Status: domain.ArticleStatusPublished,
+					Ctime:  time.UnixMilli(456),
+					Utime:  time.UnixMilli(789),
+				}, res)
+			},
+			param:    "61",
+			wantCode: http.StatusOK,
+			wantRes: Result[web.ArticleVO]{
+				Code: ginx.CodeOK,
+				Data: web.ArticleVO{
+					ID:         61,
+					Title:      "my title",
+					Content:    "my content",
+					AuthorID:   123,
+					AuthorName: "user",
+					Status:     domain.ArticleStatusPublished,
+					Ctime:      time.UnixMilli(456).Format(time.DateTime),
+					Utime:      time.UnixMilli(789).Format(time.DateTime),
+				},
+			},
+		},
+		{
+			name: "readers see detail of an article from cache",
+			before: func(t *testing.T) {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+				defer cancel()
+				val, err := json.Marshal(domain.Article{
+					ID:      62,
+					Title:   "my title",
+					Content: "my content",
+					Author: domain.Author{
+						ID:   123,
+						Name: "user",
+					},
+					Status: domain.ArticleStatusPublished,
+					Ctime:  time.UnixMilli(456),
+					Utime:  time.UnixMilli(789),
+				})
+				assert.NoError(t, err)
+				err = s.rdb.Set(ctx, "article:published_content:62", val, time.Second).Err()
+				assert.NoError(t, err)
+			},
+			after: func(t *testing.T) {
+			},
+			param:    "62",
+			wantCode: http.StatusOK,
+			wantRes: Result[web.ArticleVO]{
+				Code: ginx.CodeOK,
+				Data: web.ArticleVO{
+					ID:         62,
+					Title:      "my title",
+					Content:    "my content",
+					AuthorID:   123,
+					AuthorName: "user",
+					Status:     domain.ArticleStatusPublished,
+					Ctime:      time.UnixMilli(456).Format(time.DateTime),
+					Utime:      time.UnixMilli(789).Format(time.DateTime),
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.before(t)
+			defer tc.after(t)
+
+			req, err := http.NewRequest(
+				http.MethodGet,
+				fmt.Sprintf("/articles/pub/%s", tc.param),
+				nil,
+			)
+			req.Header.Set("Content-Type", "application/json")
+			assert.NoError(t, err)
+			rec := httptest.NewRecorder()
+
+			s.server.ServeHTTP(rec, req)
+
+			assert.Equal(t, tc.wantCode, rec.Code)
+			var res Result[web.ArticleVO]
+			err = json.NewDecoder(rec.Body).Decode(&res)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.wantRes, res)
+
+			time.Sleep(100 * time.Millisecond) // wait for goroutines
 		})
 	}
 }
