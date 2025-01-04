@@ -43,6 +43,10 @@ type ArticleCache interface {
 	SetPub(ctx context.Context, article domain.Article) error
 }
 
+type InteractiveCache interface {
+	IncrReadCntIfPresent(ctx context.Context, biz string, bizID int64) error
+}
+
 // }}}
 // {{{ Struct
 
@@ -51,6 +55,8 @@ type BaseCodeCache struct{}
 type BaseUserCache struct{}
 
 type BaseArticleCache struct{}
+
+type BaseInteractiveCache struct{}
 
 // }}}
 // {{{ Other structs
@@ -68,6 +74,10 @@ func (c *BaseUserCache) Key(uid int64) string {
 
 func (c *BaseArticleCache) Key(motif string, uid int64) string {
 	return fmt.Sprintf("article:%s:%d", motif, uid)
+}
+
+func (c *BaseInteractiveCache) Key(biz string, bizID int64) string {
+	return fmt.Sprintf("interactive:%s:%d", biz, bizID)
 }
 
 // }}}

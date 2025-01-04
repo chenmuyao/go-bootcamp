@@ -21,10 +21,19 @@ var thirdPartySet = wire.NewSet(
 	InitLogger,
 )
 
+var interactiveSvcSet = wire.NewSet(
+	dao.NewGORMInteractiveDAO,
+	rediscache.NewInteractiveRedisCache,
+	repository.NewCachedInteractiveRepository,
+	service.NewInteractiveService,
+)
+
 func InitWebServer() *gin.Engine {
 	wire.Build(
 		// third-party dependencies
 		thirdPartySet,
+
+		interactiveSvcSet,
 
 		// DAO
 		dao.NewUserDAO,
@@ -66,6 +75,7 @@ func InitArticleHandler(articleDAO dao.ArticleDAO) *web.ArticleHandler {
 	wire.Build(
 		thirdPartySet,
 		rediscache.NewArticleRedisCache,
+		interactiveSvcSet,
 
 		rediscache.NewUserRedisCache,
 		dao.NewUserDAO,

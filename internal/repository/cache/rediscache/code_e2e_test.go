@@ -41,6 +41,7 @@ func TestRedisCodeCacheSet(t *testing.T) {
 				assert.True(t, dur > time.Minute*9+time.Second+50)
 				err = rdb.Del(ctx, key).Err()
 				assert.NoError(t, err)
+				rdb.Del(ctx, "phone_code:login:12345:cnt")
 			},
 			ctx:     context.Background(),
 			biz:     "login",
@@ -64,6 +65,7 @@ func TestRedisCodeCacheSet(t *testing.T) {
 				code, err := rdb.GetDel(ctx, key).Result()
 				assert.NoError(t, err)
 				assert.Equal(t, "600123", code)
+				rdb.Del(ctx, "phone_code:login:12345:cnt")
 			},
 			ctx:     context.Background(),
 			biz:     "login",
@@ -87,6 +89,7 @@ func TestRedisCodeCacheSet(t *testing.T) {
 				code, err := rdb.GetDel(ctx, key).Result()
 				assert.NoError(t, err)
 				assert.Equal(t, "600123", code)
+				rdb.Del(ctx, "phone_code:login:12345:cnt")
 			},
 			ctx:     context.Background(),
 			biz:     "login",

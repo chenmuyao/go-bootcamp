@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"time"
@@ -26,14 +27,22 @@ import (
 // {{{ Struct
 
 type ArticleHandler struct {
-	l   logger.Logger
-	svc service.ArticleService
+	l       logger.Logger
+	svc     service.ArticleService
+	intrSvc service.InteractiveService
+	biz     string
 }
 
-func NewArticleHandler(l logger.Logger, svc service.ArticleService) *ArticleHandler {
+func NewArticleHandler(
+	l logger.Logger,
+	svc service.ArticleService,
+	intrSvc service.InteractiveService,
+) *ArticleHandler {
 	return &ArticleHandler{
-		l:   l,
-		svc: svc,
+		l:       l,
+		svc:     svc,
+		intrSvc: intrSvc,
+		biz:     "article",
 	}
 }
 
@@ -238,6 +247,20 @@ func (h *ArticleHandler) PubDetail(
 			logger.Error(err),
 		)
 	}
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		er := h.intrSvc.IncrReadCnt(ctx, h.biz, article.ID)
+		if er != nil {
+			h.l.Error(
+				"failed to update read count",
+				logger.String("biz", h.biz),
+				logger.Int64("bizID", article.ID),
+				logger.Error(er),
+			)
+		}
+	}()
+
 	return ginx.Result{
 		Code: ginx.CodeOK,
 		Data: ArticleVO{

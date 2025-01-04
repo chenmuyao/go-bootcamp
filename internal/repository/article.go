@@ -185,6 +185,7 @@ func (c *CachedArticleRepository) Sync(
 		if err != nil {
 			return 0, err
 		}
+		article = c.toDomain(dao.Article(publishedArticle))
 		return id, err
 	})
 	if err != nil {

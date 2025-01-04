@@ -50,6 +50,7 @@ func InitGinMiddlewares(
 		}),
 
 		ratelimit.NewRateLimiterBuilder(&limiter.RedisSlidingWindowOptions{
+			Prefix:        "web-interface",
 			RedisClient:   redisClient,
 			Interval:      time.Second,
 			Limit:         100,

@@ -122,7 +122,7 @@ func TestArticleHandler_Publish(t *testing.T) {
 
 			// Prepare
 			articleSvc := tc.mock(ctrl)
-			hdl := NewArticleHandler(logger.NewZapLogger(zap.L()), articleSvc)
+			hdl := NewArticleHandler(logger.NewZapLogger(zap.L()), articleSvc, nil)
 
 			server := gin.Default()
 			server.Use(func(ctx *gin.Context) {

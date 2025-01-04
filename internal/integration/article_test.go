@@ -55,9 +55,10 @@ func (s *ArticleHandlerSuite) TearDownTest() {
 	s.db.Exec("TRUNCATE articles")
 	s.db.Exec("TRUNCATE published_articles")
 	s.db.Exec("TRUNCATE users")
+	s.db.Exec("TRUNCATE interactives")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	s.rdb.Del(ctx, "article:*")
+	s.rdb.Del(ctx, "user:info:123")
 }
 
 func (s *ArticleHandlerSuite) TestEdit() {
@@ -262,6 +263,26 @@ func (s *ArticleHandlerSuite) TestPublish() {
 					AuthorID: 123,
 					Status:   domain.ArticleStatusPublished,
 				}, articlePub)
+
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+				defer cancel()
+				val, err := s.rdb.Get(ctx, "article:published_content:1").Bytes()
+				assert.NoError(t, err)
+				var res domain.Article
+				err = json.Unmarshal(val, &res)
+				assert.NoError(t, err)
+				assert.True(t, res.Ctime.UnixMilli() > 789)
+				res.Ctime = time.Time{}
+				assert.True(t, res.Utime.UnixMilli() > 789)
+				res.Utime = time.Time{}
+				assert.Equal(t, domain.Article{
+					ID:      1,
+					Title:   "my super title",
+					Content: "my content",
+					Author:  domain.Author{}, // Author is not set in the DB
+					Status:  domain.ArticleStatusPublished,
+				}, res)
+				assert.NoError(t, s.rdb.Del(ctx, "article:published_content:1").Err())
 			},
 			article: web.ArticlePublishReq{
 				Title:   "my super title",
@@ -326,6 +347,26 @@ func (s *ArticleHandlerSuite) TestPublish() {
 					Status:   domain.ArticleStatusPublished,
 					Ctime:    456,
 				}, pubArticle)
+
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+				defer cancel()
+				val, err := s.rdb.Get(ctx, "article:published_content:22").Bytes()
+				assert.NoError(t, err)
+				var res domain.Article
+				err = json.Unmarshal(val, &res)
+				assert.NoError(t, err)
+				assert.True(t, res.Ctime.UnixMilli() > 456)
+				res.Ctime = time.Time{}
+				assert.True(t, res.Utime.UnixMilli() > 789)
+				res.Utime = time.Time{}
+				assert.Equal(t, domain.Article{
+					ID:      22,
+					Title:   "new title",
+					Content: "new content",
+					Author:  domain.Author{}, // Author is not set in the DB
+					Status:  domain.ArticleStatusPublished,
+				}, res)
+				assert.NoError(t, s.rdb.Del(ctx, "article:published_content:22").Err())
 			},
 			article: web.ArticlePublishReq{
 				ID:      22,
@@ -426,6 +467,7 @@ func (s *ArticleHandlerSuite) TestPublish() {
 			err = json.NewDecoder(rec.Body).Decode(&res)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.wantRes, res)
+			time.Sleep(100 * time.Millisecond)
 		})
 	}
 }
@@ -608,6 +650,7 @@ func (s *ArticleHandlerSuite) TestDetail() {
 					Ctime:   time.UnixMilli(456),
 					Utime:   time.UnixMilli(789),
 				}, res)
+				assert.NoError(t, s.rdb.Del(ctx, "article:content:41").Err())
 			},
 			param:    "41",
 			wantCode: http.StatusOK,
@@ -642,6 +685,9 @@ func (s *ArticleHandlerSuite) TestDetail() {
 				assert.NoError(t, err)
 			},
 			after: func(t *testing.T) {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+				defer cancel()
+				assert.NoError(t, s.rdb.Del(ctx, "article:content:42").Err())
 			},
 			param:    "42",
 			wantCode: http.StatusOK,
@@ -673,6 +719,11 @@ func (s *ArticleHandlerSuite) TestDetail() {
 			},
 			after: func(t *testing.T) {
 				// check that the article is saved into the DB
+				// NOTE: even if this action should fail, we actually got
+				// the article, so the cache is updated
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+				defer cancel()
+				s.rdb.Del(ctx, "article:content:43")
 			},
 			param:    "43",
 			wantCode: http.StatusBadRequest,
@@ -756,6 +807,10 @@ func (s *ArticleHandlerSuite) TestList() {
 					Ctime:   time.UnixMilli(456),
 					Utime:   time.UnixMilli(789),
 				}}, res)
+				assert.NoError(t, s.rdb.Del(ctx, "article:first_page:123").Err())
+				_, err = s.rdb.Get(ctx, "article:content:51").Bytes()
+				assert.NoError(t, err)
+				assert.NoError(t, s.rdb.Del(ctx, "article:content:51").Err())
 			},
 			page: web.Page{
 				Limit:  1,
@@ -793,6 +848,9 @@ func (s *ArticleHandlerSuite) TestList() {
 				assert.NoError(t, err)
 			},
 			after: func(t *testing.T) {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+				defer cancel()
+				assert.NoError(t, s.rdb.Del(ctx, "article:first_page:123").Err())
 			},
 			page: web.Page{
 				Limit:  1,
@@ -894,6 +952,7 @@ func (s *ArticleHandlerSuite) TestPubDetail() {
 					Ctime:  time.UnixMilli(456),
 					Utime:  time.UnixMilli(789),
 				}, res)
+				assert.NoError(t, s.rdb.Del(ctx, "article:published_content:61").Err())
 			},
 			param:    "61",
 			wantCode: http.StatusOK,
@@ -933,6 +992,9 @@ func (s *ArticleHandlerSuite) TestPubDetail() {
 				assert.NoError(t, err)
 			},
 			after: func(t *testing.T) {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+				defer cancel()
+				assert.NoError(t, s.rdb.Del(ctx, "article:published_content:62").Err())
 			},
 			param:    "62",
 			wantCode: http.StatusOK,

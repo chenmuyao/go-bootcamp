@@ -247,3 +247,41 @@ func (mr *MockArticleCacheMockRecorder) SetPub(ctx, article any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPub", reflect.TypeOf((*MockArticleCache)(nil).SetPub), ctx, article)
 }
+
+// MockInteractiveCache is a mock of InteractiveCache interface.
+type MockInteractiveCache struct {
+	ctrl     *gomock.Controller
+	recorder *MockInteractiveCacheMockRecorder
+	isgomock struct{}
+}
+
+// MockInteractiveCacheMockRecorder is the mock recorder for MockInteractiveCache.
+type MockInteractiveCacheMockRecorder struct {
+	mock *MockInteractiveCache
+}
+
+// NewMockInteractiveCache creates a new mock instance.
+func NewMockInteractiveCache(ctrl *gomock.Controller) *MockInteractiveCache {
+	mock := &MockInteractiveCache{ctrl: ctrl}
+	mock.recorder = &MockInteractiveCacheMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockInteractiveCache) EXPECT() *MockInteractiveCacheMockRecorder {
+	return m.recorder
+}
+
+// IncrReadCntIfPresent mocks base method.
+func (m *MockInteractiveCache) IncrReadCntIfPresent(ctx context.Context, biz string, bizID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncrReadCntIfPresent", ctx, biz, bizID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IncrReadCntIfPresent indicates an expected call of IncrReadCntIfPresent.
+func (mr *MockInteractiveCacheMockRecorder) IncrReadCntIfPresent(ctx, biz, bizID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrReadCntIfPresent", reflect.TypeOf((*MockInteractiveCache)(nil).IncrReadCntIfPresent), ctx, biz, bizID)
+}

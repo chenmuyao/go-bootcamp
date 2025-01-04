@@ -15,12 +15,21 @@ import (
 	"github.com/google/wire"
 )
 
+var interactiveSvcSet = wire.NewSet(
+	dao.NewGORMInteractiveDAO,
+	rediscache.NewInteractiveRedisCache,
+	repository.NewCachedInteractiveRepository,
+	service.NewInteractiveService,
+)
+
 func InitWebServer() *gin.Engine {
 	wire.Build(
 		// third-party dependencies
 		ioc.InitRedis,
 		ioc.InitDB,
 		ioc.InitLogger,
+
+		interactiveSvcSet,
 
 		// DAO
 		dao.NewUserDAO,
@@ -30,7 +39,7 @@ func InitWebServer() *gin.Engine {
 		// Cache
 		rediscache.NewCodeRedisCache,
 		rediscache.NewUserRedisCache,
-        rediscache.NewArticleRedisCache,
+		rediscache.NewArticleRedisCache,
 		// ioc.InitCodeLocalCache,
 		// ioc.InitUserLocalCache,
 

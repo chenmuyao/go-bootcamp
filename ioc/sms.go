@@ -19,7 +19,7 @@ func InitSMSService(
 		localsms.NewService(),
 		limiter.NewLimiter(&limiter.RedisTokenBucketOptions{
 			RedisClient:   redisClient,
-			Prefix:        "",
+			Prefix:        "sms-svc",
 			Capacity:      100,
 			ReleaseAmount: 10,
 			Interval:      1 * time.Second,
