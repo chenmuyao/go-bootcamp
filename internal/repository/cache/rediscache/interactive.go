@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	fieldReadCnt = "read_cnt"
-	fieldLikeCnt = "like_cnt"
+	fieldReadCnt    = "read_cnt"
+	fieldLikeCnt    = "like_cnt"
+	fieldCollectCnt = "collect_cnt"
 )
 
 //go:embed lua/incr_cnt.lua
@@ -20,6 +21,24 @@ var luaIncrCnt string
 type InteractiveRedisCache struct {
 	cache.BaseInteractiveCache
 	client redis.Cmdable
+}
+
+// DecrCollectCntIfPresent implements cache.InteractiveCache.
+func (i *InteractiveRedisCache) DecrCollectCntIfPresent(
+	ctx context.Context,
+	biz string,
+	bizID int64,
+) error {
+	return i.client.Eval(ctx, luaIncrCnt, []string{i.Key(biz, bizID)}, fieldCollectCnt, -1).Err()
+}
+
+// IncrCollectorCntIfPresent implements cache.InteractiveCache.
+func (i *InteractiveRedisCache) IncrCollectCntIfPresent(
+	ctx context.Context,
+	biz string,
+	bizID int64,
+) error {
+	return i.client.Eval(ctx, luaIncrCnt, []string{i.Key(biz, bizID)}, fieldCollectCnt, 1).Err()
 }
 
 // DecrLikeCntIfPresent implements cache.InteractiveCache.

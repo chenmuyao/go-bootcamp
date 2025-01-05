@@ -12,6 +12,8 @@ type InteractiveDAO interface {
 	IncrReadCnt(ctx context.Context, biz string, bizID int64) error
 	InsertLikeInfo(ctx context.Context, biz string, bizID int64, uid int64) error
 	DeleteLikeInfo(ctx context.Context, biz string, bizID int64, uid int64) error
+	InsertCollectionBiz(ctx context.Context, cb UserCollectionBiz) error
+	DeleteCollectionBiz(ctx context.Context, cb UserCollectionBiz) error
 }
 
 type GORMInteractiveDAO struct {
@@ -39,6 +41,66 @@ type UserLikeBiz struct {
 	Status int
 	Utime  int64
 	Ctime  int64
+}
+
+type UserCollectionBiz struct {
+	ID int64 `gorm:"primaryKey,autoIncrement"`
+	// One ressource can only be put into one collection.
+	// Otherwise the composite index should include CID too
+	UID   int64  `gorm:"uniqueIndex:uid_biz_type_id"`
+	BizID int64  `gorm:"uniqueIndex:uid_biz_type_id"`
+	Biz   string `gorm:"uniqueIndex:uid_biz_type_id,length:128"`
+	// collection ID
+	CID   int64 `gorm:"index"`
+	Utime int64
+	Ctime int64
+}
+
+// DeleteCollectionBiz implements InteractiveDAO.
+func (g *GORMInteractiveDAO) DeleteCollectionBiz(ctx context.Context, cb UserCollectionBiz) error {
+	now := time.Now().UnixMilli()
+	return g.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		err := tx.WithContext(ctx).Delete(&UserCollectionBiz{}, map[string]interface{}{
+			"uid":    cb.UID,
+			"biz_id": cb.BizID,
+			"biz":    cb.Biz,
+		}).Error
+		if err != nil {
+			return err
+		}
+
+		return tx.WithContext(ctx).
+			Model(&Interactive{}).
+			Where("biz_id = ? AND biz = ?", cb.BizID, cb.Biz).
+			Updates(map[string]interface{}{
+				"collect_cnt": gorm.Expr("`collect_cnt` - 1"), // NOTE: don't forget ``
+				"utime":       now,
+			}).
+			Error
+	})
+}
+
+// InsertCollectionBiz implements InteractiveDAO.
+func (g *GORMInteractiveDAO) InsertCollectionBiz(ctx context.Context, cb UserCollectionBiz) error {
+	now := time.Now().UnixMilli()
+	return g.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		err := tx.Create(&cb).Error
+		if err != nil {
+			return err
+		}
+		return tx.WithContext(ctx).Clauses(clause.OnConflict{
+			DoUpdates: clause.Assignments(map[string]interface{}{
+				"collect_cnt": gorm.Expr("`collect_cnt` + 1"), // NOTE: don't forget ``
+				"utime":       now,
+			}),
+		}).Create(&Interactive{
+			Biz:        cb.Biz,
+			BizID:      cb.BizID,
+			CollectCnt: 1,
+			Ctime:      now,
+			Utime:      now,
+		}).Error
+	})
 }
 
 // DeleteLikeInfo implements InteractiveDAO.

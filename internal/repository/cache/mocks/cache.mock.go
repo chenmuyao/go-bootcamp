@@ -272,6 +272,20 @@ func (m *MockInteractiveCache) EXPECT() *MockInteractiveCacheMockRecorder {
 	return m.recorder
 }
 
+// DecrCollectCntIfPresent mocks base method.
+func (m *MockInteractiveCache) DecrCollectCntIfPresent(ctx context.Context, biz string, bizID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DecrCollectCntIfPresent", ctx, biz, bizID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DecrCollectCntIfPresent indicates an expected call of DecrCollectCntIfPresent.
+func (mr *MockInteractiveCacheMockRecorder) DecrCollectCntIfPresent(ctx, biz, bizID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecrCollectCntIfPresent", reflect.TypeOf((*MockInteractiveCache)(nil).DecrCollectCntIfPresent), ctx, biz, bizID)
+}
+
 // DecrLikeCntIfPresent mocks base method.
 func (m *MockInteractiveCache) DecrLikeCntIfPresent(ctx context.Context, biz string, bizID int64) error {
 	m.ctrl.T.Helper()
@@ -284,6 +298,20 @@ func (m *MockInteractiveCache) DecrLikeCntIfPresent(ctx context.Context, biz str
 func (mr *MockInteractiveCacheMockRecorder) DecrLikeCntIfPresent(ctx, biz, bizID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecrLikeCntIfPresent", reflect.TypeOf((*MockInteractiveCache)(nil).DecrLikeCntIfPresent), ctx, biz, bizID)
+}
+
+// IncrCollectCntIfPresent mocks base method.
+func (m *MockInteractiveCache) IncrCollectCntIfPresent(ctx context.Context, biz string, bizID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncrCollectCntIfPresent", ctx, biz, bizID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IncrCollectCntIfPresent indicates an expected call of IncrCollectCntIfPresent.
+func (mr *MockInteractiveCacheMockRecorder) IncrCollectCntIfPresent(ctx, biz, bizID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrCollectCntIfPresent", reflect.TypeOf((*MockInteractiveCache)(nil).IncrCollectCntIfPresent), ctx, biz, bizID)
 }
 
 // IncrLikeCntIfPresent mocks base method.

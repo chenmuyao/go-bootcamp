@@ -69,6 +69,7 @@ func (h *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	pub.GET("/:id", ginx.WrapLog(h.l, h.PubDetail))
 	// True: like; False: cancel like
 	pub.POST("/like", ginx.WrapBodyAndClaims(h.l, h.Like))
+	pub.POST("/collect", ginx.WrapBodyAndClaims(h.l, h.Collect))
 }
 
 func (h *ArticleHandler) Edit(
@@ -289,6 +290,30 @@ func (h *ArticleHandler) Like(ctx *gin.Context, req Like, uc ijwt.UserClaims) (g
 	if err != nil {
 		return ginx.InternalServerErrorResult, logger.LError(
 			"failed to like or cancel like",
+			logger.Error(err),
+			logger.Int64("uid", uc.UID),
+			logger.Int64("aid", req.ID),
+		)
+	}
+	return ginx.Result{
+		Code: ginx.CodeOK,
+	}, nil
+}
+
+func (h *ArticleHandler) Collect(
+	ctx *gin.Context,
+	req Collect,
+	uc ijwt.UserClaims,
+) (ginx.Result, error) {
+	var err error
+	if req.Collect {
+		err = h.intrSvc.Collect(ctx, h.biz, req.ID, req.CID, uc.UID)
+	} else {
+		err = h.intrSvc.CancelCollect(ctx, h.biz, req.ID, req.CID, uc.UID)
+	}
+	if err != nil {
+		return ginx.InternalServerErrorResult, logger.LError(
+			"failed to collect article",
 			logger.Error(err),
 			logger.Int64("uid", uc.UID),
 			logger.Int64("aid", req.ID),

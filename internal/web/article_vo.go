@@ -28,3 +28,10 @@ type Like struct {
 	ID   int64 `json:"id"`
 	Like bool  `json:"liked"`
 }
+
+type Collect struct {
+	ID int64 `json:"id"`
+	// collection id
+	CID     int64 `json:"cid"`
+	Collect bool  `json:"collect"`
+}
