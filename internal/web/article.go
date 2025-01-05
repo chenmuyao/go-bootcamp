@@ -67,6 +67,8 @@ func (h *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	// get published article (reader)
 	pub := g.Group("/pub")
 	pub.GET("/:id", ginx.WrapLog(h.l, h.PubDetail))
+	// True: like; False: cancel like
+	pub.POST("/like", ginx.WrapBodyAndClaims(h.l, h.Like))
 }
 
 func (h *ArticleHandler) Edit(
@@ -274,6 +276,26 @@ func (h *ArticleHandler) PubDetail(
 			Ctime:      article.Ctime.Format(time.DateTime),
 			Utime:      article.Ctime.Format(time.DateTime),
 		},
+	}, nil
+}
+
+func (h *ArticleHandler) Like(ctx *gin.Context, req Like, uc ijwt.UserClaims) (ginx.Result, error) {
+	var err error
+	if req.Like {
+		err = h.intrSvc.Like(ctx, h.biz, req.ID, uc.UID)
+	} else {
+		err = h.intrSvc.CancelLike(ctx, h.biz, req.ID, uc.UID)
+	}
+	if err != nil {
+		return ginx.InternalServerErrorResult, logger.LError(
+			"failed to like or cancel like",
+			logger.Error(err),
+			logger.Int64("uid", uc.UID),
+			logger.Int64("aid", req.ID),
+		)
+	}
+	return ginx.Result{
+		Code: ginx.CodeOK,
 	}, nil
 }
 

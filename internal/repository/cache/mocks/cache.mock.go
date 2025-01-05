@@ -272,6 +272,34 @@ func (m *MockInteractiveCache) EXPECT() *MockInteractiveCacheMockRecorder {
 	return m.recorder
 }
 
+// DecrLikeCntIfPresent mocks base method.
+func (m *MockInteractiveCache) DecrLikeCntIfPresent(ctx context.Context, biz string, bizID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DecrLikeCntIfPresent", ctx, biz, bizID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DecrLikeCntIfPresent indicates an expected call of DecrLikeCntIfPresent.
+func (mr *MockInteractiveCacheMockRecorder) DecrLikeCntIfPresent(ctx, biz, bizID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecrLikeCntIfPresent", reflect.TypeOf((*MockInteractiveCache)(nil).DecrLikeCntIfPresent), ctx, biz, bizID)
+}
+
+// IncrLikeCntIfPresent mocks base method.
+func (m *MockInteractiveCache) IncrLikeCntIfPresent(ctx context.Context, biz string, bizID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncrLikeCntIfPresent", ctx, biz, bizID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IncrLikeCntIfPresent indicates an expected call of IncrLikeCntIfPresent.
+func (mr *MockInteractiveCacheMockRecorder) IncrLikeCntIfPresent(ctx, biz, bizID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrLikeCntIfPresent", reflect.TypeOf((*MockInteractiveCache)(nil).IncrLikeCntIfPresent), ctx, biz, bizID)
+}
+
 // IncrReadCntIfPresent mocks base method.
 func (m *MockInteractiveCache) IncrReadCntIfPresent(ctx context.Context, biz string, bizID int64) error {
 	m.ctrl.T.Helper()

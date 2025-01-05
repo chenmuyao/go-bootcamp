@@ -23,3 +23,8 @@ type ArticleVO struct {
 	Ctime      string `json:"ctime,omitempty"`
 	Utime      string `json:"utime,omitempty"`
 }
+
+type Like struct {
+	ID   int64 `json:"id"`
+	Like bool  `json:"liked"`
+}

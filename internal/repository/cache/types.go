@@ -45,6 +45,8 @@ type ArticleCache interface {
 
 type InteractiveCache interface {
 	IncrReadCntIfPresent(ctx context.Context, biz string, bizID int64) error
+	IncrLikeCntIfPresent(ctx context.Context, biz string, bizID int64) error
+	DecrLikeCntIfPresent(ctx context.Context, biz string, bizID int64) error
 }
 
 // }}}

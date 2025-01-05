@@ -12,7 +12,14 @@ import (
 
 func InitTable(db *gorm.DB) error {
 	// NOTE: Not the best practice. Too risky. Strong dependency
-	return db.AutoMigrate(&User{}, &SMSInfo{}, &Article{}, &PublishedArticle{}, &Interactive{})
+	return db.AutoMigrate(
+		&User{},
+		&SMSInfo{},
+		&Article{},
+		&PublishedArticle{},
+		&Interactive{},
+		&UserLikeBiz{},
+	)
 }
 
 func InitCollection(mdb *mongo.Database) error {
