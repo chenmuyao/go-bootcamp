@@ -13,6 +13,7 @@ import (
 	"github.com/chenmuyao/go-bootcamp/pkg/ginx"
 	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/sync/errgroup"
 )
 
 // {{{ Consts
@@ -66,7 +67,7 @@ func (h *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 
 	// get published article (reader)
 	pub := g.Group("/pub")
-	pub.GET("/:id", ginx.WrapLog(h.l, h.PubDetail))
+	pub.GET("/:id", ginx.WrapClaims(h.l, h.PubDetail))
 	// True: like; False: cancel like
 	pub.POST("/like", ginx.WrapBodyAndClaims(h.l, h.Like))
 	pub.POST("/collect", ginx.WrapBodyAndClaims(h.l, h.Collect))
@@ -235,6 +236,7 @@ func (h *ArticleHandler) List(
 
 func (h *ArticleHandler) PubDetail(
 	ctx *gin.Context,
+	uc ijwt.UserClaims,
 ) (ginx.Result, error) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
@@ -242,11 +244,31 @@ func (h *ArticleHandler) PubDetail(
 		h.l.Warn("wrong id", logger.String("id", idStr), logger.Error(err))
 		return ginx.InternalServerErrorResult, nil
 	}
-	article, err := h.svc.GetPubByID(ctx, id)
+
+	var (
+		eg      errgroup.Group
+		article domain.Article
+		intr    domain.Interactive
+	)
+
+	eg.Go(func() error {
+		var er error
+		article, er = h.svc.GetPubByID(ctx, id)
+		return er
+	})
+
+	eg.Go(func() error {
+		var er error
+		intr, er = h.intrSvc.Get(ctx, h.biz, id, uc.UID)
+		return er
+	})
+
+	err = eg.Wait()
 	if err != nil {
 		return ginx.InternalServerErrorResult, logger.LError(
 			"Get published article detail failed",
 			logger.Int64("id", id),
+			logger.Int64("uid", uc.UID),
 			logger.Error(err),
 		)
 	}
@@ -276,6 +298,12 @@ func (h *ArticleHandler) PubDetail(
 			Status:     uint8(article.Status),
 			Ctime:      article.Ctime.Format(time.DateTime),
 			Utime:      article.Ctime.Format(time.DateTime),
+
+			ReadCnt:    intr.ReadCnt,
+			LikeCnt:    intr.LikeCnt,
+			CollectCnt: intr.CollectCnt,
+			Liked:      intr.Liked,
+			Collected:  intr.Collected,
 		},
 	}, nil
 }

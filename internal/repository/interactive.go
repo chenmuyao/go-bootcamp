@@ -4,8 +4,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/cache"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
+	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 )
 
 type InteractiveRepository interface {
@@ -14,11 +16,78 @@ type InteractiveRepository interface {
 	DecrLike(ctx context.Context, biz string, id int64, uid int64) error
 	AddCollectionItem(ctx context.Context, biz string, id int64, cid int64, uid int64) error
 	DeleteCollectionItem(ctx context.Context, biz string, id int64, cid int64, uid int64) error
+	Get(ctx context.Context, biz string, bizID int64) (domain.Interactive, error)
+	Liked(ctx context.Context, biz string, bizID int64, uid int64) (bool, error)
+	Collected(ctx context.Context, biz string, bizID int64, uid int64) (bool, error)
 }
 
 type CachedInteractiveRepository struct {
+	l     logger.Logger
 	dao   dao.InteractiveDAO
 	cache cache.InteractiveCache
+}
+
+// Collected implements InteractiveRepository.
+func (c *CachedInteractiveRepository) Collected(
+	ctx context.Context,
+	biz string,
+	bizID int64,
+	uid int64,
+) (bool, error) {
+	_, err := c.dao.GetCollectInfo(ctx, biz, bizID, uid)
+	switch err {
+	case nil:
+		return true, nil
+	case dao.ErrRecordNotFound:
+		return false, nil
+	default:
+		return false, err
+	}
+}
+
+// Get implements InteractiveRepository.
+func (c *CachedInteractiveRepository) Get(
+	ctx context.Context,
+	biz string,
+	bizID int64,
+) (domain.Interactive, error) {
+	intr, err := c.cache.Get(ctx, biz, bizID)
+	if err == nil {
+		return intr, nil
+	}
+	intrDAO, err := c.dao.Get(ctx, biz, bizID)
+	if err != nil {
+		return domain.Interactive{}, nil
+	}
+	res := c.toDomain(intrDAO)
+	err = c.cache.Set(ctx, biz, bizID, res)
+	if err != nil {
+		c.l.Error(
+			"failed to set interactive cache",
+			logger.String("biz", biz),
+			logger.Int64("bizID", bizID),
+			logger.Error(err),
+		)
+	}
+	return res, nil
+}
+
+// Liked implements InteractiveRepository.
+func (c *CachedInteractiveRepository) Liked(
+	ctx context.Context,
+	biz string,
+	bizID int64,
+	uid int64,
+) (bool, error) {
+	_, err := c.dao.GetLikeInfo(ctx, biz, bizID, uid)
+	switch err {
+	case nil:
+		return true, nil
+	case dao.ErrRecordNotFound:
+		return false, nil
+	default:
+		return false, err
+	}
 }
 
 // DeleteCollectionItem implements InteractiveRepository.
@@ -109,11 +178,21 @@ func (c *CachedInteractiveRepository) IncrReadCnt(
 	return c.cache.IncrReadCntIfPresent(ctx, biz, bizID)
 }
 
+func (c *CachedInteractiveRepository) toDomain(dao dao.Interactive) domain.Interactive {
+	return domain.Interactive{
+		ReadCnt:    dao.ReadCnt,
+		LikeCnt:    dao.LikeCnt,
+		CollectCnt: dao.CollectCnt,
+	}
+}
+
 func NewCachedInteractiveRepository(
+	l logger.Logger,
 	dao dao.InteractiveDAO,
 	cache cache.InteractiveCache,
 ) InteractiveRepository {
 	return &CachedInteractiveRepository{
+		l:     l,
 		dao:   dao,
 		cache: cache,
 	}

@@ -14,12 +14,19 @@ type InteractiveDAO interface {
 	DeleteLikeInfo(ctx context.Context, biz string, bizID int64, uid int64) error
 	InsertCollectionBiz(ctx context.Context, cb UserCollectionBiz) error
 	DeleteCollectionBiz(ctx context.Context, cb UserCollectionBiz) error
+	Get(ctx context.Context, biz string, bizID int64) (Interactive, error)
+	GetLikeInfo(ctx context.Context, biz string, bizID int64, uid int64) (UserLikeBiz, error)
+	GetCollectInfo(
+		ctx context.Context,
+		biz string,
+		bizID int64,
+		uid int64,
+	) (UserCollectionBiz, error)
 }
 
 type GORMInteractiveDAO struct {
 	db *gorm.DB
 }
-
 type Interactive struct {
 	ID int64 `gorm:"primaryKey,autoIncrement"`
 
@@ -54,6 +61,46 @@ type UserCollectionBiz struct {
 	CID   int64 `gorm:"index"`
 	Utime int64
 	Ctime int64
+}
+
+// Get implements InteractiveDAO.
+func (g *GORMInteractiveDAO) Get(
+	ctx context.Context,
+	biz string,
+	bizID int64,
+) (Interactive, error) {
+	var intr Interactive
+	err := g.db.WithContext(ctx).Where("biz_id = ? AND biz = ?", bizID, biz).First(&intr).Error
+	return intr, err
+}
+
+// GetLikeInfo implements InteractiveDAO.
+func (g *GORMInteractiveDAO) GetLikeInfo(
+	ctx context.Context,
+	biz string,
+	bizID int64,
+	uid int64,
+) (UserLikeBiz, error) {
+	var res UserLikeBiz
+	err := g.db.WithContext(ctx).
+		Where("uid = ? AND biz_id = ? AND biz = ? AND status = ?", uid, bizID, biz, 1).
+		First(&res).
+		Error
+	return res, err
+}
+
+func (g *GORMInteractiveDAO) GetCollectInfo(
+	ctx context.Context,
+	biz string,
+	bizID int64,
+	uid int64,
+) (UserCollectionBiz, error) {
+	var res UserCollectionBiz
+	err := g.db.WithContext(ctx).
+		Where("uid = ? AND biz_id = ? AND biz = ?", uid, bizID, biz).
+		First(&res).
+		Error
+	return res, err
 }
 
 // DeleteCollectionBiz implements InteractiveDAO.

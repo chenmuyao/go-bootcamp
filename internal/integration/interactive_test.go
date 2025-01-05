@@ -11,6 +11,7 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/repository/cache/rediscache"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
 	"github.com/chenmuyao/go-bootcamp/internal/service"
+	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
@@ -157,9 +158,10 @@ func (s *InteractivceTestSuite) TestIncrReadCnt() {
 			tc.before(t)
 			defer tc.after(t)
 
+			l := logger.NewNopLogger()
 			dao := dao.NewGORMInteractiveDAO(s.db)
 			cache := rediscache.NewInteractiveRedisCache(s.rdb)
-			repo := repository.NewCachedInteractiveRepository(dao, cache)
+			repo := repository.NewCachedInteractiveRepository(l, dao, cache)
 			svc := service.NewInteractiveService(repo)
 			err := svc.IncrReadCnt(context.Background(), "read", tc.bizID)
 			assert.Equal(t, nil, err)
@@ -346,7 +348,8 @@ func (s *InteractivceTestSuite) TestLike() {
 
 			dao := dao.NewGORMInteractiveDAO(s.db)
 			cache := rediscache.NewInteractiveRedisCache(s.rdb)
-			repo := repository.NewCachedInteractiveRepository(dao, cache)
+			l := logger.NewNopLogger()
+			repo := repository.NewCachedInteractiveRepository(l, dao, cache)
 			svc := service.NewInteractiveService(repo)
 			err := svc.Like(context.Background(), "like", tc.bizID, 123)
 			assert.Equal(t, nil, err)
@@ -520,7 +523,8 @@ func (s *InteractivceTestSuite) TestCancelLike() {
 
 			dao := dao.NewGORMInteractiveDAO(s.db)
 			cache := rediscache.NewInteractiveRedisCache(s.rdb)
-			repo := repository.NewCachedInteractiveRepository(dao, cache)
+			l := logger.NewNopLogger()
+			repo := repository.NewCachedInteractiveRepository(l, dao, cache)
 			svc := service.NewInteractiveService(repo)
 			err := svc.CancelLike(context.Background(), "cancel_like", tc.bizID, 123)
 			assert.Equal(t, nil, err)
@@ -707,7 +711,8 @@ func (s *InteractivceTestSuite) TestCollect() {
 
 			dao := dao.NewGORMInteractiveDAO(s.db)
 			cache := rediscache.NewInteractiveRedisCache(s.rdb)
-			repo := repository.NewCachedInteractiveRepository(dao, cache)
+			l := logger.NewNopLogger()
+			repo := repository.NewCachedInteractiveRepository(l, dao, cache)
 			svc := service.NewInteractiveService(repo)
 			err := svc.Collect(context.Background(), "collect", tc.bizID, 1, 123)
 			assert.Equal(t, nil, err)
@@ -857,7 +862,8 @@ func (s *InteractivceTestSuite) TestCancelCollect() {
 
 			dao := dao.NewGORMInteractiveDAO(s.db)
 			cache := rediscache.NewInteractiveRedisCache(s.rdb)
-			repo := repository.NewCachedInteractiveRepository(dao, cache)
+			l := logger.NewNopLogger()
+			repo := repository.NewCachedInteractiveRepository(l, dao, cache)
 			svc := service.NewInteractiveService(repo)
 			err := svc.CancelCollect(context.Background(), "cancel_collect", tc.bizID, 1, 123)
 			assert.Equal(t, nil, err)

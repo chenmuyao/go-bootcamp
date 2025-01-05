@@ -49,6 +49,8 @@ type InteractiveCache interface {
 	DecrLikeCntIfPresent(ctx context.Context, biz string, bizID int64) error
 	IncrCollectCntIfPresent(ctx context.Context, biz string, bizID int64) error
 	DecrCollectCntIfPresent(ctx context.Context, biz string, bizID int64) error
+	Get(ctx context.Context, biz string, bizID int64) (domain.Interactive, error)
+	Set(ctx context.Context, biz string, bizID int64, intr domain.Interactive) error
 }
 
 // }}}
