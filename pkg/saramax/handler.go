@@ -49,6 +49,14 @@ func (h *Handler[T]) ConsumeClaim(
 		// run biz
 		err = h.bizFn(msg, t)
 		if err != nil {
+			// NOTE: can introduce a retry
+			h.l.Error(
+				"failed to handle msg",
+				logger.String("topic", msg.Topic),
+				logger.Int32("partition", msg.Partition),
+				logger.Int64("offset", msg.Offset),
+				logger.Error(err),
+			)
 		}
 		session.MarkMessage(msg, "")
 	}
