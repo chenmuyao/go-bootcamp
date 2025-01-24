@@ -2,6 +2,7 @@ package rediscache
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"time"
 
@@ -61,11 +62,11 @@ func (i *InteractiveRedisCache) Get(
 	key := i.Key(biz, bizID)
 	res, err := i.client.HGetAll(ctx, key).Result()
 	if err != nil {
-		return domain.Interactive{}, nil
+		return domain.Interactive{}, err
 	}
 	if len(res) == 0 {
 		// No data
-		return domain.Interactive{}, nil
+		return domain.Interactive{}, errors.New("no data")
 	}
 	var intr domain.Interactive
 	intr.CollectCnt, _ = strconv.ParseInt(res[fieldCollectCnt], 10, 64)

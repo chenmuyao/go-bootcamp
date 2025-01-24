@@ -343,7 +343,10 @@ func (c *CachedArticleRepository) GetByAuthor(
 		cachedArticles, err := c.cache.GetFirstPage(ctx, uid)
 		switch err {
 		case nil:
-			return cachedArticles[:limit], nil
+			if len(cachedArticles) > limit {
+				return cachedArticles[:limit], nil
+			}
+			return cachedArticles, nil
 		case cache.ErrKeyNotExist:
 			// ignore
 			break
@@ -365,6 +368,7 @@ func (c *CachedArticleRepository) GetByAuthor(
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 		if offset == 0 && limit <= pageSize {
+			c.l.Debug("Set first page", logger.Field{Key: "res", Value: res})
 			err = c.cache.SetFirstPage(ctx, uid, res)
 			// err 1: network issue, maybe temporary
 			// err 2: redis down

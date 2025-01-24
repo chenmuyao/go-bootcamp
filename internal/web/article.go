@@ -260,6 +260,8 @@ func (h *ArticleHandler) PubDetail(
 	eg.Go(func() error {
 		var er error
 		intr, er = h.intrSvc.Get(ctx, h.biz, id, uc.UID)
+		h.l.Debug("intr", logger.Field{Key: "intr", Value: intr}, logger.Error(er))
+
 		return er
 	})
 
@@ -334,7 +336,7 @@ func (h *ArticleHandler) Collect(
 	uc ijwt.UserClaims,
 ) (ginx.Result, error) {
 	var err error
-	if req.Collect {
+	if req.Collected {
 		err = h.intrSvc.Collect(ctx, h.biz, req.ID, req.CID, uc.UID)
 	} else {
 		err = h.intrSvc.CancelCollect(ctx, h.biz, req.ID, req.CID, uc.UID)

@@ -17,17 +17,17 @@ type ArticleVO struct {
 	Title      string `json:"title,omitempty"`
 	Abstract   string `json:"abstract,omitempty"`
 	Content    string `json:"content,omitempty"`
-	AuthorID   int64  `json:"author_id,omitempty"`
-	AuthorName string `json:"author_name,omitempty"`
+	AuthorID   int64  `json:"authorId,omitempty"`
+	AuthorName string `json:"authorName,omitempty"`
 	Status     uint8  `json:"status,omitempty"`
 	Ctime      string `json:"ctime,omitempty"`
 	Utime      string `json:"utime,omitempty"`
 
-	ReadCnt    int64 `json:"read_cnt,omitempty"`
-	LikeCnt    int64 `json:"like_cnt,omitempty"`
-	CollectCnt int64 `json:"collect_cnt,omitempty"`
-	Liked      bool  `json:"liked,omitempty"`
-	Collected  bool  `json:"collected,omitempty"`
+	ReadCnt    int64 `json:"readCnt,omitempty"`
+	LikeCnt    int64 `json:"likeCnt,omitempty"`
+	CollectCnt int64 `json:"collectCnt,omitempty"`
+	Liked      bool  `json:"liked"`
+	Collected  bool  `json:"collected"`
 }
 
 type Like struct {
@@ -38,6 +38,6 @@ type Like struct {
 type Collect struct {
 	ID int64 `json:"id"`
 	// collection id
-	CID     int64 `json:"cid"`
-	Collect bool  `json:"collect"`
+	CID       int64 `json:"cid"`
+	Collected bool  `json:"collected"`
 }

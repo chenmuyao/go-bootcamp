@@ -45,6 +45,8 @@ func (i *InteractiveReadEventConsumer) Consume(msg *sarama.ConsumerMessage, even
 	ctx, cancel := context.WithTimeout(context.Background(), consumeTimeout)
 	defer cancel()
 
+	i.l.Debug("Consume")
+
 	return i.repo.IncrReadCnt(ctx, "article", event.Aid)
 }
 

@@ -106,6 +106,7 @@ func WrapClaims[Claims jwt.Claims](
 
 		var empty Result
 		if res != empty {
+			l.Debug("res", logger.Field{Key: "res", Value: res})
 			ctx.JSON(ResultToStatus(res), res)
 		}
 	}

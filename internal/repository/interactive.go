@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
@@ -53,12 +54,14 @@ func (c *CachedInteractiveRepository) Get(
 ) (domain.Interactive, error) {
 	intr, err := c.cache.Get(ctx, biz, bizID)
 	if err == nil {
+		slog.Error("intr cache", slog.Any("intr", intr))
 		return intr, nil
 	}
 	intrDAO, err := c.dao.Get(ctx, biz, bizID)
 	if err != nil {
 		return domain.Interactive{}, nil
 	}
+	slog.Error("intr dao", slog.Any("intrDAO", intrDAO))
 	res := c.toDomain(intrDAO)
 	err = c.cache.Set(ctx, biz, bizID, res)
 	if err != nil {
@@ -69,6 +72,7 @@ func (c *CachedInteractiveRepository) Get(
 			logger.Error(err),
 		)
 	}
+	slog.Error("intr res", slog.Any("intr", res))
 	return res, nil
 }
 

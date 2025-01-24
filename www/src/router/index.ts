@@ -52,6 +52,21 @@ const router = createRouter({
       name: 'oauth2 callback',
       component: () => import('@/components/OAuth2Success.vue'),
     },
+    {
+      path: '/articles/list',
+      name: 'articles list',
+      component: () => import('@/views/articles/ListView.vue'),
+    },
+    {
+      path: '/articles/edit',
+      name: 'articles edit',
+      component: () => import('@/views/articles/EditView.vue'),
+    },
+    {
+      path: '/articles/view',
+      name: 'articles view',
+      component: () => import('@/views/articles/ReadView.vue'),
+    },
   ],
 })
 
