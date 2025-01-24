@@ -7,6 +7,7 @@
 package startup
 
 import (
+	"github.com/chenmuyao/go-bootcamp/internal/events/article"
 	"github.com/chenmuyao/go-bootcamp/internal/repository"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/cache/rediscache"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
@@ -41,7 +42,10 @@ func InitWebServer() *gin.Engine {
 	articleDAO := dao.NewArticleDAO(db)
 	articleCache := rediscache.NewArticleRedisCache(cmdable)
 	articleRepository := repository.NewArticleRepository(logger, articleDAO, articleCache, userRepository)
-	articleService := service.NewArticleService(articleRepository)
+	client := InitSaramaClient()
+	syncProducer := InitSyncProducer(client)
+	producer := article.NewSaramaSyncProducer(syncProducer)
+	articleService := service.NewArticleService(articleRepository, producer)
 	interactiveDAO := dao.NewGORMInteractiveDAO(db)
 	interactiveCache := rediscache.NewInteractiveRedisCache(cmdable)
 	interactiveRepository := repository.NewCachedInteractiveRepository(logger, interactiveDAO, interactiveCache)
@@ -60,7 +64,10 @@ func InitArticleHandler(articleDAO dao.ArticleDAO) *web.ArticleHandler {
 	userCache := rediscache.NewUserRedisCache(cmdable)
 	userRepository := repository.NewUserRepository(userDAO, userCache)
 	articleRepository := repository.NewArticleRepository(logger, articleDAO, articleCache, userRepository)
-	articleService := service.NewArticleService(articleRepository)
+	client := InitSaramaClient()
+	syncProducer := InitSyncProducer(client)
+	producer := article.NewSaramaSyncProducer(syncProducer)
+	articleService := service.NewArticleService(articleRepository, producer)
 	interactiveDAO := dao.NewGORMInteractiveDAO(db)
 	interactiveCache := rediscache.NewInteractiveRedisCache(cmdable)
 	interactiveRepository := repository.NewCachedInteractiveRepository(logger, interactiveDAO, interactiveCache)
@@ -75,6 +82,8 @@ var thirdPartySet = wire.NewSet(
 	InitRedis,
 	InitDB,
 	InitLogger,
+	InitSaramaClient,
+	InitSyncProducer,
 )
 
 var interactiveSvcSet = wire.NewSet(dao.NewGORMInteractiveDAO, rediscache.NewInteractiveRedisCache, repository.NewCachedInteractiveRepository, service.NewInteractiveService)

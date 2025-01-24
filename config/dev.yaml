@@ -8,3 +8,6 @@ redis:
 
 db:
   dsn: root:root@tcp(127.0.0.1:13316)/wetravel?charset=utf8mb4&parseTime=True&loc=Local
+
+sarama:
+  addr: localhost:9094

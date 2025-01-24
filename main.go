@@ -32,7 +32,14 @@ import (
 func main() {
 	config.InitConfig("config/dev.yaml")
 
-	server := InitWebServer()
+	app := InitWebServer()
 
-	server.Run(":8081")
+	for _, c := range app.consumers {
+		err := c.Start()
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	app.server.Run(":8081")
 }

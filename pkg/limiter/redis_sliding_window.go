@@ -54,8 +54,8 @@ func NewRedisSlidingWindowLimiter(options *RedisSlidingWindowOptions) *redisSlid
 
 type RedisSlidingWindowOptions struct {
 	RedisClient   redis.Cmdable
+    Interval      time.Duration
 	Prefix        string
-	Interval      time.Duration
 	WindowsAmount int
 	Limit         int
 }

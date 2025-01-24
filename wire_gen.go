@@ -7,6 +7,7 @@
 package main
 
 import (
+	"github.com/chenmuyao/go-bootcamp/internal/events/article"
 	"github.com/chenmuyao/go-bootcamp/internal/repository"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/cache/rediscache"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
@@ -14,13 +15,12 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/web"
 	"github.com/chenmuyao/go-bootcamp/internal/web/jwt"
 	"github.com/chenmuyao/go-bootcamp/ioc"
-	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
 )
 
 // Injectors from wire.go:
 
-func InitWebServer() *gin.Engine {
+func InitWebServer() *App {
 	cmdable := ioc.InitRedis()
 	handler := jwt.NewRedisJWTHandler(cmdable)
 	logger := ioc.InitLogger()
@@ -42,14 +42,23 @@ func InitWebServer() *gin.Engine {
 	articleDAO := dao.NewArticleDAO(db)
 	articleCache := rediscache.NewArticleRedisCache(cmdable)
 	articleRepository := repository.NewArticleRepository(logger, articleDAO, articleCache, userRepository)
-	articleService := service.NewArticleService(articleRepository)
+	client := ioc.InitSaramaClient()
+	syncProducer := ioc.InitSyncProducer(client)
+	producer := article.NewSaramaSyncProducer(syncProducer)
+	articleService := service.NewArticleService(articleRepository, producer)
 	interactiveDAO := dao.NewGORMInteractiveDAO(db)
 	interactiveCache := rediscache.NewInteractiveRedisCache(cmdable)
 	interactiveRepository := repository.NewCachedInteractiveRepository(logger, interactiveDAO, interactiveCache)
 	interactiveService := service.NewInteractiveService(interactiveRepository)
 	articleHandler := web.NewArticleHandler(logger, articleService, interactiveService)
 	engine := ioc.InitWebServer(v, userHandler, oAuth2GiteaHandler, articleHandler)
-	return engine
+	interactiveReadEventConsumer := article.NewInteractiveReadEventConsumer(logger, interactiveRepository, client)
+	v2 := ioc.InitConsumers(interactiveReadEventConsumer)
+	app := &App{
+		server:    engine,
+		consumers: v2,
+	}
+	return app
 }
 
 // wire.go:

@@ -253,7 +253,7 @@ func (h *ArticleHandler) PubDetail(
 
 	eg.Go(func() error {
 		var er error
-		article, er = h.svc.GetPubByID(ctx, id)
+		article, er = h.svc.GetPubByID(ctx, id, uc.UID)
 		return er
 	})
 

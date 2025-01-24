@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
+	"github.com/chenmuyao/go-bootcamp/internal/events/article"
 	"github.com/chenmuyao/go-bootcamp/internal/repository"
 	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 )
@@ -22,7 +23,7 @@ type ArticleService interface {
 	Withdraw(ctx context.Context, userID int64, articleID int64) error
 	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article, error)
 	GetByID(ctx context.Context, id int64) (domain.Article, error)
-	GetPubByID(ctx context.Context, id int64) (domain.Article, error)
+	GetPubByID(ctx context.Context, id int64, uid int64) (domain.Article, error)
 }
 
 type articleService struct {
@@ -32,11 +33,34 @@ type articleService struct {
 	// v1: separate reader and author at repo level
 	readerRepo repository.ArticleReaderRepository
 	authorRepo repository.ArticleAuthorRepository
+	producer   article.Producer
 }
 
 // GetPubByID implements ArticleService.
-func (a *articleService) GetPubByID(ctx context.Context, id int64) (domain.Article, error) {
-	return a.repo.GetPubByID(ctx, id)
+func (a *articleService) GetPubByID(
+	ctx context.Context,
+	id int64,
+	uid int64,
+) (domain.Article, error) {
+	res, err := a.repo.GetPubByID(ctx, id)
+	go func() {
+		if err == nil {
+			// send a message
+			er := a.producer.ProduceReadEvent(article.ReadEvent{
+				Aid: id,
+				Uid: uid,
+			})
+			if er != nil {
+				a.l.Error(
+					"failed to send ReadEvent",
+					logger.Int64("aid", id),
+					logger.Int64("uid", uid),
+					logger.Error(err),
+				)
+			}
+		}
+	}()
+	return res, err
 }
 
 // GetByID implements ArticleService.
@@ -118,8 +142,12 @@ func NewArticleServiceV1(
 	}
 }
 
-func NewArticleService(repo repository.ArticleRepository) ArticleService {
+func NewArticleService(
+	repo repository.ArticleRepository,
+	producer article.Producer,
+) ArticleService {
 	return &articleService{
-		repo: repo,
+		repo:     repo,
+		producer: producer,
 	}
 }

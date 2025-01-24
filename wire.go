@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/chenmuyao/go-bootcamp/internal/events/article"
 	"github.com/chenmuyao/go-bootcamp/internal/repository"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/cache/rediscache"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
@@ -11,7 +12,6 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/web"
 	ijwt "github.com/chenmuyao/go-bootcamp/internal/web/jwt"
 	"github.com/chenmuyao/go-bootcamp/ioc"
-	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
 )
 
@@ -22,14 +22,20 @@ var interactiveSvcSet = wire.NewSet(
 	service.NewInteractiveService,
 )
 
-func InitWebServer() *gin.Engine {
+func InitWebServer() *App {
 	wire.Build(
 		// third-party dependencies
 		ioc.InitRedis,
 		ioc.InitDB,
 		ioc.InitLogger,
+		ioc.InitSaramaClient,
+		ioc.InitSyncProducer,
 
 		interactiveSvcSet,
+
+		article.NewSaramaSyncProducer,
+		article.NewInteractiveReadEventConsumer,
+		ioc.InitConsumers,
 
 		// DAO
 		dao.NewUserDAO,
@@ -64,6 +70,8 @@ func InitWebServer() *gin.Engine {
 
 		ioc.InitGinMiddlewares,
 		ioc.InitWebServer,
+
+		wire.Struct(new(App), "*"),
 	)
-	return &gin.Engine{}
+	return new(App)
 }

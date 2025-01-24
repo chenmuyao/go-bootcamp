@@ -4,6 +4,7 @@
 package startup
 
 import (
+	"github.com/chenmuyao/go-bootcamp/internal/events/article"
 	"github.com/chenmuyao/go-bootcamp/internal/repository"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/cache/rediscache"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
@@ -19,6 +20,8 @@ var thirdPartySet = wire.NewSet(
 	InitRedis,
 	InitDB,
 	InitLogger,
+	InitSaramaClient,
+	InitSyncProducer,
 )
 
 var interactiveSvcSet = wire.NewSet(
@@ -46,6 +49,9 @@ func InitWebServer() *gin.Engine {
 		rediscache.NewArticleRedisCache,
 		// ioc.InitCodeLocalCache,
 		// ioc.InitUserLocalCache,
+
+		article.NewSaramaSyncProducer,
+		// article.NewInteractiveReadEventConsumer,
 
 		// Repo
 		repository.NewUserRepository,
@@ -80,6 +86,8 @@ func InitArticleHandler(articleDAO dao.ArticleDAO) *web.ArticleHandler {
 		rediscache.NewUserRedisCache,
 		dao.NewUserDAO,
 		repository.NewUserRepository,
+
+		article.NewSaramaSyncProducer,
 
 		repository.NewArticleRepository,
 		service.NewArticleService,

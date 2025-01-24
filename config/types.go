@@ -5,6 +5,7 @@ type Config struct {
 	Remote RemoteConfigCenter `yaml:"remote"`
 	DB     DBConfig           `yaml:"db"`
 	Redis  RedisConfig        `yaml:"redis"`
+	Sarama SaramaConfig       `yaml:"sarama"`
 }
 
 type RemoteConfigCenter struct {
@@ -25,4 +26,8 @@ type GiteaOauth2Config struct {
 	BaseURL      string `yaml:"baseURL"`
 	ClientID     string `yaml:"clientID"`
 	ClientSecret string `yaml:"clientSecret"`
+}
+
+type SaramaConfig struct {
+	Addr []string `yaml:"addr"`
 }
