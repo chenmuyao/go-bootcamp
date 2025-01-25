@@ -13,6 +13,7 @@ import (
 
 type InteractiveRepository interface {
 	IncrReadCnt(ctx context.Context, biz string, bizID int64) error
+	BatchIncrReadCnt(ctx context.Context, bizs []string, bizIDs []int64) error
 	IncrLike(ctx context.Context, biz string, id int64, uid int64) error
 	DecrLike(ctx context.Context, biz string, id int64, uid int64) error
 	AddCollectionItem(ctx context.Context, biz string, id int64, cid int64, uid int64) error
@@ -180,6 +181,35 @@ func (c *CachedInteractiveRepository) IncrReadCnt(
 	// NOTE: add cache might fail and cause the inconsistency of data, but it
 	// is not critical in this feature.
 	return c.cache.IncrReadCntIfPresent(ctx, biz, bizID)
+}
+
+// BatchIncrReadCnt implements InteractiveRepository.
+func (c *CachedInteractiveRepository) BatchIncrReadCnt(
+	ctx context.Context,
+	bizs []string,
+	bizIDs []int64,
+) error {
+	err := c.dao.BatchIncrReadCnt(ctx, bizs, bizIDs)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		for i, bizID := range bizIDs {
+			er := c.cache.IncrReadCntIfPresent(ctx, bizs[i], bizID)
+			if er != nil {
+				c.l.Error(
+					"failed to incr ReadCnt cache",
+					logger.String("biz", bizs[i]),
+					logger.Int64("bizID", bizID),
+					logger.Error(er),
+				)
+			}
+		}
+	}()
+	return nil
 }
 
 func (c *CachedInteractiveRepository) toDomain(dao dao.Interactive) domain.Interactive {

@@ -31,6 +31,25 @@ func (i *InteractiveReadEventConsumer) Start() error {
 		er := cg.Consume(
 			context.Background(),
 			[]string{TopicReadEvent},
+			saramax.NewBatchHandler[ReadEvent](i.l, i.BatchConsume),
+		)
+		if er != nil {
+			i.l.Error("quit consuming", logger.Error(er))
+		}
+	}()
+	return nil
+}
+
+// StartV1 consume one message a time
+func (i *InteractiveReadEventConsumer) StartV1() error {
+	cg, err := sarama.NewConsumerGroupFromClient("interactive", i.client)
+	if err != nil {
+		return err
+	}
+	go func() {
+		er := cg.Consume(
+			context.Background(),
+			[]string{TopicReadEvent},
 			saramax.NewHandler[ReadEvent](i.l, i.Consume),
 		)
 		if er != nil {
@@ -48,6 +67,24 @@ func (i *InteractiveReadEventConsumer) Consume(msg *sarama.ConsumerMessage, even
 	i.l.Debug("Consume")
 
 	return i.repo.IncrReadCnt(ctx, "article", event.Aid)
+}
+
+func (i *InteractiveReadEventConsumer) BatchConsume(
+	msgs []*sarama.ConsumerMessage,
+	events []ReadEvent,
+) error {
+	ctx, cancel := context.WithTimeout(context.Background(), consumeTimeout)
+	defer cancel()
+
+	bizs := make([]string, len(events))
+	bizIDs := make([]int64, len(events))
+
+	for i, ev := range events {
+		bizs[i] = "article"
+		bizIDs[i] = ev.Aid
+	}
+
+	return i.repo.BatchIncrReadCnt(ctx, bizs, bizIDs)
 }
 
 func NewInteractiveReadEventConsumer(

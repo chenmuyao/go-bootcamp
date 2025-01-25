@@ -10,6 +10,7 @@ import (
 
 type InteractiveDAO interface {
 	IncrReadCnt(ctx context.Context, biz string, bizID int64) error
+	BatchIncrReadCnt(ctx context.Context, bizs []string, bizIDs []int64) error
 	InsertLikeInfo(ctx context.Context, biz string, bizID int64, uid int64) error
 	DeleteLikeInfo(ctx context.Context, biz string, bizID int64, uid int64) error
 	InsertCollectionBiz(ctx context.Context, cb UserCollectionBiz) error
@@ -27,6 +28,7 @@ type InteractiveDAO interface {
 type GORMInteractiveDAO struct {
 	db *gorm.DB
 }
+
 type Interactive struct {
 	ID int64 `gorm:"primaryKey,autoIncrement"`
 
@@ -239,6 +241,25 @@ func (g *GORMInteractiveDAO) IncrReadCnt(ctx context.Context, biz string, bizID 
 		Ctime:   now,
 		Utime:   now,
 	}).Error
+}
+
+// BatchIncrReadCnt implements InteractiveDAO.
+func (g *GORMInteractiveDAO) BatchIncrReadCnt(
+	ctx context.Context,
+	bizs []string,
+	bizIDs []int64,
+) error {
+	// NOTE: Use transaction to improve the performance for batch update
+	return g.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		txDAO := NewGORMInteractiveDAO(tx)
+		for i, bizID := range bizIDs {
+			err := txDAO.IncrReadCnt(ctx, bizs[i], bizID)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func NewGORMInteractiveDAO(db *gorm.DB) InteractiveDAO {
