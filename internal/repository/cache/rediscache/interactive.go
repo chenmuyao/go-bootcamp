@@ -3,11 +3,13 @@ package rediscache
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
 	_ "embed"
 
+	"github.com/chenmuyao/generique/gslice"
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/cache"
 	"github.com/redis/go-redis/v9"
@@ -26,6 +28,76 @@ var luaIncrCnt string
 type InteractiveRedisCache struct {
 	cache.BaseInteractiveCache
 	client redis.Cmdable
+}
+
+// GetTopLikedIDs implements cache.InteractiveCache.
+func (i *InteractiveRedisCache) GetTopLikedIDs(
+	ctx context.Context,
+	biz string,
+	limit int64,
+) ([]int64, error) {
+	resStr, err := i.client.ZRevRange(ctx, i.topLikedKey(biz), 0, limit).Result()
+	if err != nil {
+		return []int64{}, err
+	}
+	res := gslice.Map(resStr, func(id int, src string) int64 {
+		i, _ := strconv.ParseInt(src, 10, 64)
+		// parsing error ignored
+		return i
+	})
+	return res, nil
+}
+
+// SetLikeToZSET implements cache.InteractiveCache.
+func (i *InteractiveRedisCache) SetLikeToZSET(
+	ctx context.Context,
+	biz string,
+	bizId int64,
+	likeCnt int64,
+) error {
+	return i.client.ZAdd(ctx, i.topLikedKey(biz), redis.Z{
+		Score:  float64(likeCnt),
+		Member: bizId,
+	}).Err()
+}
+
+func (i *InteractiveRedisCache) topLikedKey(biz string) string {
+	return fmt.Sprintf("top_liked_%s", biz)
+}
+
+// BatchGet implements cache.InteractiveCache.
+func (i *InteractiveRedisCache) BatchGet(
+	ctx context.Context,
+	biz string,
+	bizIDs []int64,
+) ([]domain.Interactive, error) {
+	res := make([]domain.Interactive, 0, len(bizIDs))
+	for _, bizID := range bizIDs {
+		intr, err := i.Get(ctx, biz, bizID)
+		if err != nil {
+			return []domain.Interactive{}, err
+		}
+		res = append(res, intr)
+	}
+	return res, nil
+}
+
+// BatchSet implements cache.InteractiveCache.
+func (i *InteractiveRedisCache) BatchSet(
+	ctx context.Context,
+	biz string,
+	bizIDs []int64,
+	intr []domain.Interactive,
+) error {
+	var err error
+	for idx, bizID := range bizIDs {
+		er := i.Set(ctx, biz, bizID, intr[idx])
+		if er != nil {
+			// log the error
+			err = er
+		}
+	}
+	return err
 }
 
 // Set implements cache.InteractiveCache.

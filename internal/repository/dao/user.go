@@ -28,6 +28,7 @@ type UserDAO interface {
 	FindByEmail(ctx context.Context, email string) (User, error)
 	FindByPhone(ctx context.Context, phone string) (User, error)
 	FindByID(ctx context.Context, id int64) (User, error)
+	BatchFindByIDs(ctx context.Context, ids []int64) ([]User, error)
 	UpdateProfile(ctx context.Context, user User) error
 }
 
@@ -94,6 +95,26 @@ func (dao *GORMUserDAO) FindByPhone(ctx context.Context, phone string) (User, er
 	var u User
 	err := dao.db.WithContext(ctx).Where("phone=?", phone).First(&u).Error
 	return u, err
+}
+
+// BatchFindByIDs implements UserDAO.
+func (dao *GORMUserDAO) BatchFindByIDs(ctx context.Context, ids []int64) ([]User, error) {
+	res := make([]User, 0, len(ids))
+	err := dao.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		txDAO := NewUserDAO(tx)
+		for _, id := range ids {
+			u, err := txDAO.FindByID(ctx, id)
+			if err != nil {
+				return err
+			}
+			res = append(res, u)
+		}
+		return nil
+	})
+	if err != nil {
+		return []User{}, err
+	}
+	return res, nil
 }
 
 func (dao *GORMUserDAO) FindByID(ctx context.Context, id int64) (User, error) {

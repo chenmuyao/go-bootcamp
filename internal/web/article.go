@@ -68,6 +68,7 @@ func (h *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	// get published article (reader)
 	pub := g.Group("/pub")
 	pub.GET("/:id", ginx.WrapClaims(h.l, h.PubDetail))
+	pub.GET("/top_like", ginx.WrapLog(h.l, h.TopLike))
 	// True: like; False: cancel like
 	pub.POST("/like", ginx.WrapBodyAndClaims(h.l, h.Like))
 	pub.POST("/collect", ginx.WrapBodyAndClaims(h.l, h.Collect))
@@ -307,6 +308,39 @@ func (h *ArticleHandler) PubDetail(
 			Liked:      intr.Liked,
 			Collected:  intr.Collected,
 		},
+	}, nil
+}
+
+func (h *ArticleHandler) TopLike(ctx *gin.Context) (ginx.Result, error) {
+	// Get top limit
+	var limit int
+	limitStr := ctx.Query("limit")
+	if res, err := strconv.Atoi(limitStr); err != nil {
+		limit = res
+	}
+
+	res, err := h.intrSvc.GetTopLike(ctx, h.biz, limit)
+	if err != nil {
+		return ginx.InternalServerErrorResult, logger.LError(
+			"failed to get top like",
+			logger.Error(err),
+		)
+	}
+	articles := gslice.Map(res, func(id int, src domain.ArticleInteractive) ArticleVO {
+		return ArticleVO{
+			ID:         src.Article.ID,
+			Title:      src.Article.Title,
+			Abstract:   src.Article.Abstract(),
+			AuthorID:   src.Article.Author.ID,
+			AuthorName: src.Article.Author.Name,
+			Ctime:      src.Article.Ctime.Format(time.DateTime),
+			Utime:      src.Article.Ctime.Format(time.DateTime),
+			LikeCnt:    src.Intr.LikeCnt,
+		}
+	})
+	return ginx.Result{
+		Code: ginx.CodeOK,
+		Data: articles,
 	}, nil
 }
 

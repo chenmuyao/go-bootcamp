@@ -32,3 +32,14 @@ func InitCodeLocalCache() cache.CodeCache {
 
 	return localcache.NewCodeLocalCache(code, cnt, timeout)
 }
+
+func InitTopArticlesCache() cache.TopArticlesCache {
+	timeout := 15 * time.Second
+	cc := ttlcache.New(
+		ttlcache.WithTTL[string, []domain.ArticleInteractive](timeout),
+		ttlcache.WithDisableTouchOnHit[string, []domain.ArticleInteractive](),
+	)
+	go cc.Start()
+
+	return localcache.NewTopArticlesLocalCache(cc)
+}

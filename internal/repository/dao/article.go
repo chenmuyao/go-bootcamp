@@ -28,10 +28,30 @@ type ArticleDAO interface {
 	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]Article, error)
 	GetByID(ctx context.Context, id int64) (Article, error)
 	GetPubByID(ctx context.Context, id int64) (PublishedArticle, error)
+	BatchGetPubByIDs(ctx context.Context, ids []int64) ([]PublishedArticle, error)
 }
 
 type GORMArticleDAO struct {
 	db *gorm.DB
+}
+
+func (a *GORMArticleDAO) BatchGetPubByIDs(
+	ctx context.Context,
+	ids []int64,
+) ([]PublishedArticle, error) {
+	res := make([]PublishedArticle, 0, len(ids))
+	err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		txDAO := NewArticleDAO(tx)
+		for _, id := range ids {
+			a, err := txDAO.GetPubByID(ctx, id)
+			if err != nil {
+				return err
+			}
+			res = append(res, a)
+		}
+		return nil
+	})
+	return res, err
 }
 
 // GetPubByID implements ArticleDAO.

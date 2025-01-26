@@ -48,6 +48,7 @@ func InitWebServer() *App {
 		rediscache.NewArticleRedisCache,
 		// ioc.InitCodeLocalCache,
 		// ioc.InitUserLocalCache,
+		ioc.InitTopArticlesCache,
 
 		// Repo
 		repository.NewUserRepository,

@@ -24,6 +24,35 @@ type ArticleRedisCache struct {
 	client redis.Cmdable
 }
 
+// BatchGetPub implements cache.ArticleCache.
+func (a *ArticleRedisCache) BatchGetPub(
+	ctx context.Context,
+	ids []int64,
+) ([]domain.Article, error) {
+	res := make([]domain.Article, 0, len(ids))
+	for _, id := range ids {
+		u, err := a.Get(ctx, id)
+		if err != nil {
+			return []domain.Article{}, err
+		}
+		res = append(res, u)
+	}
+	return res, nil
+}
+
+// BatchSetPub implements cache.ArticleCache.
+func (a *ArticleRedisCache) BatchSetPub(ctx context.Context, articles []domain.Article) error {
+	var err error
+	for _, article := range articles {
+		er := a.Set(ctx, article)
+		if er != nil {
+			// log the error
+			err = er
+		}
+	}
+	return err
+}
+
 // GetPub implements cache.ArticleCache.
 func (a *ArticleRedisCache) GetPub(ctx context.Context, id int64) (domain.Article, error) {
 	key := a.Key(motifPublishedContent, id)

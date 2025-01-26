@@ -94,6 +94,35 @@ func (m *MockUserCache) EXPECT() *MockUserCacheMockRecorder {
 	return m.recorder
 }
 
+// BatchGet mocks base method.
+func (m *MockUserCache) BatchGet(ctx context.Context, uids []int64) ([]domain.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchGet", ctx, uids)
+	ret0, _ := ret[0].([]domain.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchGet indicates an expected call of BatchGet.
+func (mr *MockUserCacheMockRecorder) BatchGet(ctx, uids any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGet", reflect.TypeOf((*MockUserCache)(nil).BatchGet), ctx, uids)
+}
+
+// BatchSet mocks base method.
+func (m *MockUserCache) BatchSet(ctx context.Context, users []domain.User) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchSet", ctx, users)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// BatchSet indicates an expected call of BatchSet.
+func (mr *MockUserCacheMockRecorder) BatchSet(ctx, users any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchSet", reflect.TypeOf((*MockUserCache)(nil).BatchSet), ctx, users)
+}
+
 // Get mocks base method.
 func (m *MockUserCache) Get(ctx context.Context, uid int64) (domain.User, error) {
 	m.ctrl.T.Helper()
@@ -145,6 +174,35 @@ func NewMockArticleCache(ctrl *gomock.Controller) *MockArticleCache {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockArticleCache) EXPECT() *MockArticleCacheMockRecorder {
 	return m.recorder
+}
+
+// BatchGetPub mocks base method.
+func (m *MockArticleCache) BatchGetPub(ctx context.Context, ids []int64) ([]domain.Article, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchGetPub", ctx, ids)
+	ret0, _ := ret[0].([]domain.Article)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchGetPub indicates an expected call of BatchGetPub.
+func (mr *MockArticleCacheMockRecorder) BatchGetPub(ctx, ids any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetPub", reflect.TypeOf((*MockArticleCache)(nil).BatchGetPub), ctx, ids)
+}
+
+// BatchSetPub mocks base method.
+func (m *MockArticleCache) BatchSetPub(ctx context.Context, articles []domain.Article) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchSetPub", ctx, articles)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// BatchSetPub indicates an expected call of BatchSetPub.
+func (mr *MockArticleCacheMockRecorder) BatchSetPub(ctx, articles any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchSetPub", reflect.TypeOf((*MockArticleCache)(nil).BatchSetPub), ctx, articles)
 }
 
 // DelFirstPage mocks base method.
@@ -272,6 +330,35 @@ func (m *MockInteractiveCache) EXPECT() *MockInteractiveCacheMockRecorder {
 	return m.recorder
 }
 
+// BatchGet mocks base method.
+func (m *MockInteractiveCache) BatchGet(ctx context.Context, biz string, bizIDs []int64) ([]domain.Interactive, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchGet", ctx, biz, bizIDs)
+	ret0, _ := ret[0].([]domain.Interactive)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchGet indicates an expected call of BatchGet.
+func (mr *MockInteractiveCacheMockRecorder) BatchGet(ctx, biz, bizIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGet", reflect.TypeOf((*MockInteractiveCache)(nil).BatchGet), ctx, biz, bizIDs)
+}
+
+// BatchSet mocks base method.
+func (m *MockInteractiveCache) BatchSet(ctx context.Context, biz string, bizIDs []int64, intr []domain.Interactive) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchSet", ctx, biz, bizIDs, intr)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// BatchSet indicates an expected call of BatchSet.
+func (mr *MockInteractiveCacheMockRecorder) BatchSet(ctx, biz, bizIDs, intr any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchSet", reflect.TypeOf((*MockInteractiveCache)(nil).BatchSet), ctx, biz, bizIDs, intr)
+}
+
 // DecrCollectCntIfPresent mocks base method.
 func (m *MockInteractiveCache) DecrCollectCntIfPresent(ctx context.Context, biz string, bizID int64) error {
 	m.ctrl.T.Helper()
@@ -313,6 +400,21 @@ func (m *MockInteractiveCache) Get(ctx context.Context, biz string, bizID int64)
 func (mr *MockInteractiveCacheMockRecorder) Get(ctx, biz, bizID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockInteractiveCache)(nil).Get), ctx, biz, bizID)
+}
+
+// GetTopLikedIDs mocks base method.
+func (m *MockInteractiveCache) GetTopLikedIDs(ctx context.Context, biz string, limit int64) ([]int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTopLikedIDs", ctx, biz, limit)
+	ret0, _ := ret[0].([]int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTopLikedIDs indicates an expected call of GetTopLikedIDs.
+func (mr *MockInteractiveCacheMockRecorder) GetTopLikedIDs(ctx, biz, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopLikedIDs", reflect.TypeOf((*MockInteractiveCache)(nil).GetTopLikedIDs), ctx, biz, limit)
 }
 
 // IncrCollectCntIfPresent mocks base method.
@@ -369,4 +471,71 @@ func (m *MockInteractiveCache) Set(ctx context.Context, biz string, bizID int64,
 func (mr *MockInteractiveCacheMockRecorder) Set(ctx, biz, bizID, intr any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockInteractiveCache)(nil).Set), ctx, biz, bizID, intr)
+}
+
+// SetLikeToZSET mocks base method.
+func (m *MockInteractiveCache) SetLikeToZSET(ctx context.Context, biz string, bizId, likeCnt int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetLikeToZSET", ctx, biz, bizId, likeCnt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetLikeToZSET indicates an expected call of SetLikeToZSET.
+func (mr *MockInteractiveCacheMockRecorder) SetLikeToZSET(ctx, biz, bizId, likeCnt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLikeToZSET", reflect.TypeOf((*MockInteractiveCache)(nil).SetLikeToZSET), ctx, biz, bizId, likeCnt)
+}
+
+// MockTopArticlesCache is a mock of TopArticlesCache interface.
+type MockTopArticlesCache struct {
+	ctrl     *gomock.Controller
+	recorder *MockTopArticlesCacheMockRecorder
+	isgomock struct{}
+}
+
+// MockTopArticlesCacheMockRecorder is the mock recorder for MockTopArticlesCache.
+type MockTopArticlesCacheMockRecorder struct {
+	mock *MockTopArticlesCache
+}
+
+// NewMockTopArticlesCache creates a new mock instance.
+func NewMockTopArticlesCache(ctrl *gomock.Controller) *MockTopArticlesCache {
+	mock := &MockTopArticlesCache{ctrl: ctrl}
+	mock.recorder = &MockTopArticlesCacheMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockTopArticlesCache) EXPECT() *MockTopArticlesCacheMockRecorder {
+	return m.recorder
+}
+
+// GetTopLikedArticles mocks base method.
+func (m *MockTopArticlesCache) GetTopLikedArticles(ctx context.Context) ([]domain.ArticleInteractive, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTopLikedArticles", ctx)
+	ret0, _ := ret[0].([]domain.ArticleInteractive)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTopLikedArticles indicates an expected call of GetTopLikedArticles.
+func (mr *MockTopArticlesCacheMockRecorder) GetTopLikedArticles(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopLikedArticles", reflect.TypeOf((*MockTopArticlesCache)(nil).GetTopLikedArticles), ctx)
+}
+
+// SetTopLikedArticles mocks base method.
+func (m *MockTopArticlesCache) SetTopLikedArticles(ctx context.Context, articles []domain.ArticleInteractive) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetTopLikedArticles", ctx, articles)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetTopLikedArticles indicates an expected call of SetTopLikedArticles.
+func (mr *MockTopArticlesCacheMockRecorder) SetTopLikedArticles(ctx, articles any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTopLikedArticles", reflect.TypeOf((*MockTopArticlesCache)(nil).SetTopLikedArticles), ctx, articles)
 }
