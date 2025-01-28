@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/repository/cache"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
 	"github.com/chenmuyao/go-bootcamp/pkg/logger"
+	"golang.org/x/sync/errgroup"
 )
 
 type InteractiveRepository interface {
@@ -24,6 +26,7 @@ type InteractiveRepository interface {
 	Liked(ctx context.Context, biz string, bizID int64, uid int64) (bool, error)
 	Collected(ctx context.Context, biz string, bizID int64, uid int64) (bool, error)
 	GetTopLike(ctx context.Context, biz string, limit int) ([]domain.ArticleInteractive, error)
+	BatchSetTopLike(ctx context.Context, biz string, batchSize int) error
 }
 
 type CachedInteractiveRepository struct {
@@ -33,6 +36,54 @@ type CachedInteractiveRepository struct {
 	topCache             cache.TopArticlesCache
 	articleRepo          ArticleRepository
 	defaultTopLikedLimit int64
+}
+
+// SetTopLike implements InteractiveRepository.
+func (c *CachedInteractiveRepository) BatchSetTopLike(
+	ctx context.Context,
+	biz string,
+	batchSize int,
+) error {
+	offset := 0
+
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.SetLimit(10)
+
+	for {
+		daoLikes, err := c.dao.GetAll(ctx, biz, batchSize, offset)
+		if err != nil {
+			return fmt.Errorf("failed to get likes from dao: %w", err)
+		}
+
+		if len(daoLikes) == 0 {
+			break
+		}
+
+		for _, l := range daoLikes {
+			like := l
+			eg.Go(func() error {
+				if err := c.cache.SetLikeToZSET(ctx, biz, like.BizID, like.ID); err != nil {
+					c.l.Error(
+						"failed to set like to zset",
+						logger.String("biz", biz),
+						logger.Int64("bizID", like.BizID),
+						logger.Int64("ID", like.ID),
+						logger.Error(err),
+					)
+					return err
+				}
+				return nil
+			})
+		}
+
+		offset += batchSize
+	}
+
+	if err := eg.Wait(); err != nil {
+		return fmt.Errorf("failed to process all likes: %w", err)
+	}
+
+	return nil
 }
 
 // GetTopLike implements InteractiveRepository.

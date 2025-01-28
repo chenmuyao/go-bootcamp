@@ -16,6 +16,7 @@ type InteractiveDAO interface {
 	InsertCollectionBiz(ctx context.Context, cb UserCollectionBiz) error
 	DeleteCollectionBiz(ctx context.Context, cb UserCollectionBiz) error
 	Get(ctx context.Context, biz string, bizID int64) (Interactive, error)
+	GetAll(ctx context.Context, biz string, limit int, offset int) ([]Interactive, error)
 	BatchGet(ctx context.Context, biz string, bizIDs []int64) ([]Interactive, error)
 	GetLikeInfo(ctx context.Context, biz string, bizID int64, uid int64) (UserLikeBiz, error)
 	GetCollectInfo(
@@ -64,6 +65,23 @@ type UserCollectionBiz struct {
 	CID   int64 `gorm:"index"`
 	Utime int64
 	Ctime int64
+}
+
+// GetAll implements InteractiveDAO.
+func (g *GORMInteractiveDAO) GetAll(
+	ctx context.Context,
+	biz string,
+	limit int,
+	offset int,
+) ([]Interactive, error) {
+	var intrs []Interactive
+	err := g.db.WithContext(ctx).
+		Where("biz = ?", biz).
+		Offset(offset).
+		Limit(limit).
+		Find(&intrs).
+		Error
+	return intrs, err
 }
 
 // BatchGet implements InteractiveDAO.

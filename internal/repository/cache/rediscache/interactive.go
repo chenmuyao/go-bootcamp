@@ -25,9 +25,30 @@ const (
 //go:embed lua/incr_cnt.lua
 var luaIncrCnt string
 
+//go:embed lua/incr_rank.lua
+var luaIncrRank string
+
 type InteractiveRedisCache struct {
 	cache.BaseInteractiveCache
 	client redis.Cmdable
+}
+
+// IncrLikeRankIfPresent implements cache.InteractiveCache.
+func (i *InteractiveRedisCache) IncrLikeRankIfPresent(
+	ctx context.Context,
+	biz string,
+	bizID int64,
+) error {
+	return i.client.Eval(ctx, luaIncrRank, []string{i.topLikedKey(biz)}, bizID, 1).Err()
+}
+
+// DecrLikeRankIfPresent implements cache.InteractiveCache.
+func (i *InteractiveRedisCache) DecrLikeRankIfPresent(
+	ctx context.Context,
+	biz string,
+	bizID int64,
+) error {
+	return i.client.Eval(ctx, luaIncrRank, []string{i.topLikedKey(biz)}, bizID, -1).Err()
 }
 
 // GetTopLikedIDs implements cache.InteractiveCache.
@@ -171,7 +192,11 @@ func (i *InteractiveRedisCache) DecrLikeCntIfPresent(
 	biz string,
 	bizID int64,
 ) error {
-	return i.client.Eval(ctx, luaIncrCnt, []string{i.Key(biz, bizID)}, fieldLikeCnt, -1).Err()
+	err := i.client.Eval(ctx, luaIncrCnt, []string{i.Key(biz, bizID)}, fieldLikeCnt, -1).Err()
+	if err != nil {
+		return err
+	}
+	return i.DecrLikeRankIfPresent(ctx, biz, bizID)
 }
 
 // IncrLikeCntIfPresent implements cache.InteractiveCache.
@@ -180,7 +205,11 @@ func (i *InteractiveRedisCache) IncrLikeCntIfPresent(
 	biz string,
 	bizID int64,
 ) error {
-	return i.client.Eval(ctx, luaIncrCnt, []string{i.Key(biz, bizID)}, fieldLikeCnt, 1).Err()
+	err := i.client.Eval(ctx, luaIncrCnt, []string{i.Key(biz, bizID)}, fieldLikeCnt, 1).Err()
+	if err != nil {
+		return err
+	}
+	return i.IncrLikeRankIfPresent(ctx, biz, bizID)
 }
 
 // IncrReadCntIfPresent implements cache.InteractiveCache.

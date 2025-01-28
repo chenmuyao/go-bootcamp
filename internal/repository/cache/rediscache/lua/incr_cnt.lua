@@ -6,6 +6,8 @@ local cntKey = ARGV[1]
 
 local delta = tonumber(ARGV[2])
 
+local zsetKey = ARGV[3]
+
 local exist = redis.call("EXISTS", key, cntKey, delta)
 
 if exist == 1 then
