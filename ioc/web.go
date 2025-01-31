@@ -8,8 +8,6 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/web"
 	ijwt "github.com/chenmuyao/go-bootcamp/internal/web/jwt"
 	"github.com/chenmuyao/go-bootcamp/internal/web/middleware"
-	"github.com/chenmuyao/go-bootcamp/pkg/ginx/middleware/ratelimit"
-	"github.com/chenmuyao/go-bootcamp/pkg/limiter"
 	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -49,13 +47,13 @@ func InitGinMiddlewares(
 			MaxAge: 12 * time.Hour,
 		}),
 
-		ratelimit.NewRateLimiterBuilder(&limiter.RedisSlidingWindowOptions{
-			Prefix:        "web-interface",
-			RedisClient:   redisClient,
-			Interval:      time.Second,
-			Limit:         100,
-			WindowsAmount: 10,
-		}).Build(),
+		// ratelimit.NewRateLimiterBuilder(&limiter.RedisSlidingWindowOptions{
+		// 	Prefix:        "web-interface",
+		// 	RedisClient:   redisClient,
+		// 	Interval:      time.Second,
+		// 	Limit:         100,
+		// 	WindowsAmount: 10,
+		// }).Build(),
 		middleware.NewLogMiddlewareBuilder(func(ctx context.Context, al middleware.AccessLog) {
 			l.Debug("", logger.Field{Key: "req", Value: al})
 		}).AllowReqBody().AllowRespBody().Build(),

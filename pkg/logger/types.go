@@ -71,4 +71,11 @@ func String(key string, val string) Field {
 	}
 }
 
+func Any(key string, val any) Field {
+	return Field{
+		Key:   key,
+		Value: val,
+	}
+}
+
 // }}}

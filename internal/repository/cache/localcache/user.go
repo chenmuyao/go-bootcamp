@@ -24,6 +24,16 @@ type UserLocalCache struct {
 	cc *ttlcache.Cache[string, domain.User]
 }
 
+// BatchGet implements cache.UserCache.
+func (c *UserLocalCache) BatchGet(ctx context.Context, uids []int64) ([]domain.User, error) {
+	panic("unimplemented")
+}
+
+// BatchSet implements cache.UserCache.
+func (c *UserLocalCache) BatchSet(ctx context.Context, users []domain.User) error {
+	panic("unimplemented")
+}
+
 func NewUserLocalCache(cc *ttlcache.Cache[string, domain.User]) cache.UserCache {
 	return &UserLocalCache{
 		cc: cc,

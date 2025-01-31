@@ -41,6 +41,21 @@ func (m *MockUserDAO) EXPECT() *MockUserDAOMockRecorder {
 	return m.recorder
 }
 
+// BatchFindByIDs mocks base method.
+func (m *MockUserDAO) BatchFindByIDs(ctx context.Context, ids []int64) ([]dao.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchFindByIDs", ctx, ids)
+	ret0, _ := ret[0].([]dao.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchFindByIDs indicates an expected call of BatchFindByIDs.
+func (mr *MockUserDAOMockRecorder) BatchFindByIDs(ctx, ids any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchFindByIDs", reflect.TypeOf((*MockUserDAO)(nil).BatchFindByIDs), ctx, ids)
+}
+
 // FindByEmail mocks base method.
 func (m *MockUserDAO) FindByEmail(ctx context.Context, email string) (dao.User, error) {
 	m.ctrl.T.Helper()

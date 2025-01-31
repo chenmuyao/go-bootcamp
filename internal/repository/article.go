@@ -31,6 +31,7 @@ type ArticleRepository interface {
 	) error
 	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article, error)
 	GetByID(ctx context.Context, id int64) (domain.Article, error)
+	BatchGetPubByIDs(ctx context.Context, ids []int64) ([]domain.Article, error)
 	GetPubByID(ctx context.Context, id int64) (domain.Article, error)
 }
 
@@ -48,6 +49,47 @@ type CachedArticleRepository struct {
 
 	// V2 repository level transaction
 	db *gorm.DB
+}
+
+func (c *CachedArticleRepository) BatchGetPubByIDs(
+	ctx context.Context,
+	ids []int64,
+) ([]domain.Article, error) {
+	cached, err := c.cache.BatchGetPub(ctx, ids)
+	if err == nil {
+		return cached, nil
+	}
+
+	daoArticles, err := c.dao.BatchGetPubByIDs(ctx, ids)
+	if err != nil {
+		c.l.Error("failed to get dao articles", logger.Any("ids", ids), logger.Error(err))
+		return []domain.Article{}, err
+	}
+
+	authorIDs := make([]int64, 0, len(ids))
+	for _, daoArt := range daoArticles {
+		authorIDs = append(authorIDs, daoArt.AuthorID)
+	}
+
+	authors, err := c.userRepo.BatchFindByIDs(ctx, authorIDs)
+	if err != nil {
+		c.l.Error("failed to get authors", logger.Any("authorIDs", authorIDs), logger.Error(err))
+		return []domain.Article{}, err
+	}
+	domainArticles := gslice.Map(
+		daoArticles,
+		func(id int, src dao.PublishedArticle) domain.Article {
+			res := c.toDomain(dao.Article(src))
+			res.Author.Name = authors[id].Name
+			return res
+		},
+	)
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		c.batchCachePub(ctx, domainArticles)
+	}()
+	return domainArticles, nil
 }
 
 // GetPubByID implements ArticleRepository.
@@ -405,6 +447,13 @@ func (c *CachedArticleRepository) preCache(ctx context.Context, articles []domai
 
 func (c *CachedArticleRepository) cachePub(ctx context.Context, article domain.Article) {
 	err := c.cache.SetPub(ctx, article)
+	if err != nil {
+		c.l.Warn("Set published cache error", logger.Error(err))
+	}
+}
+
+func (c *CachedArticleRepository) batchCachePub(ctx context.Context, articles []domain.Article) {
+	err := c.cache.BatchSetPub(ctx, articles)
 	if err != nil {
 		c.l.Warn("Set published cache error", logger.Error(err))
 	}

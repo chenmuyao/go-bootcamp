@@ -41,6 +41,21 @@ func (m *MockUserRepository) EXPECT() *MockUserRepositoryMockRecorder {
 	return m.recorder
 }
 
+// BatchFindByIDs mocks base method.
+func (m *MockUserRepository) BatchFindByIDs(ctx context.Context, userIDs []int64) ([]domain.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchFindByIDs", ctx, userIDs)
+	ret0, _ := ret[0].([]domain.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchFindByIDs indicates an expected call of BatchFindByIDs.
+func (mr *MockUserRepositoryMockRecorder) BatchFindByIDs(ctx, userIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchFindByIDs", reflect.TypeOf((*MockUserRepository)(nil).BatchFindByIDs), ctx, userIDs)
+}
+
 // Create mocks base method.
 func (m *MockUserRepository) Create(ctx context.Context, u domain.User) (domain.User, error) {
 	m.ctrl.T.Helper()

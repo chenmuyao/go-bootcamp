@@ -41,6 +41,21 @@ func (m *MockArticleDAO) EXPECT() *MockArticleDAOMockRecorder {
 	return m.recorder
 }
 
+// BatchGetPubByIDs mocks base method.
+func (m *MockArticleDAO) BatchGetPubByIDs(ctx context.Context, ids []int64) ([]dao.PublishedArticle, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchGetPubByIDs", ctx, ids)
+	ret0, _ := ret[0].([]dao.PublishedArticle)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchGetPubByIDs indicates an expected call of BatchGetPubByIDs.
+func (mr *MockArticleDAOMockRecorder) BatchGetPubByIDs(ctx, ids any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetPubByIDs", reflect.TypeOf((*MockArticleDAO)(nil).BatchGetPubByIDs), ctx, ids)
+}
+
 // GetByAuthor mocks base method.
 func (m *MockArticleDAO) GetByAuthor(ctx context.Context, uid int64, offset, limit int) ([]dao.Article, error) {
 	m.ctrl.T.Helper()

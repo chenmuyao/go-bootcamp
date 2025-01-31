@@ -15,10 +15,35 @@ type InteractiveService interface {
 	Collect(ctx context.Context, biz string, id int64, cid int64, uid int64) error
 	CancelCollect(ctx context.Context, biz string, id int64, cid int64, uid int64) error
 	Get(ctx context.Context, biz string, id int64, uid int64) (domain.Interactive, error)
+	BatchGet(ctx context.Context, biz string, id []int64) ([]domain.Interactive, error)
+	GetTopLike(ctx context.Context, biz string, limit int) ([]int64, error)
 }
 
 type interactiveService struct {
 	repo repository.InteractiveRepository
+
+	defaultTopLikeLimit int
+}
+
+// GetTopLike implements InteractiveService.
+func (i *interactiveService) GetTopLike(
+	ctx context.Context,
+	biz string,
+	limit int,
+) ([]int64, error) {
+	if limit <= 0 || limit > i.defaultTopLikeLimit {
+		limit = i.defaultTopLikeLimit
+	}
+	return i.repo.GetTopLike(ctx, biz, limit)
+}
+
+// BatchGet implements InteractiveService.
+func (i *interactiveService) BatchGet(
+	ctx context.Context,
+	biz string,
+	id []int64,
+) ([]domain.Interactive, error) {
+	return i.repo.BatchGet(ctx, biz, id)
 }
 
 // Get implements InteractiveService.
@@ -91,6 +116,7 @@ func (i *interactiveService) IncrReadCnt(ctx context.Context, biz string, bizID 
 
 func NewInteractiveService(repo repository.InteractiveRepository) InteractiveService {
 	return &interactiveService{
-		repo: repo,
+		repo:                repo,
+		defaultTopLikeLimit: 10,
 	}
 }

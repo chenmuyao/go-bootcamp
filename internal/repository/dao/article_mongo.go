@@ -23,6 +23,14 @@ type MongoDBArticleDAO struct {
 	client   *mongo.Client
 }
 
+// BatchGetPubByIDs implements ArticleDAO.
+func (m *MongoDBArticleDAO) BatchGetPubByIDs(
+	ctx context.Context,
+	ids []int64,
+) ([]PublishedArticle, error) {
+	panic("unimplemented")
+}
+
 // GetPubByID implements ArticleDAO.
 func (m *MongoDBArticleDAO) GetPubByID(ctx context.Context, id int64) (PublishedArticle, error) {
 	panic("unimplemented")

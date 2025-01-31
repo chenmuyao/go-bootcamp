@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/chenmuyao/generique/gslice"
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/cache"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
@@ -32,6 +33,7 @@ type UserRepository interface {
 	FindByPhone(ctx context.Context, phone string) (domain.User, error)
 	UpdateProfile(ctx context.Context, user *domain.User) error
 	FindByID(ctx context.Context, userID int64) (domain.User, error)
+	BatchFindByIDs(ctx context.Context, userIDs []int64) ([]domain.User, error)
 }
 
 // }}}
@@ -91,6 +93,38 @@ func (repo *CachedUserRepository) UpdateProfile(ctx context.Context, user *domai
 		return err
 	}
 	return nil
+}
+
+// BatchFindByIDs implements UserRepository.
+func (repo *CachedUserRepository) BatchFindByIDs(
+	ctx context.Context,
+	userIDs []int64,
+) ([]domain.User, error) {
+	du, err := repo.cache.BatchGet(ctx, userIDs)
+	// found, return
+	if err == nil {
+		return du, nil
+	}
+	slog.Error("redis get", "err", err)
+
+	daoUsers, err := repo.dao.BatchFindByIDs(ctx, userIDs)
+	if err != nil {
+		return []domain.User{}, err
+	}
+
+	domainUsers := gslice.Map(daoUsers, func(id int, src dao.User) domain.User {
+		return repo.userDAOToDomain(&src)
+	})
+
+	go func() {
+		err = repo.cache.BatchSet(ctx, domainUsers)
+		if err != nil {
+			// Network, or redis crash
+			slog.Error("redis set", "err", err)
+		}
+	}()
+
+	return du, nil
 }
 
 // NOTE: Ok for normal case. But if cache penetration happens, the DB can be crashed

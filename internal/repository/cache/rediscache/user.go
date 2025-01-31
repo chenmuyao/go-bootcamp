@@ -46,6 +46,32 @@ func NewUserRedisCache(cmd redis.Cmdable) cache.UserCache {
 // }}}
 // {{{ Struct Methods
 
+// BatchGet implements cache.UserCache.
+func (c *UserRedisCache) BatchGet(ctx context.Context, uids []int64) ([]domain.User, error) {
+	res := make([]domain.User, 0, len(uids))
+	for _, uid := range uids {
+		u, err := c.Get(ctx, uid)
+		if err != nil {
+			return []domain.User{}, err
+		}
+		res = append(res, u)
+	}
+	return res, nil
+}
+
+// BatchSet implements cache.UserCache.
+func (c *UserRedisCache) BatchSet(ctx context.Context, users []domain.User) error {
+	var err error
+	for _, user := range users {
+		er := c.Set(ctx, user)
+		if er != nil {
+			// log the error
+			err = er
+		}
+	}
+	return err
+}
+
 func (c *UserRedisCache) Get(ctx context.Context, uid int64) (domain.User, error) {
 	key := c.Key(uid)
 	// NOTE: Suppose using JSON to marshal

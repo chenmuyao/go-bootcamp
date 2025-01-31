@@ -68,6 +68,7 @@ func (h *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	// get published article (reader)
 	pub := g.Group("/pub")
 	pub.GET("/:id", ginx.WrapClaims(h.l, h.PubDetail))
+	pub.GET("/top_like", ginx.WrapLog(h.l, h.TopLike))
 	// True: like; False: cancel like
 	pub.POST("/like", ginx.WrapBodyAndClaims(h.l, h.Like))
 	pub.POST("/collect", ginx.WrapBodyAndClaims(h.l, h.Collect))
@@ -307,6 +308,58 @@ func (h *ArticleHandler) PubDetail(
 			Liked:      intr.Liked,
 			Collected:  intr.Collected,
 		},
+	}, nil
+}
+
+func (h *ArticleHandler) TopLike(ctx *gin.Context) (ginx.Result, error) {
+	// Get top limit
+	var limit int
+	limitStr := ctx.Query("limit")
+	if res, err := strconv.Atoi(limitStr); err != nil {
+		limit = res
+	}
+
+	articleIDs, err := h.intrSvc.GetTopLike(ctx, h.biz, limit)
+	if err != nil {
+		return ginx.InternalServerErrorResult, logger.LError(
+			"failed to get top like",
+			logger.Error(err),
+		)
+	}
+
+	articles, err := h.svc.BatchGetPubByIDs(ctx, articleIDs)
+	if err != nil {
+		return ginx.InternalServerErrorResult, logger.LError(
+			"failed to get articles",
+			logger.String("biz", h.biz),
+			logger.Error(err),
+		)
+	}
+
+	intrs, err := h.intrSvc.BatchGet(ctx, h.biz, articleIDs)
+	if err != nil {
+		return ginx.InternalServerErrorResult, logger.LError(
+			"failed to get interactives",
+			logger.String("biz", h.biz),
+			logger.Error(err),
+		)
+	}
+
+	intrArticles := gslice.Map(articles, func(id int, src domain.Article) ArticleVO {
+		return ArticleVO{
+			ID:         src.ID,
+			Title:      src.Title,
+			Abstract:   src.Abstract(),
+			AuthorID:   src.Author.ID,
+			AuthorName: src.Author.Name,
+			Ctime:      src.Ctime.Format(time.DateTime),
+			Utime:      src.Ctime.Format(time.DateTime),
+			LikeCnt:    intrs[id].LikeCnt,
+		}
+	})
+	return ginx.Result{
+		Code: ginx.CodeOK,
+		Data: intrArticles,
 	}, nil
 }
 

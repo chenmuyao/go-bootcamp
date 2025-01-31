@@ -20,6 +20,23 @@ import (
 
 // Injectors from wire.go:
 
+func InitInteractiveRepo() repository.InteractiveRepository {
+	logger := ioc.InitLogger()
+	db := ioc.InitDB(logger)
+	interactiveDAO := dao.NewGORMInteractiveDAO(db)
+	cmdable := ioc.InitRedis()
+	interactiveCache := rediscache.NewInteractiveRedisCache(cmdable)
+	topArticlesCache := ioc.InitTopArticlesCache()
+	articleDAO := dao.NewArticleDAO(db)
+	articleCache := rediscache.NewArticleRedisCache(cmdable)
+	userDAO := dao.NewUserDAO(db)
+	userCache := rediscache.NewUserRedisCache(cmdable)
+	userRepository := repository.NewUserRepository(userDAO, userCache)
+	articleRepository := repository.NewArticleRepository(logger, articleDAO, articleCache, userRepository)
+	interactiveRepository := repository.NewCachedInteractiveRepository(logger, interactiveDAO, interactiveCache, topArticlesCache, articleRepository)
+	return interactiveRepository
+}
+
 func InitWebServer() *App {
 	cmdable := ioc.InitRedis()
 	handler := jwt.NewRedisJWTHandler(cmdable)
@@ -48,7 +65,8 @@ func InitWebServer() *App {
 	articleService := service.NewArticleService(articleRepository, producer)
 	interactiveDAO := dao.NewGORMInteractiveDAO(db)
 	interactiveCache := rediscache.NewInteractiveRedisCache(cmdable)
-	interactiveRepository := repository.NewCachedInteractiveRepository(logger, interactiveDAO, interactiveCache)
+	topArticlesCache := ioc.InitTopArticlesCache()
+	interactiveRepository := repository.NewCachedInteractiveRepository(logger, interactiveDAO, interactiveCache, topArticlesCache, articleRepository)
 	interactiveService := service.NewInteractiveService(interactiveRepository)
 	articleHandler := web.NewArticleHandler(logger, articleService, interactiveService)
 	engine := ioc.InitWebServer(v, userHandler, oAuth2GiteaHandler, articleHandler)

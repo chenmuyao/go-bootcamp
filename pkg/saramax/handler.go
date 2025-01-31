@@ -45,6 +45,7 @@ func (h *Handler[T]) ConsumeClaim(
 				logger.Int64("offset", msg.Offset),
 				logger.Error(err),
 			)
+			continue
 		}
 		// run biz
 		err = h.bizFn(msg, t)
@@ -57,6 +58,7 @@ func (h *Handler[T]) ConsumeClaim(
 				logger.Int64("offset", msg.Offset),
 				logger.Error(err),
 			)
+			continue
 		}
 		session.MarkMessage(msg, "")
 	}
