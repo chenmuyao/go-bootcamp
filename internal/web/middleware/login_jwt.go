@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	ijwt "github.com/chenmuyao/go-bootcamp/internal/web/jwt"
-	"github.com/chenmuyao/go-bootcamp/pkg/httpx"
 	"github.com/gin-gonic/gin"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -69,12 +68,12 @@ func (m *LoginJWT) Build() gin.HandlerFunc {
 			return
 		}
 
-		if uc.UserAgent != ctx.GetHeader(httpx.UserAgent) {
-			// NOTE: Instrument here. Might be attackers.
-			// A better option is to use the browser's fingerprint.
-			ctx.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
+		// if uc.UserAgent != ctx.GetHeader(httpx.UserAgent) {
+		// 	// NOTE: Instrument here. Might be attackers.
+		// 	// A better option is to use the browser's fingerprint.
+		// 	ctx.AbortWithStatus(http.StatusUnauthorized)
+		// 	return
+		// }
 
 		// Check if logged out
 		if err := m.CheckSession(ctx, uc.SSID); err != nil {

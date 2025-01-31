@@ -59,13 +59,13 @@ type InteractiveCache interface {
 	BatchSet(ctx context.Context, biz string, bizIDs []int64, intr []domain.Interactive) error
 	GetTopLikedIDs(ctx context.Context, biz string, limit int64) ([]int64, error)
 	SetLikeToZSET(ctx context.Context, biz string, bizId int64, likeCnt int64) error
-	IncrLikeRankIfPresent(ctx context.Context, biz string, bizID int64) error
-	DecrLikeRankIfPresent(ctx context.Context, biz string, bizID int64) error
+	IncrLikeRank(ctx context.Context, biz string, bizID int64) error
+	DecrLikeRank(ctx context.Context, biz string, bizID int64) error
 }
 
 type TopArticlesCache interface {
-	SetTopLikedArticles(ctx context.Context, articles []domain.ArticleInteractive) error
-	GetTopLikedArticles(ctx context.Context) ([]domain.ArticleInteractive, error)
+	SetTopLikedArticles(ctx context.Context, articles []int64) error
+	GetTopLikedArticles(ctx context.Context) ([]int64, error)
 }
 
 // }}}

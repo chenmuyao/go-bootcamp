@@ -24,6 +24,7 @@ type ArticleService interface {
 	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article, error)
 	GetByID(ctx context.Context, id int64) (domain.Article, error)
 	GetPubByID(ctx context.Context, id int64, uid int64) (domain.Article, error)
+	BatchGetPubByIDs(ctx context.Context, ids []int64) ([]domain.Article, error)
 }
 
 type articleService struct {
@@ -34,6 +35,14 @@ type articleService struct {
 	readerRepo repository.ArticleReaderRepository
 	authorRepo repository.ArticleAuthorRepository
 	producer   article.Producer
+}
+
+// BatchGetPubByIDs implements ArticleService.
+func (a *articleService) BatchGetPubByIDs(
+	ctx context.Context,
+	ids []int64,
+) ([]domain.Article, error) {
+	return a.repo.BatchGetPubByIDs(ctx, ids)
 }
 
 // GetPubByID implements ArticleService.

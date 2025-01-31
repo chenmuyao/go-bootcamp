@@ -36,8 +36,8 @@ func InitCodeLocalCache() cache.CodeCache {
 func InitTopArticlesCache() cache.TopArticlesCache {
 	timeout := 15 * time.Second
 	cc := ttlcache.New(
-		ttlcache.WithTTL[string, []domain.ArticleInteractive](timeout),
-		ttlcache.WithDisableTouchOnHit[string, []domain.ArticleInteractive](),
+		ttlcache.WithTTL[string, []int64](timeout),
+		ttlcache.WithDisableTouchOnHit[string, []int64](),
 	)
 	go cc.Start()
 

@@ -17,11 +17,6 @@ type Author struct {
 	Name string
 }
 
-type ArticleInteractive struct {
-	Article Article
-	Intr    Interactive
-}
-
 type ArticleStatus uint8
 
 const (

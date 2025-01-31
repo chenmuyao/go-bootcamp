@@ -319,28 +319,47 @@ func (h *ArticleHandler) TopLike(ctx *gin.Context) (ginx.Result, error) {
 		limit = res
 	}
 
-	res, err := h.intrSvc.GetTopLike(ctx, h.biz, limit)
+	articleIDs, err := h.intrSvc.GetTopLike(ctx, h.biz, limit)
 	if err != nil {
 		return ginx.InternalServerErrorResult, logger.LError(
 			"failed to get top like",
 			logger.Error(err),
 		)
 	}
-	articles := gslice.Map(res, func(id int, src domain.ArticleInteractive) ArticleVO {
+
+	articles, err := h.svc.BatchGetPubByIDs(ctx, articleIDs)
+	if err != nil {
+		return ginx.InternalServerErrorResult, logger.LError(
+			"failed to get articles",
+			logger.String("biz", h.biz),
+			logger.Error(err),
+		)
+	}
+
+	intrs, err := h.intrSvc.BatchGet(ctx, h.biz, articleIDs)
+	if err != nil {
+		return ginx.InternalServerErrorResult, logger.LError(
+			"failed to get interactives",
+			logger.String("biz", h.biz),
+			logger.Error(err),
+		)
+	}
+
+	intrArticles := gslice.Map(articles, func(id int, src domain.Article) ArticleVO {
 		return ArticleVO{
-			ID:         src.Article.ID,
-			Title:      src.Article.Title,
-			Abstract:   src.Article.Abstract(),
-			AuthorID:   src.Article.Author.ID,
-			AuthorName: src.Article.Author.Name,
-			Ctime:      src.Article.Ctime.Format(time.DateTime),
-			Utime:      src.Article.Ctime.Format(time.DateTime),
-			LikeCnt:    src.Intr.LikeCnt,
+			ID:         src.ID,
+			Title:      src.Title,
+			Abstract:   src.Abstract(),
+			AuthorID:   src.Author.ID,
+			AuthorName: src.Author.Name,
+			Ctime:      src.Ctime.Format(time.DateTime),
+			Utime:      src.Ctime.Format(time.DateTime),
+			LikeCnt:    intrs[id].LikeCnt,
 		}
 	})
 	return ginx.Result{
 		Code: ginx.CodeOK,
-		Data: articles,
+		Data: intrArticles,
 	}, nil
 }
 

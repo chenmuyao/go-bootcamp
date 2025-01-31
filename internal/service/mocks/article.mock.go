@@ -41,6 +41,21 @@ func (m *MockArticleService) EXPECT() *MockArticleServiceMockRecorder {
 	return m.recorder
 }
 
+// BatchGetPubByIDs mocks base method.
+func (m *MockArticleService) BatchGetPubByIDs(ctx context.Context, ids []int64) ([]domain.Article, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchGetPubByIDs", ctx, ids)
+	ret0, _ := ret[0].([]domain.Article)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchGetPubByIDs indicates an expected call of BatchGetPubByIDs.
+func (mr *MockArticleServiceMockRecorder) BatchGetPubByIDs(ctx, ids any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetPubByIDs", reflect.TypeOf((*MockArticleService)(nil).BatchGetPubByIDs), ctx, ids)
+}
+
 // GetByAuthor mocks base method.
 func (m *MockArticleService) GetByAuthor(ctx context.Context, uid int64, offset, limit int) ([]domain.Article, error) {
 	m.ctrl.T.Helper()

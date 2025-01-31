@@ -387,6 +387,20 @@ func (mr *MockInteractiveCacheMockRecorder) DecrLikeCntIfPresent(ctx, biz, bizID
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecrLikeCntIfPresent", reflect.TypeOf((*MockInteractiveCache)(nil).DecrLikeCntIfPresent), ctx, biz, bizID)
 }
 
+// DecrLikeRank mocks base method.
+func (m *MockInteractiveCache) DecrLikeRank(ctx context.Context, biz string, bizID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DecrLikeRank", ctx, biz, bizID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DecrLikeRank indicates an expected call of DecrLikeRank.
+func (mr *MockInteractiveCacheMockRecorder) DecrLikeRank(ctx, biz, bizID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecrLikeRank", reflect.TypeOf((*MockInteractiveCache)(nil).DecrLikeRank), ctx, biz, bizID)
+}
+
 // Get mocks base method.
 func (m *MockInteractiveCache) Get(ctx context.Context, biz string, bizID int64) (domain.Interactive, error) {
 	m.ctrl.T.Helper()
@@ -443,6 +457,20 @@ func (m *MockInteractiveCache) IncrLikeCntIfPresent(ctx context.Context, biz str
 func (mr *MockInteractiveCacheMockRecorder) IncrLikeCntIfPresent(ctx, biz, bizID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrLikeCntIfPresent", reflect.TypeOf((*MockInteractiveCache)(nil).IncrLikeCntIfPresent), ctx, biz, bizID)
+}
+
+// IncrLikeRank mocks base method.
+func (m *MockInteractiveCache) IncrLikeRank(ctx context.Context, biz string, bizID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncrLikeRank", ctx, biz, bizID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IncrLikeRank indicates an expected call of IncrLikeRank.
+func (mr *MockInteractiveCacheMockRecorder) IncrLikeRank(ctx, biz, bizID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrLikeRank", reflect.TypeOf((*MockInteractiveCache)(nil).IncrLikeRank), ctx, biz, bizID)
 }
 
 // IncrReadCntIfPresent mocks base method.
@@ -512,10 +540,10 @@ func (m *MockTopArticlesCache) EXPECT() *MockTopArticlesCacheMockRecorder {
 }
 
 // GetTopLikedArticles mocks base method.
-func (m *MockTopArticlesCache) GetTopLikedArticles(ctx context.Context) ([]domain.ArticleInteractive, error) {
+func (m *MockTopArticlesCache) GetTopLikedArticles(ctx context.Context) ([]int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTopLikedArticles", ctx)
-	ret0, _ := ret[0].([]domain.ArticleInteractive)
+	ret0, _ := ret[0].([]int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -527,7 +555,7 @@ func (mr *MockTopArticlesCacheMockRecorder) GetTopLikedArticles(ctx any) *gomock
 }
 
 // SetTopLikedArticles mocks base method.
-func (m *MockTopArticlesCache) SetTopLikedArticles(ctx context.Context, articles []domain.ArticleInteractive) error {
+func (m *MockTopArticlesCache) SetTopLikedArticles(ctx context.Context, articles []int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetTopLikedArticles", ctx, articles)
 	ret0, _ := ret[0].(error)

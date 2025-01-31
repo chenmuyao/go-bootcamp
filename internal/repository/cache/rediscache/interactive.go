@@ -33,22 +33,23 @@ type InteractiveRedisCache struct {
 	client redis.Cmdable
 }
 
-// IncrLikeRankIfPresent implements cache.InteractiveCache.
-func (i *InteractiveRedisCache) IncrLikeRankIfPresent(
+// IncrLikeRank implements cache.InteractiveCache.
+func (i *InteractiveRedisCache) IncrLikeRank(
 	ctx context.Context,
 	biz string,
 	bizID int64,
 ) error {
-	return i.client.Eval(ctx, luaIncrRank, []string{i.topLikedKey(biz)}, bizID, 1).Err()
+	return i.client.ZIncrBy(ctx, i.topLikedKey(biz), float64(1), strconv.FormatInt(bizID, 10)).Err()
 }
 
-// DecrLikeRankIfPresent implements cache.InteractiveCache.
-func (i *InteractiveRedisCache) DecrLikeRankIfPresent(
+// DecrLikeRank implements cache.InteractiveCache.
+func (i *InteractiveRedisCache) DecrLikeRank(
 	ctx context.Context,
 	biz string,
 	bizID int64,
 ) error {
-	return i.client.Eval(ctx, luaIncrRank, []string{i.topLikedKey(biz)}, bizID, -1).Err()
+	return i.client.ZIncrBy(ctx, i.topLikedKey(biz), float64(-1), strconv.FormatInt(bizID, 10)).
+		Err()
 }
 
 // GetTopLikedIDs implements cache.InteractiveCache.
@@ -192,11 +193,7 @@ func (i *InteractiveRedisCache) DecrLikeCntIfPresent(
 	biz string,
 	bizID int64,
 ) error {
-	err := i.client.Eval(ctx, luaIncrCnt, []string{i.Key(biz, bizID)}, fieldLikeCnt, -1).Err()
-	if err != nil {
-		return err
-	}
-	return i.DecrLikeRankIfPresent(ctx, biz, bizID)
+	return i.client.Eval(ctx, luaIncrCnt, []string{i.Key(biz, bizID)}, fieldLikeCnt, -1).Err()
 }
 
 // IncrLikeCntIfPresent implements cache.InteractiveCache.
@@ -205,11 +202,7 @@ func (i *InteractiveRedisCache) IncrLikeCntIfPresent(
 	biz string,
 	bizID int64,
 ) error {
-	err := i.client.Eval(ctx, luaIncrCnt, []string{i.Key(biz, bizID)}, fieldLikeCnt, 1).Err()
-	if err != nil {
-		return err
-	}
-	return i.IncrLikeRankIfPresent(ctx, biz, bizID)
+	return i.client.Eval(ctx, luaIncrCnt, []string{i.Key(biz, bizID)}, fieldLikeCnt, 1).Err()
 }
 
 // IncrReadCntIfPresent implements cache.InteractiveCache.

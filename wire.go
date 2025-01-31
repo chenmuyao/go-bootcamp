@@ -22,6 +22,29 @@ var interactiveSvcSet = wire.NewSet(
 	service.NewInteractiveService,
 )
 
+func InitInteractiveRepo() repository.InteractiveRepository {
+	wire.Build(
+		ioc.InitRedis,
+		ioc.InitDB,
+		ioc.InitLogger,
+
+		rediscache.NewUserRedisCache,
+		rediscache.NewArticleRedisCache,
+		ioc.InitTopArticlesCache,
+
+		dao.NewUserDAO,
+		dao.NewArticleDAO,
+		dao.NewGORMInteractiveDAO,
+
+		rediscache.NewInteractiveRedisCache,
+
+		repository.NewUserRepository,
+		repository.NewArticleRepository,
+		repository.NewCachedInteractiveRepository,
+	)
+	return &repository.CachedInteractiveRepository{}
+}
+
 func InitWebServer() *App {
 	wire.Build(
 		// third-party dependencies

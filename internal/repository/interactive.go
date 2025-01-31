@@ -25,7 +25,7 @@ type InteractiveRepository interface {
 	Get(ctx context.Context, biz string, bizID int64) (domain.Interactive, error)
 	Liked(ctx context.Context, biz string, bizID int64, uid int64) (bool, error)
 	Collected(ctx context.Context, biz string, bizID int64, uid int64) (bool, error)
-	GetTopLike(ctx context.Context, biz string, limit int) ([]domain.ArticleInteractive, error)
+	GetTopLike(ctx context.Context, biz string, limit int) ([]int64, error)
 	BatchSetTopLike(ctx context.Context, biz string, batchSize int) error
 }
 
@@ -91,7 +91,7 @@ func (c *CachedInteractiveRepository) GetTopLike(
 	ctx context.Context,
 	biz string,
 	limit int,
-) ([]domain.ArticleInteractive, error) {
+) ([]int64, error) {
 	// Get top like articles' IDs from local cache
 	res, err := c.topCache.GetTopLikedArticles(ctx)
 	if err == nil && len(res) > 0 {
@@ -107,43 +107,20 @@ func (c *CachedInteractiveRepository) GetTopLike(
 		// XXX: The data should be prepared, if not found,
 		// just return error
 		c.l.Error("failed to get top liked ids", logger.String("biz", biz), logger.Error(err))
-		return []domain.ArticleInteractive{}, err
-	}
-
-	// get articles and intr to construct the result
-
-	articles, err := c.articleRepo.BatchGetPubByIDs(ctx, ids)
-	if err != nil {
-		c.l.Error("failed to get articles", logger.String("biz", biz), logger.Error(err))
-		return []domain.ArticleInteractive{}, err
-	}
-
-	intrs, err := c.BatchGet(ctx, biz, ids)
-	if err != nil {
-		c.l.Error("failed to get interactions", logger.String("biz", biz), logger.Error(err))
-		return []domain.ArticleInteractive{}, err
-	}
-
-	artInts := make([]domain.ArticleInteractive, 0, len(ids))
-	for i := range ids {
-		artInt := domain.ArticleInteractive{
-			Article: articles[i],
-			Intr:    intrs[i],
-		}
-		artInts = append(artInts, artInt)
+		return []int64{}, err
 	}
 
 	// set back to local cache with a short ttl
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
-		er := c.topCache.SetTopLikedArticles(ctx, artInts)
+		er := c.topCache.SetTopLikedArticles(ctx, ids)
 		if er != nil {
 			c.l.Error("failed to write back to local cache", logger.Error(err))
 		}
 	}()
 
-	return artInts, nil
+	return ids, nil
 }
 
 // Collected implements InteractiveRepository.
@@ -295,7 +272,11 @@ func (c *CachedInteractiveRepository) DecrLike(
 		return err
 	}
 
-	return c.cache.DecrLikeCntIfPresent(ctx, biz, id)
+	err = c.cache.DecrLikeCntIfPresent(ctx, biz, id)
+	if err != nil {
+		return err
+	}
+	return c.cache.DecrLikeRank(ctx, biz, id)
 }
 
 func (c *CachedInteractiveRepository) IncrLike(
@@ -309,7 +290,11 @@ func (c *CachedInteractiveRepository) IncrLike(
 		return err
 	}
 
-	return c.cache.IncrLikeCntIfPresent(ctx, biz, id)
+	err = c.cache.IncrLikeCntIfPresent(ctx, biz, id)
+	if err != nil {
+		return err
+	}
+	return c.cache.IncrLikeRank(ctx, biz, id)
 }
 
 // IncrReadCnt implements InteractiveRepository.

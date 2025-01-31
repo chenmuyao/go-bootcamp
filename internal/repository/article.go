@@ -62,6 +62,7 @@ func (c *CachedArticleRepository) BatchGetPubByIDs(
 
 	daoArticles, err := c.dao.BatchGetPubByIDs(ctx, ids)
 	if err != nil {
+		c.l.Error("failed to get dao articles", logger.Any("ids", ids), logger.Error(err))
 		return []domain.Article{}, err
 	}
 
@@ -72,6 +73,7 @@ func (c *CachedArticleRepository) BatchGetPubByIDs(
 
 	authors, err := c.userRepo.BatchFindByIDs(ctx, authorIDs)
 	if err != nil {
+		c.l.Error("failed to get authors", logger.Any("authorIDs", authorIDs), logger.Error(err))
 		return []domain.Article{}, err
 	}
 	domainArticles := gslice.Map(
