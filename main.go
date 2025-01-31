@@ -46,7 +46,10 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	intrRepo := InitInteractiveRepo()
-	intrRepo.BatchSetTopLike(ctx, "article", 1000)
+	err := intrRepo.BatchSetTopLike(ctx, "article", 1000)
+	if err != nil {
+		panic(err)
+	}
 
 	app.server.Run(":8081")
 }

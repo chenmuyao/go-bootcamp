@@ -62,7 +62,7 @@ func (c *CachedInteractiveRepository) BatchSetTopLike(
 		for _, l := range daoLikes {
 			like := l
 			eg.Go(func() error {
-				if err := c.cache.SetLikeToZSET(ctx, biz, like.BizID, like.ID); err != nil {
+				if err := c.cache.SetLikeToZSET(ctx, biz, like.BizID, like.LikeCnt); err != nil {
 					c.l.Error(
 						"failed to set like to zset",
 						logger.String("biz", biz),
