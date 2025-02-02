@@ -1,16 +1,18 @@
 package ioc
 
 import (
-	"context"
 	"strings"
 	"time"
 
 	"github.com/chenmuyao/go-bootcamp/internal/web"
 	ijwt "github.com/chenmuyao/go-bootcamp/internal/web/jwt"
 	"github.com/chenmuyao/go-bootcamp/internal/web/middleware"
+	"github.com/chenmuyao/go-bootcamp/pkg/ginx"
+	"github.com/chenmuyao/go-bootcamp/pkg/ginx/middleware/prometheus"
 	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	prom "github.com/prometheus/client_golang/prometheus"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -32,6 +34,22 @@ func InitGinMiddlewares(
 	jwtHdl ijwt.Handler,
 	l logger.Logger,
 ) []gin.HandlerFunc {
+	pb := prometheus.NewPrometheusBuilder(
+		"my_company",
+		"wetravel",
+		"gin_http",
+		"instance",
+		"Gin requests data",
+	)
+	ginx.InitCounter(prom.CounterOpts{
+		Namespace: "my_company",
+		Subsystem: "wetravel",
+		Name:      "errcode",
+		Help:      "Error code data",
+		ConstLabels: prom.Labels{
+			"instance_id": "instance",
+		},
+	})
 	return []gin.HandlerFunc{
 		cors.New(cors.Config{
 			AllowCredentials: true,
@@ -46,6 +64,8 @@ func InitGinMiddlewares(
 			},
 			MaxAge: 12 * time.Hour,
 		}),
+		pb.BuildResponseTime(),
+		pb.BuildActiveRequest(),
 
 		// ratelimit.NewRateLimiterBuilder(&limiter.RedisSlidingWindowOptions{
 		// 	Prefix:        "web-interface",
@@ -54,9 +74,9 @@ func InitGinMiddlewares(
 		// 	Limit:         100,
 		// 	WindowsAmount: 10,
 		// }).Build(),
-		middleware.NewLogMiddlewareBuilder(func(ctx context.Context, al middleware.AccessLog) {
-			l.Debug("", logger.Field{Key: "req", Value: al})
-		}).AllowReqBody().AllowRespBody().Build(),
+		// middleware.NewLogMiddlewareBuilder(func(ctx context.Context, al middleware.AccessLog) {
+		// 	l.Debug("", logger.Field{Key: "req", Value: al})
+		// }).AllowReqBody().AllowRespBody().Build(),
 		useJWT(jwtHdl),
 		// useSession(),
 		// sessionCheckLogin(),

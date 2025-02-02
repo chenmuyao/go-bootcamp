@@ -2,11 +2,26 @@ package ginx
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/prometheus/client_golang/prometheus"
 )
+
+var vector *prometheus.CounterVec
+
+func InitCounter(opt prometheus.CounterOpts) {
+	vector = prometheus.NewCounterVec(opt, []string{
+		"code",
+	})
+	if err := prometheus.Register(vector); err != nil {
+		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+			vector = are.ExistingCollector.(*prometheus.CounterVec)
+		}
+	}
+}
 
 func WrapBodyAndClaims[Req any, Claims jwt.Claims](
 	l logger.Logger,
@@ -36,6 +51,7 @@ func WrapBodyAndClaims[Req any, Claims jwt.Claims](
 		}
 
 		res, err := bizFn(ctx, req, uc)
+		vector.WithLabelValues(strconv.Itoa(res.Code)).Inc()
 		if logError, ok := err.(*logger.LogError); ok {
 			l.Error(logError.Msg, logError.Fields...)
 		} else if err != nil {
@@ -69,6 +85,7 @@ func WrapBody[Req any](
 		})
 
 		res, err := bizFn(ctx, req)
+		vector.WithLabelValues(strconv.Itoa(res.Code)).Inc()
 		if logError, ok := err.(*logger.LogError); ok {
 			l.Error(logError.Msg, logError.Fields...)
 		} else if err != nil {
@@ -98,6 +115,7 @@ func WrapClaims[Claims jwt.Claims](
 		}
 
 		res, err := bizFn(ctx, uc)
+		vector.WithLabelValues(strconv.Itoa(res.Code)).Inc()
 		if logError, ok := err.(*logger.LogError); ok {
 			l.Error(logError.Msg, logError.Fields...)
 		} else if err != nil {
@@ -115,6 +133,7 @@ func WrapClaims[Claims jwt.Claims](
 func WrapLog(l logger.Logger, bizFn func(ctx *gin.Context) (Result, error)) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		res, err := bizFn(ctx)
+		vector.WithLabelValues(strconv.Itoa(res.Code)).Inc()
 		if logError, ok := err.(*logger.LogError); ok {
 			l.Error(logError.Msg, logError.Fields...)
 		} else if err != nil {
