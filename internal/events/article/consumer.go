@@ -8,6 +8,7 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/repository"
 	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 	"github.com/chenmuyao/go-bootcamp/pkg/saramax"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 const consumeTimeout = time.Second
@@ -43,6 +44,22 @@ func (i *InteractiveReadEventConsumer) Start() error {
 // StartV1 consume one message a time
 func (i *InteractiveReadEventConsumer) StartV1() error {
 	cg, err := sarama.NewConsumerGroupFromClient("interactive", i.client)
+	vector := prometheus.NewSummaryVec(prometheus.SummaryOpts{
+		Namespace: "my_company",
+		Subsystem: "wetravel",
+		Name:      "kafka_consumer",
+		Help:      "Kafka consumer metrics",
+		Objectives: map[float64]float64{
+			0.5:   0.01,
+			0.75:  0.01,
+			0.9:   0.01,
+			0.99:  0.001,
+			0.999: 0.0001,
+		},
+		ConstLabels: prometheus.Labels{
+			"instance_id": "instance",
+		},
+	}, []string{"topic", "partition"})
 	if err != nil {
 		return err
 	}
@@ -50,7 +67,7 @@ func (i *InteractiveReadEventConsumer) StartV1() error {
 		er := cg.Consume(
 			context.Background(),
 			[]string{TopicReadEvent},
-			saramax.NewHandler[ReadEvent](i.l, i.Consume),
+			saramax.NewHandler[ReadEvent](i.l, vector, i.Consume),
 		)
 		if er != nil {
 			i.l.Error("quit consuming", logger.Error(er))
