@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/chenmuyao/go-bootcamp/config"
+	"github.com/chenmuyao/go-bootcamp/ioc"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -38,6 +39,12 @@ func main() {
 	config.InitConfig("config/dev.yaml")
 
 	initPrometheus()
+	tpCancel := ioc.InitOTEL()
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		tpCancel(ctx)
+	}()
 
 	app := InitWebServer()
 

@@ -22,7 +22,7 @@ func (p *PrometheusSMS) Send(ctx context.Context, toNb string, body string, args
 	return p.Service.Send(ctx, toNb, body, args...)
 }
 
-func NewPrometheusOAuth(svc sms.Service, opts prometheus.SummaryOpts) sms.Service {
+func NewPrometheusSMS(svc sms.Service, opts prometheus.SummaryOpts) sms.Service {
 	sum := prometheus.NewSummary(opts)
 	if err := prometheus.Register(sum); err != nil {
 		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {

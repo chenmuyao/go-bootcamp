@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	prom "github.com/prometheus/client_golang/prometheus"
 	"github.com/redis/go-redis/v9"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 func InitWebServer(middlewares []gin.HandlerFunc,
@@ -66,6 +67,7 @@ func InitGinMiddlewares(
 		}),
 		pb.BuildResponseTime(),
 		pb.BuildActiveRequest(),
+		otelgin.Middleware("wetravel"),
 
 		// ratelimit.NewRateLimiterBuilder(&limiter.RedisSlidingWindowOptions{
 		// 	Prefix:        "web-interface",

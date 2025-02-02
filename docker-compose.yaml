@@ -67,3 +67,8 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - 9090:9090
+
+  zipkin:
+    image: openzipkin/zipkin-slim
+    ports:
+      - '9411:9411'

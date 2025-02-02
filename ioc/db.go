@@ -9,6 +9,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	glogger "gorm.io/gorm/logger"
+	"gorm.io/plugin/opentelemetry/tracing"
 	"gorm.io/plugin/prometheus"
 )
 
@@ -26,17 +27,19 @@ func InitDB(l logger.Logger) *gorm.DB {
 
 	err = db.Use(
 		prometheus.New(prometheus.Config{
-			DBName:          "wetravel",
-			RefreshInterval: 15,
+			DBName:           "wetravel",
+			RefreshInterval:  15,
 			MetricsCollector: []prometheus.MetricsCollector{
-				&prometheus.MySQL{
-					VariableNames: []string{"thread_running"},
-				},
+				// &prometheus.MySQL{
+				// 	VariableNames: []string{"thread_running"},
+				// },
 			},
 		}))
 	if err != nil {
 		panic(err)
 	}
+
+	db.Use(tracing.NewPlugin(tracing.WithoutMetrics(), tracing.WithDBName("wetravel")))
 
 	err = db.Use(gormx.NewCallbacks(prom.SummaryOpts{
 		Namespace: "my_company",

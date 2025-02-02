@@ -6,9 +6,13 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/repository"
 	"github.com/chenmuyao/go-bootcamp/internal/service/sms"
 	"github.com/chenmuyao/go-bootcamp/internal/service/sms/localsms"
+	"github.com/chenmuyao/go-bootcamp/internal/service/sms/opentelemetry"
+	"github.com/chenmuyao/go-bootcamp/internal/service/sms/prometheus"
 	"github.com/chenmuyao/go-bootcamp/internal/service/sms/ratelimit"
 	"github.com/chenmuyao/go-bootcamp/pkg/limiter"
+	prom "github.com/prometheus/client_golang/prometheus"
 	"github.com/redis/go-redis/v9"
+	"go.opentelemetry.io/otel"
 )
 
 func InitSMSService(
@@ -36,5 +40,25 @@ func InitSMSService(
 	// 		RetryErrorCodes: []int{20504},
 	// 	},
 	// )
-	return rateLimitSMSSvc
+
+	promSvc := prometheus.NewPrometheusSMS(rateLimitSMSSvc, prom.SummaryOpts{
+		Namespace: "my_company",
+		Subsystem: "wetravel",
+		Name:      "sms_svc",
+		Help:      "SMS service metrics",
+		Objectives: map[float64]float64{
+			0.5:   0.01,
+			0.75:  0.01,
+			0.9:   0.01,
+			0.99:  0.001,
+			0.999: 0.0001,
+		},
+		ConstLabels: prom.Labels{
+			"instance_id": "instance",
+		},
+	})
+
+	tracer := otel.Tracer("github.com/blabla/opentelemetry")
+	otelSvc := opentelemetry.NewOTELSMSSvc(promSvc, tracer)
+	return otelSvc
 }
