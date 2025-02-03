@@ -88,7 +88,7 @@ func (i *InteractiveRedisCache) topLikedKey(biz string) string {
 }
 
 // BatchGet implements cache.InteractiveCache.
-func (i *InteractiveRedisCache) BatchGet(
+func (i *InteractiveRedisCache) MustBatchGet(
 	ctx context.Context,
 	biz string,
 	bizIDs []int64,

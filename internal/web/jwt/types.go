@@ -2,6 +2,7 @@ package jwt
 
 import "github.com/gin-gonic/gin"
 
+//go:generate mockgen -source=./types.go -package=jwtmocks -destination=./mocks/jwt.mock.go
 type Handler interface {
 	ExtractToken(ctx *gin.Context) string
 	ClearToken(ctx *gin.Context) error

@@ -9,6 +9,7 @@ const (
 	LeakyBucket
 )
 
+//go:generate mockgen -source=./types.go -package=limitermocks -destination=./mocks/limiter.mock.go
 type Limiter interface {
 	AcceptConnection(ctx context.Context, biz string) bool
 }

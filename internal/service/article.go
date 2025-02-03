@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"github.com/chenmuyao/go-bootcamp/internal/events/article"
@@ -17,6 +18,7 @@ var (
 	ErrPublish         = errors.New("still failed to publish article after retries")
 )
 
+//go:generate mockgen -source=./article.go -package=svcmocks -destination=./mocks/article.mock.go
 type ArticleService interface {
 	Save(ctx context.Context, article domain.Article) (int64, error)
 	Publish(ctx context.Context, article domain.Article) (int64, error)
@@ -25,6 +27,7 @@ type ArticleService interface {
 	GetByID(ctx context.Context, id int64) (domain.Article, error)
 	GetPubByID(ctx context.Context, id int64, uid int64) (domain.Article, error)
 	BatchGetPubByIDs(ctx context.Context, ids []int64) ([]domain.Article, error)
+	ListPub(ctx context.Context, start time.Time, offset, limit int) ([]domain.Article, error)
 }
 
 type articleService struct {
@@ -35,6 +38,16 @@ type articleService struct {
 	readerRepo repository.ArticleReaderRepository
 	authorRepo repository.ArticleAuthorRepository
 	producer   article.Producer
+}
+
+// ListPub implements ArticleService.
+func (a *articleService) ListPub(
+	ctx context.Context,
+	start time.Time,
+	offset int,
+	limit int,
+) ([]domain.Article, error) {
+	panic("unimplemented")
 }
 
 // BatchGetPubByIDs implements ArticleService.

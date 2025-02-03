@@ -13,6 +13,7 @@ import (
 // }}}
 // {{{ Interface
 
+//go:generate mockgen -source=./types.go -package=smsmocks -destination=./mocks/sms.mock.go
 type Service interface {
 	Send(ctx context.Context, toNb string, body string, args ...string) error
 }

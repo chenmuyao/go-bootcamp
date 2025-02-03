@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+//go:generate mockgen -source=./interactive.go -package=daomocks -destination=./mocks/interactive.mock.go
 type InteractiveDAO interface {
 	IncrReadCnt(ctx context.Context, biz string, bizID int64) error
 	BatchIncrReadCnt(ctx context.Context, bizs []string, bizIDs []int64) error
@@ -17,7 +18,7 @@ type InteractiveDAO interface {
 	DeleteCollectionBiz(ctx context.Context, cb UserCollectionBiz) error
 	Get(ctx context.Context, biz string, bizID int64) (Interactive, error)
 	GetAll(ctx context.Context, biz string, limit int, offset int) ([]Interactive, error)
-	BatchGet(ctx context.Context, biz string, bizIDs []int64) ([]Interactive, error)
+	MustBatchGet(ctx context.Context, biz string, bizIDs []int64) ([]Interactive, error)
 	GetLikeInfo(ctx context.Context, biz string, bizID int64, uid int64) (UserLikeBiz, error)
 	GetCollectInfo(
 		ctx context.Context,
@@ -85,7 +86,7 @@ func (g *GORMInteractiveDAO) GetAll(
 }
 
 // BatchGet implements InteractiveDAO.
-func (g *GORMInteractiveDAO) BatchGet(
+func (g *GORMInteractiveDAO) MustBatchGet(
 	ctx context.Context,
 	biz string,
 	bizIDs []int64,

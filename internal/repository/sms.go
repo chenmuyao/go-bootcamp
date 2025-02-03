@@ -17,6 +17,7 @@ import (
 // }}}
 // {{{ Interface
 
+//go:generate mockgen -source=./sms.go -package=repomocks -destination=./mocks/sms.mock.go
 type AsyncSMSRepository interface {
 	AddSMS(ctx context.Context, toNb string, body string, args string) error
 	TrySend(

@@ -27,6 +27,7 @@ var (
 // }}}
 // {{{ Interface
 
+//go:generate mockgen -source=./user.go -package=repomocks -destination=./mocks/user.mock.go
 type UserRepository interface {
 	Create(ctx context.Context, u domain.User) (domain.User, error)
 	FindByEmail(ctx context.Context, email string) (domain.User, error)

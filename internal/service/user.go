@@ -27,6 +27,8 @@ var (
 // 1. For test purpose
 // 2. UserServiceV1 V2, etc
 // 3. UserServiceVIP ...
+
+//go:generate mockgen -source=./user.go -package=svcmocks -destination=./mocks/user.mock.go
 type UserService interface {
 	SignUp(ctx context.Context, u domain.User) (domain.User, error)
 	Login(ctx context.Context, email string, password string) (domain.User, error)

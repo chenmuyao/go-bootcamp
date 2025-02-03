@@ -8,6 +8,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+//go:generate mockgen -source=./interactive.go -package=svcmocks -destination=./mocks/interactive.mock.go
 type InteractiveService interface {
 	IncrReadCnt(ctx context.Context, biz string, bizID int64) error
 	Like(ctx context.Context, biz string, id int64, uid int64) error
@@ -15,7 +16,9 @@ type InteractiveService interface {
 	Collect(ctx context.Context, biz string, id int64, cid int64, uid int64) error
 	CancelCollect(ctx context.Context, biz string, id int64, cid int64, uid int64) error
 	Get(ctx context.Context, biz string, id int64, uid int64) (domain.Interactive, error)
-	BatchGet(ctx context.Context, biz string, id []int64) ([]domain.Interactive, error)
+	// NOTE: Intr must exist
+	MustBatchGet(ctx context.Context, biz string, id []int64) ([]domain.Interactive, error)
+	GetByIDs(ctx context.Context, biz string, ids []int64) (map[int64]domain.Interactive, error)
 	GetTopLike(ctx context.Context, biz string, limit int) ([]int64, error)
 }
 
@@ -23,6 +26,15 @@ type interactiveService struct {
 	repo repository.InteractiveRepository
 
 	defaultTopLikeLimit int
+}
+
+// GetByIDs implements InteractiveService.
+func (i *interactiveService) GetByIDs(
+	ctx context.Context,
+	biz string,
+	ids []int64,
+) (map[int64]domain.Interactive, error) {
+	panic("unimplemented")
 }
 
 // GetTopLike implements InteractiveService.
@@ -38,12 +50,12 @@ func (i *interactiveService) GetTopLike(
 }
 
 // BatchGet implements InteractiveService.
-func (i *interactiveService) BatchGet(
+func (i *interactiveService) MustBatchGet(
 	ctx context.Context,
 	biz string,
 	id []int64,
 ) ([]domain.Interactive, error) {
-	return i.repo.BatchGet(ctx, biz, id)
+	return i.repo.MustBatchGet(ctx, biz, id)
 }
 
 // Get implements InteractiveService.

@@ -7,6 +7,7 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
 )
 
+//go:generate mockgen -source=./article_reader.go -package=repomocks -destination=./mocks/article_reader.mock.go
 type ArticleReaderRepository interface {
 	// Insert or Update
 	Save(ctx context.Context, article domain.Article) error

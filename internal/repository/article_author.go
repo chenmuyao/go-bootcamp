@@ -7,6 +7,7 @@ import (
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
 )
 
+//go:generate mockgen -source=./article_author.go -package=repomocks -destination=./mocks/article_author.mock.go
 type ArticleAuthorRepository interface {
 	Create(ctx context.Context, article domain.Article) (int64, error)
 	Update(ctx context.Context, article domain.Article) error

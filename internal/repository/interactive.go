@@ -14,6 +14,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+//go:generate mockgen -source=./interactive.go -package=repomocks -destination=./mocks/interactive.mock.go
 type InteractiveRepository interface {
 	IncrReadCnt(ctx context.Context, biz string, bizID int64) error
 	BatchIncrReadCnt(ctx context.Context, bizs []string, bizIDs []int64) error
@@ -21,7 +22,8 @@ type InteractiveRepository interface {
 	DecrLike(ctx context.Context, biz string, id int64, uid int64) error
 	AddCollectionItem(ctx context.Context, biz string, id int64, cid int64, uid int64) error
 	DeleteCollectionItem(ctx context.Context, biz string, id int64, cid int64, uid int64) error
-	BatchGet(ctx context.Context, biz string, bizIDs []int64) ([]domain.Interactive, error)
+	MustBatchGet(ctx context.Context, biz string, bizIDs []int64) ([]domain.Interactive, error)
+	GetByIDs(ctx context.Context, biz string, ids []int64) (map[int64]domain.Interactive, error)
 	Get(ctx context.Context, biz string, bizID int64) (domain.Interactive, error)
 	Liked(ctx context.Context, biz string, bizID int64, uid int64) (bool, error)
 	Collected(ctx context.Context, biz string, bizID int64, uid int64) (bool, error)
@@ -36,6 +38,15 @@ type CachedInteractiveRepository struct {
 	topCache             cache.TopArticlesCache
 	articleRepo          ArticleRepository
 	defaultTopLikedLimit int64
+}
+
+// GetByIDs implements InteractiveRepository.
+func (c *CachedInteractiveRepository) GetByIDs(
+	ctx context.Context,
+	biz string,
+	ids []int64,
+) (map[int64]domain.Interactive, error) {
+	panic("unimplemented")
 }
 
 // SetTopLike implements InteractiveRepository.
@@ -142,17 +153,17 @@ func (c *CachedInteractiveRepository) Collected(
 }
 
 // BatchGet implements InteractiveRepository.
-func (c *CachedInteractiveRepository) BatchGet(
+func (c *CachedInteractiveRepository) MustBatchGet(
 	ctx context.Context,
 	biz string,
 	bizIDs []int64,
 ) ([]domain.Interactive, error) {
-	intrs, err := c.cache.BatchGet(ctx, biz, bizIDs)
+	intrs, err := c.cache.MustBatchGet(ctx, biz, bizIDs)
 	if err == nil {
 		slog.Error("intr cache", slog.Any("intr", intrs))
 		return intrs, nil
 	}
-	intrDAOs, err := c.dao.BatchGet(ctx, biz, bizIDs)
+	intrDAOs, err := c.dao.MustBatchGet(ctx, biz, bizIDs)
 	if err != nil {
 		return []domain.Interactive{}, nil
 	}

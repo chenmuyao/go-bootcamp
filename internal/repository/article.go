@@ -19,6 +19,7 @@ const (
 
 var ErrArticleNotFound = dao.ErrArticleNotFound
 
+//go:generate mockgen -source=./article.go -package=repomocks -destination=./mocks/article.mock.go
 type ArticleRepository interface {
 	Create(ctx context.Context, article domain.Article) (int64, error)
 	Update(ctx context.Context, article domain.Article) error

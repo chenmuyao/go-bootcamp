@@ -11,6 +11,7 @@ import (
 
 var ErrArticleNotFound = errors.New("article not found")
 
+//go:generate mockgen -source=./article.go -package=daomocks -destination=./mocks/article.mock.go
 type ArticleDAO interface {
 	Insert(ctx context.Context, article Article) (int64, error)
 	UpdateByID(ctx context.Context, article Article) error

@@ -336,7 +336,7 @@ func (h *ArticleHandler) TopLike(ctx *gin.Context) (ginx.Result, error) {
 		)
 	}
 
-	intrs, err := h.intrSvc.BatchGet(ctx, h.biz, articleIDs)
+	intrs, err := h.intrSvc.MustBatchGet(ctx, h.biz, articleIDs)
 	if err != nil {
 		return ginx.InternalServerErrorResult, logger.LError(
 			"failed to get interactives",

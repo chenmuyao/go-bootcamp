@@ -19,6 +19,7 @@ var (
 // }}}
 // {{{ Interface
 
+//go:generate mockgen -source=./code.go -package=repomocks -destination=./mocks/code.mock.go
 type CodeRepository interface {
 	Set(ctx context.Context, biz, phone, code string) error
 	Verify(ctx context.Context, biz, phone, code string) (bool, error)

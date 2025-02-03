@@ -18,6 +18,7 @@ var ErrDuplicatedSMS = errors.New("sms already exists")
 // }}}
 // {{{ Interface
 
+//go:generate mockgen -source=./sms.go -package=daomocks -destination=./mocks/sms.mock.go
 type AsyncSMSDAO interface {
 	Insert(ctx context.Context, s SMSInfo) error
 	Update(ctx context.Context, s SMSInfo) error

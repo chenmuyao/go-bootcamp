@@ -23,6 +23,7 @@ var (
 // }}}
 // {{{ Interface
 
+//go:generate mockgen -source=./user.go -package=daomocks -destination=./mocks/user.mock.go
 type UserDAO interface {
 	Insert(ctx context.Context, u User) (User, error)
 	FindByEmail(ctx context.Context, email string) (User, error)

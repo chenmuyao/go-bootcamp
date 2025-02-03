@@ -22,6 +22,8 @@ var (
 // }}}
 // {{{ Interface
 
+//go:generate mockgen -source=./types.go -package=cachemocks -destination=./mocks/cache.mock.go
+
 type CodeCache interface {
 	Set(ctx context.Context, biz, phone, code string) error
 	Verify(ctx context.Context, biz, phone, code string) (bool, error)
@@ -55,7 +57,7 @@ type InteractiveCache interface {
 	DecrCollectCntIfPresent(ctx context.Context, biz string, bizID int64) error
 	Get(ctx context.Context, biz string, bizID int64) (domain.Interactive, error)
 	Set(ctx context.Context, biz string, bizID int64, intr domain.Interactive) error
-	BatchGet(ctx context.Context, biz string, bizIDs []int64) ([]domain.Interactive, error)
+	MustBatchGet(ctx context.Context, biz string, bizIDs []int64) ([]domain.Interactive, error)
 	BatchSet(ctx context.Context, biz string, bizIDs []int64, intr []domain.Interactive) error
 	GetTopLikedIDs(ctx context.Context, biz string, limit int64) ([]int64, error)
 	SetLikeToZSET(ctx context.Context, biz string, bizId int64, likeCnt int64) error

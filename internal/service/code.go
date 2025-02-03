@@ -26,6 +26,7 @@ var (
 // }}}
 // {{{ Interface
 
+//go:generate mockgen -source=./code.go -package=svcmocks -destination=./mocks/code.mock.go
 type CodeService interface {
 	Send(ctx context.Context, biz string, phone string, tpl *template.Template) error
 	Verify(ctx context.Context, biz string, phone string, inputCode string) (bool, error)
