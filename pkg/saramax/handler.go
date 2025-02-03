@@ -8,6 +8,7 @@ import (
 	"github.com/IBM/sarama"
 	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 type Handler[T any] struct {
@@ -18,9 +19,10 @@ type Handler[T any] struct {
 
 func NewHandler[T any](
 	l logger.Logger,
-	vector *prometheus.SummaryVec,
+	opts prometheus.SummaryOpts,
 	bizFn func(msg *sarama.ConsumerMessage, event T) error,
 ) *Handler[T] {
+	vector := promauto.NewSummaryVec(opts, []string{"topic", "partition", "err"})
 	return &Handler[T]{
 		l:      l,
 		vector: vector,
@@ -50,13 +52,14 @@ func (h *Handler[T]) handle(
 	session sarama.ConsumerGroupSession,
 ) {
 	var t T
+	var err error
 	start := time.Now()
 	defer func() {
 		duration := time.Since(start)
-		h.vector.WithLabelValues(msg.Topic, strconv.Itoa(int(msg.Partition))).
+		h.vector.WithLabelValues(msg.Topic, strconv.Itoa(int(msg.Partition)), err.Error()).
 			Observe(float64(duration))
 	}()
-	err := json.Unmarshal(msg.Value, &t)
+	err = json.Unmarshal(msg.Value, &t)
 	if err != nil {
 		// NOTE: can introduce a retry
 		h.l.Error(
@@ -66,6 +69,7 @@ func (h *Handler[T]) handle(
 			logger.Int64("offset", msg.Offset),
 			logger.Error(err),
 		)
+		return
 	}
 	// run biz
 	err = h.bizFn(msg, t)
@@ -78,6 +82,7 @@ func (h *Handler[T]) handle(
 			logger.Int64("offset", msg.Offset),
 			logger.Error(err),
 		)
+		return
 	}
 	session.MarkMessage(msg, "")
 }

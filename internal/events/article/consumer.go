@@ -44,7 +44,7 @@ func (i *InteractiveReadEventConsumer) Start() error {
 // StartV1 consume one message a time
 func (i *InteractiveReadEventConsumer) StartV1() error {
 	cg, err := sarama.NewConsumerGroupFromClient("interactive", i.client)
-	vector := prometheus.NewSummaryVec(prometheus.SummaryOpts{
+	promOpts := prometheus.SummaryOpts{
 		Namespace: "my_company",
 		Subsystem: "wetravel",
 		Name:      "kafka_consumer",
@@ -59,7 +59,7 @@ func (i *InteractiveReadEventConsumer) StartV1() error {
 		ConstLabels: prometheus.Labels{
 			"instance_id": "instance",
 		},
-	}, []string{"topic", "partition"})
+	}
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (i *InteractiveReadEventConsumer) StartV1() error {
 		er := cg.Consume(
 			context.Background(),
 			[]string{TopicReadEvent},
-			saramax.NewHandler[ReadEvent](i.l, vector, i.Consume),
+			saramax.NewHandler[ReadEvent](i.l, promOpts, i.Consume),
 		)
 		if er != nil {
 			i.l.Error("quit consuming", logger.Error(er))
