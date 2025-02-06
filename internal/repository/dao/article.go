@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -30,10 +31,27 @@ type ArticleDAO interface {
 	GetByID(ctx context.Context, id int64) (Article, error)
 	GetPubByID(ctx context.Context, id int64) (PublishedArticle, error)
 	BatchGetPubByIDs(ctx context.Context, ids []int64) ([]PublishedArticle, error)
+	ListPub(ctx context.Context, start time.Time, offset, limit int) ([]PublishedArticle, error)
 }
 
 type GORMArticleDAO struct {
 	db *gorm.DB
+}
+
+// ListPub implements ArticleDAO.
+func (a *GORMArticleDAO) ListPub(
+	ctx context.Context,
+	start time.Time,
+	offset int,
+	limit int,
+) ([]PublishedArticle, error) {
+	var article []PublishedArticle
+	err := a.db.WithContext(ctx).
+		Where("utime < ? AND status = ?", start.UnixMilli(), domain.ArticleStatusPublished).
+		Offset(offset).
+		Limit(limit).
+		Error
+	return article, err
 }
 
 func (a *GORMArticleDAO) BatchGetPubByIDs(

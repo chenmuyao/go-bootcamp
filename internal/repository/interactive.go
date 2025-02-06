@@ -23,7 +23,7 @@ type InteractiveRepository interface {
 	AddCollectionItem(ctx context.Context, biz string, id int64, cid int64, uid int64) error
 	DeleteCollectionItem(ctx context.Context, biz string, id int64, cid int64, uid int64) error
 	MustBatchGet(ctx context.Context, biz string, bizIDs []int64) ([]domain.Interactive, error)
-	GetByIDs(ctx context.Context, biz string, ids []int64) (map[int64]domain.Interactive, error)
+	GetByIDs(ctx context.Context, biz string, ids []int64) ([]domain.Interactive, error)
 	Get(ctx context.Context, biz string, bizID int64) (domain.Interactive, error)
 	Liked(ctx context.Context, biz string, bizID int64, uid int64) (bool, error)
 	Collected(ctx context.Context, biz string, bizID int64, uid int64) (bool, error)
@@ -45,8 +45,15 @@ func (c *CachedInteractiveRepository) GetByIDs(
 	ctx context.Context,
 	biz string,
 	ids []int64,
-) (map[int64]domain.Interactive, error) {
-	panic("unimplemented")
+) ([]domain.Interactive, error) {
+	intrDAOs, err := c.dao.GetByIDs(ctx, biz, ids)
+	if err != nil {
+		return []domain.Interactive{}, err
+	}
+	res := gslice.Map(intrDAOs, func(id int, src dao.Interactive) domain.Interactive {
+		return c.toDomain(src)
+	})
+	return res, nil
 }
 
 // SetTopLike implements InteractiveRepository.
@@ -355,6 +362,8 @@ func (c *CachedInteractiveRepository) BatchIncrReadCnt(
 
 func (c *CachedInteractiveRepository) toDomain(dao dao.Interactive) domain.Interactive {
 	return domain.Interactive{
+		Biz:        dao.Biz,
+		BizID:      dao.BizID,
 		ReadCnt:    dao.ReadCnt,
 		LikeCnt:    dao.LikeCnt,
 		CollectCnt: dao.CollectCnt,

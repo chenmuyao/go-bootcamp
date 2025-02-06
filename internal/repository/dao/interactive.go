@@ -26,6 +26,7 @@ type InteractiveDAO interface {
 		bizID int64,
 		uid int64,
 	) (UserCollectionBiz, error)
+	GetByIDs(ctx context.Context, biz string, ids []int64) ([]Interactive, error)
 }
 
 type GORMInteractiveDAO struct {
@@ -66,6 +67,20 @@ type UserCollectionBiz struct {
 	CID   int64 `gorm:"index"`
 	Utime int64
 	Ctime int64
+}
+
+// GetByIDs implements InteractiveDAO.
+func (g *GORMInteractiveDAO) GetByIDs(
+	ctx context.Context,
+	biz string,
+	ids []int64,
+) ([]Interactive, error) {
+	var intrs []Interactive
+	err := g.db.WithContext(ctx).
+		Where("biz = ? AND biz_id IN ?", biz, ids).
+		Find(&intrs).
+		Error
+	return intrs, err
 }
 
 // GetAll implements InteractiveDAO.

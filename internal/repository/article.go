@@ -34,6 +34,7 @@ type ArticleRepository interface {
 	GetByID(ctx context.Context, id int64) (domain.Article, error)
 	BatchGetPubByIDs(ctx context.Context, ids []int64) ([]domain.Article, error)
 	GetPubByID(ctx context.Context, id int64) (domain.Article, error)
+	ListPub(ctx context.Context, start time.Time, offset, limit int) ([]domain.Article, error)
 }
 
 type CachedArticleRepository struct {
@@ -50,6 +51,27 @@ type CachedArticleRepository struct {
 
 	// V2 repository level transaction
 	db *gorm.DB
+}
+
+// ListPub implements ArticleRepository.
+func (c *CachedArticleRepository) ListPub(
+	ctx context.Context,
+	start time.Time,
+	offset int,
+	limit int,
+) ([]domain.Article, error) {
+	daoArticles, err := c.dao.ListPub(ctx, start, offset, limit)
+	if err != nil {
+		return []domain.Article{}, err
+	}
+	domainArticles := gslice.Map(
+		daoArticles,
+		func(id int, src dao.PublishedArticle) domain.Article {
+			res := c.toDomain(dao.Article(src))
+			return res
+		},
+	)
+	return domainArticles, nil
 }
 
 func (c *CachedArticleRepository) BatchGetPubByIDs(

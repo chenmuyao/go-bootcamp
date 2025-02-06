@@ -47,7 +47,7 @@ func (a *articleService) ListPub(
 	offset int,
 	limit int,
 ) ([]domain.Article, error) {
-	panic("unimplemented")
+	return a.repo.ListPub(ctx, start, offset, limit)
 }
 
 // BatchGetPubByIDs implements ArticleService.

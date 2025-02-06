@@ -23,6 +23,16 @@ type MongoDBArticleDAO struct {
 	client   *mongo.Client
 }
 
+// ListPub implements ArticleDAO.
+func (m *MongoDBArticleDAO) ListPub(
+	ctx context.Context,
+	start time.Time,
+	offset int,
+	limit int,
+) ([]PublishedArticle, error) {
+	panic("unimplemented")
+}
+
 // BatchGetPubByIDs implements ArticleDAO.
 func (m *MongoDBArticleDAO) BatchGetPubByIDs(
 	ctx context.Context,

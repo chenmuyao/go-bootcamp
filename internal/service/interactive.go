@@ -34,7 +34,16 @@ func (i *interactiveService) GetByIDs(
 	biz string,
 	ids []int64,
 ) (map[int64]domain.Interactive, error) {
-	panic("unimplemented")
+	intrs, err := i.repo.GetByIDs(ctx, biz, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make(map[int64]domain.Interactive)
+	for _, intr := range intrs {
+		res[intr.BizID] = intr
+	}
+	return res, nil
 }
 
 // GetTopLike implements InteractiveService.
