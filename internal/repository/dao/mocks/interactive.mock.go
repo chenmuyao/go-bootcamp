@@ -113,6 +113,21 @@ func (mr *MockInteractiveDAOMockRecorder) GetAll(ctx, biz, limit, offset any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockInteractiveDAO)(nil).GetAll), ctx, biz, limit, offset)
 }
 
+// GetByIDs mocks base method.
+func (m *MockInteractiveDAO) GetByIDs(ctx context.Context, biz string, ids []int64) ([]dao.Interactive, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByIDs", ctx, biz, ids)
+	ret0, _ := ret[0].([]dao.Interactive)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByIDs indicates an expected call of GetByIDs.
+func (mr *MockInteractiveDAOMockRecorder) GetByIDs(ctx, biz, ids any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByIDs", reflect.TypeOf((*MockInteractiveDAO)(nil).GetByIDs), ctx, biz, ids)
+}
+
 // GetCollectInfo mocks base method.
 func (m *MockInteractiveDAO) GetCollectInfo(ctx context.Context, biz string, bizID, uid int64) (dao.UserCollectionBiz, error) {
 	m.ctrl.T.Helper()

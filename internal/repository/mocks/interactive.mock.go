@@ -142,10 +142,10 @@ func (mr *MockInteractiveRepositoryMockRecorder) Get(ctx, biz, bizID any) *gomoc
 }
 
 // GetByIDs mocks base method.
-func (m *MockInteractiveRepository) GetByIDs(ctx context.Context, biz string, ids []int64) (map[int64]domain.Interactive, error) {
+func (m *MockInteractiveRepository) GetByIDs(ctx context.Context, biz string, ids []int64) ([]domain.Interactive, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByIDs", ctx, biz, ids)
-	ret0, _ := ret[0].(map[int64]domain.Interactive)
+	ret0, _ := ret[0].([]domain.Interactive)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

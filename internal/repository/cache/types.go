@@ -70,6 +70,11 @@ type TopArticlesCache interface {
 	GetTopLikedArticles(ctx context.Context) ([]int64, error)
 }
 
+type RankingCache interface {
+	Set(ctx context.Context, arts []domain.Article) error
+	Get(ctx context.Context) ([]domain.Article, error)
+}
+
 // }}}
 // {{{ Struct
 
@@ -80,6 +85,8 @@ type BaseUserCache struct{}
 type BaseArticleCache struct{}
 
 type BaseInteractiveCache struct{}
+
+type BaseRankingCache struct{}
 
 // }}}
 // {{{ Other structs
@@ -101,6 +108,10 @@ func (c *BaseArticleCache) Key(motif string, uid int64) string {
 
 func (c *BaseInteractiveCache) Key(biz string, bizID int64) string {
 	return fmt.Sprintf("interactive:%s:%d", biz, bizID)
+}
+
+func (c *BaseRankingCache) Key(biz string) string {
+	return fmt.Sprintf("ranking:%s", biz)
 }
 
 // }}}

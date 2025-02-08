@@ -43,3 +43,16 @@ func InitTopArticlesCache() cache.TopArticlesCache {
 
 	return localcache.NewTopArticlesLocalCache(cc)
 }
+
+func InitRankingLocalCache() *localcache.RankingLocalCache {
+	// NOTE: longer than redis, or never expires
+	// If redis + sql down, can still use the expired local cache
+	timeout := 5 * time.Minute
+	cc := ttlcache.New(
+		ttlcache.WithTTL[string, []domain.Article](timeout),
+		ttlcache.WithDisableTouchOnHit[string, []domain.Article](),
+	)
+	go cc.Start()
+
+	return localcache.NewRankingLocalCache(cc)
+}

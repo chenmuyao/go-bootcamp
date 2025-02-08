@@ -72,9 +72,16 @@ func InitWebServer() *App {
 	engine := ioc.InitWebServer(v, userHandler, oAuth2GiteaHandler, articleHandler)
 	interactiveReadEventConsumer := article.NewInteractiveReadEventConsumer(logger, interactiveRepository, client)
 	v2 := ioc.InitConsumers(interactiveReadEventConsumer)
+	rankingCache := rediscache.NewRankingRedisCache(cmdable)
+	rankingLocalCache := ioc.InitRankingLocalCache()
+	rankingRepository := repository.NewCachedRankingRepository(rankingCache, rankingLocalCache)
+	rankingService := service.NewBatchRankingService(interactiveService, articleService, rankingRepository)
+	job := ioc.InitRankingJob(rankingService)
+	cron := ioc.InitJobs(logger, job)
 	app := &App{
 		server:    engine,
 		consumers: v2,
+		cron:      cron,
 	}
 	return app
 }
@@ -82,3 +89,5 @@ func InitWebServer() *App {
 // wire.go:
 
 var interactiveSvcSet = wire.NewSet(dao.NewGORMInteractiveDAO, rediscache.NewInteractiveRedisCache, repository.NewCachedInteractiveRepository, service.NewInteractiveService)
+
+var rankingSvcSet = wire.NewSet(ioc.InitRankingLocalCache, rediscache.NewRankingRedisCache, repository.NewCachedRankingRepository, service.NewBatchRankingService)

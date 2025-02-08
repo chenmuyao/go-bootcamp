@@ -47,6 +47,10 @@ func main() {
 	}()
 
 	app := InitWebServer()
+	app.cron.Start()
+	defer func() {
+		<-app.cron.Stop().Done()
+	}()
 
 	for _, c := range app.consumers {
 		err := c.Start()

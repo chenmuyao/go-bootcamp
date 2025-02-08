@@ -2,17 +2,18 @@ package service
 
 import (
 	"context"
-	"log"
 	"math"
 	"time"
 
 	"github.com/chenmuyao/generique/gqueue"
 	"github.com/chenmuyao/generique/gslice"
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
+	"github.com/chenmuyao/go-bootcamp/internal/repository"
 )
 
 type RankingService interface {
-	TopN(ctx context.Context) ([]domain.Article, error)
+	TopN(ctx context.Context) error
+	GetTopN(ctx context.Context) ([]domain.Article, error)
 }
 
 type BatchRankingService struct {
@@ -21,17 +22,22 @@ type BatchRankingService struct {
 	batchSize int
 	scoreFunc func(likeCnt int64, utime time.Time) float64
 	n         int
+	repo      repository.RankingRepository
+}
+
+// GetTopN implements RankingService.
+func (b *BatchRankingService) GetTopN(ctx context.Context) ([]domain.Article, error) {
+	return b.repo.GetTopN(ctx)
 }
 
 // TopN implements RankingService.
-func (b *BatchRankingService) TopN(ctx context.Context) ([]domain.Article, error) {
+func (b *BatchRankingService) TopN(ctx context.Context) error {
 	arts, err := b.topN(ctx)
 	if err != nil {
-		return []domain.Article{}, nil
+		return nil
 	}
 	// Save results to the cache
-	log.Println(arts)
-	return arts, err
+	return b.repo.ReplaceTopN(ctx, arts)
 }
 
 func (b *BatchRankingService) topN(ctx context.Context) ([]domain.Article, error) {
@@ -93,15 +99,20 @@ func (b *BatchRankingService) topN(ctx context.Context) ([]domain.Article, error
 	return res, nil
 }
 
-func NewBatchRankingService(intrSvc InteractiveService, artSvc ArticleService) RankingService {
+func NewBatchRankingService(
+	intrSvc InteractiveService,
+	artSvc ArticleService,
+	repo repository.RankingRepository,
+) RankingService {
 	return &BatchRankingService{
 		intrSvc:   intrSvc,
 		artSvc:    artSvc,
 		batchSize: 100,
-		n:         100,
 		scoreFunc: func(likeCnt int64, utime time.Time) float64 {
 			duration := time.Since(utime).Seconds()
 			return float64(likeCnt-1) / math.Pow(duration+2, 1.5)
 		},
+		n:    100,
+		repo: repo,
 	}
 }

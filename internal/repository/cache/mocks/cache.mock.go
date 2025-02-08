@@ -567,3 +567,41 @@ func (mr *MockTopArticlesCacheMockRecorder) SetTopLikedArticles(ctx, articles an
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTopLikedArticles", reflect.TypeOf((*MockTopArticlesCache)(nil).SetTopLikedArticles), ctx, articles)
 }
+
+// MockRankingCache is a mock of RankingCache interface.
+type MockRankingCache struct {
+	ctrl     *gomock.Controller
+	recorder *MockRankingCacheMockRecorder
+	isgomock struct{}
+}
+
+// MockRankingCacheMockRecorder is the mock recorder for MockRankingCache.
+type MockRankingCacheMockRecorder struct {
+	mock *MockRankingCache
+}
+
+// NewMockRankingCache creates a new mock instance.
+func NewMockRankingCache(ctrl *gomock.Controller) *MockRankingCache {
+	mock := &MockRankingCache{ctrl: ctrl}
+	mock.recorder = &MockRankingCacheMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockRankingCache) EXPECT() *MockRankingCacheMockRecorder {
+	return m.recorder
+}
+
+// Set mocks base method.
+func (m *MockRankingCache) Set(ctx context.Context, arts []domain.Article) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Set", ctx, arts)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Set indicates an expected call of Set.
+func (mr *MockRankingCacheMockRecorder) Set(ctx, arts any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockRankingCache)(nil).Set), ctx, arts)
+}
