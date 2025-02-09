@@ -5,6 +5,7 @@ package main
 
 import (
 	"github.com/chenmuyao/go-bootcamp/internal/events/article"
+	"github.com/chenmuyao/go-bootcamp/internal/job"
 	"github.com/chenmuyao/go-bootcamp/internal/repository"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/cache/rediscache"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
@@ -13,6 +14,14 @@ import (
 	ijwt "github.com/chenmuyao/go-bootcamp/internal/web/jwt"
 	"github.com/chenmuyao/go-bootcamp/ioc"
 	"github.com/google/wire"
+)
+
+var thirdPartySet = wire.NewSet(
+	ioc.InitRedis,
+	ioc.InitDB,
+	ioc.InitLogger,
+	ioc.InitSaramaClient,
+	ioc.InitSyncProducer,
 )
 
 var interactiveSvcSet = wire.NewSet(
@@ -29,11 +38,15 @@ var rankingSvcSet = wire.NewSet(
 	service.NewBatchRankingService,
 )
 
+var jobProviderSet = wire.NewSet(
+	service.NewCronJobService,
+	repository.NewPreemptJobRepository,
+	dao.NewGORMJobDAO,
+)
+
 func InitInteractiveRepo() repository.InteractiveRepository {
 	wire.Build(
-		ioc.InitRedis,
-		ioc.InitDB,
-		ioc.InitLogger,
+		thirdPartySet,
 
 		rediscache.NewUserRedisCache,
 		rediscache.NewArticleRedisCache,
@@ -55,11 +68,7 @@ func InitInteractiveRepo() repository.InteractiveRepository {
 func InitWebServer() *App {
 	wire.Build(
 		// third-party dependencies
-		ioc.InitRedis,
-		ioc.InitDB,
-		ioc.InitLogger,
-		ioc.InitSaramaClient,
-		ioc.InitSyncProducer,
+		thirdPartySet,
 
 		interactiveSvcSet,
 		rankingSvcSet,
@@ -108,4 +117,9 @@ func InitWebServer() *App {
 		wire.Struct(new(App), "*"),
 	)
 	return new(App)
+}
+
+func InitJobScheduler() *job.Scheduler {
+	wire.Build(jobProviderSet, thirdPartySet, job.NewScheduler)
+	return &job.Scheduler{}
 }

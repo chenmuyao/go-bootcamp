@@ -5,6 +5,7 @@ package startup
 
 import (
 	"github.com/chenmuyao/go-bootcamp/internal/events/article"
+	"github.com/chenmuyao/go-bootcamp/internal/job"
 	"github.com/chenmuyao/go-bootcamp/internal/repository"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/cache/rediscache"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
@@ -30,6 +31,12 @@ var interactiveSvcSet = wire.NewSet(
 	ioc.InitTopArticlesCache,
 	repository.NewCachedInteractiveRepository,
 	service.NewInteractiveService,
+)
+
+var jobProviderSet = wire.NewSet(
+	service.NewCronJobService,
+	repository.NewPreemptJobRepository,
+	dao.NewGORMJobDAO,
 )
 
 func InitWebServer() *gin.Engine {
@@ -95,4 +102,9 @@ func InitArticleHandler(articleDAO dao.ArticleDAO) *web.ArticleHandler {
 		web.NewArticleHandler,
 	)
 	return &web.ArticleHandler{}
+}
+
+func InitJobScheduler() *job.Scheduler {
+	wire.Build(jobProviderSet, thirdPartySet, job.NewScheduler)
+	return &job.Scheduler{}
 }

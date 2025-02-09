@@ -8,6 +8,7 @@ package main
 
 import (
 	"github.com/chenmuyao/go-bootcamp/internal/events/article"
+	"github.com/chenmuyao/go-bootcamp/internal/job"
 	"github.com/chenmuyao/go-bootcamp/internal/repository"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/cache/rediscache"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
@@ -86,8 +87,22 @@ func InitWebServer() *App {
 	return app
 }
 
+func InitJobScheduler() *job.Scheduler {
+	logger := ioc.InitLogger()
+	db := ioc.InitDB(logger)
+	jobDAO := dao.NewGORMJobDAO(db, logger)
+	jobRepository := repository.NewPreemptJobRepository(jobDAO)
+	jobService := service.NewCronJobService(logger, jobRepository)
+	scheduler := job.NewScheduler(logger, jobService)
+	return scheduler
+}
+
 // wire.go:
+
+var thirdPartySet = wire.NewSet(ioc.InitRedis, ioc.InitDB, ioc.InitLogger, ioc.InitSaramaClient, ioc.InitSyncProducer)
 
 var interactiveSvcSet = wire.NewSet(dao.NewGORMInteractiveDAO, rediscache.NewInteractiveRedisCache, repository.NewCachedInteractiveRepository, service.NewInteractiveService)
 
 var rankingSvcSet = wire.NewSet(ioc.InitRankingLocalCache, rediscache.NewRankingRedisCache, repository.NewCachedRankingRepository, service.NewBatchRankingService)
+
+var jobProviderSet = wire.NewSet(service.NewCronJobService, repository.NewPreemptJobRepository, dao.NewGORMJobDAO)
