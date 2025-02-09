@@ -3,15 +3,18 @@ package ioc
 import (
 	"time"
 
+	"github.com/bsm/redislock"
 	"github.com/chenmuyao/go-bootcamp/internal/job"
 	"github.com/chenmuyao/go-bootcamp/internal/service"
 	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/redis/go-redis/v9"
 	"github.com/robfig/cron/v3"
 )
 
-func InitRankingJob(svc service.RankingService) job.Job {
-	return job.NewRankingJob(svc, time.Second*30)
+func InitRankingJob(svc service.RankingService, l logger.Logger, redis redis.Cmdable) job.Job {
+	lock := redislock.New(redis)
+	return job.NewRankingJob(svc, lock, time.Second*30, l)
 }
 
 func InitJobs(l logger.Logger, j job.Job) *cron.Cron {

@@ -5,6 +5,7 @@ go 1.23.1
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/IBM/sarama v1.45.0
+	github.com/bsm/redislock v0.9.4
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/chenmuyao/generique v0.0.0-20250206220710-0888e544bdc9
 	github.com/dlclark/regexp2 v1.11.4

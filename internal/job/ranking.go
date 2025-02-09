@@ -4,12 +4,16 @@ import (
 	"context"
 	"time"
 
+	"github.com/bsm/redislock"
 	"github.com/chenmuyao/go-bootcamp/internal/service"
+	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 )
 
 type RankingJob struct {
-	svc     service.RankingService
-	timeout time.Duration
+	l          logger.Logger
+	svc        service.RankingService
+	timeout    time.Duration
+	lockClient *redislock.Client
 }
 
 // Name implements Job.
@@ -19,14 +23,38 @@ func (r *RankingJob) Name() string {
 
 // Run implements Job.
 func (r *RankingJob) Run() error {
-	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*4)
 	defer cancel()
-	return r.svc.TopN(ctx)
+	lock, err := r.lockClient.Obtain(ctx, "job:ranking", r.timeout, &redislock.Options{
+		RetryStrategy: redislock.LimitRetry(redislock.LinearBackoff(100*time.Millisecond), 3),
+	})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		er := lock.Release(ctx)
+		if er != nil {
+			r.l.Error("ranking job failed to release distributed loc", logger.Error(er))
+		}
+	}()
+
+	bizCtx, bizCancel := context.WithTimeout(context.Background(), r.timeout)
+	defer bizCancel()
+	return r.svc.TopN(bizCtx)
 }
 
-func NewRankingJob(svc service.RankingService, timeout time.Duration) Job {
+func NewRankingJob(
+	svc service.RankingService,
+	lock *redislock.Client,
+	timeout time.Duration,
+	l logger.Logger,
+) Job {
 	return &RankingJob{
-		svc:     svc,
-		timeout: timeout,
+		l:          l,
+		svc:        svc,
+		timeout:    timeout,
+		lockClient: lock,
 	}
 }

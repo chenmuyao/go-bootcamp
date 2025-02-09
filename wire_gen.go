@@ -76,7 +76,7 @@ func InitWebServer() *App {
 	rankingLocalCache := ioc.InitRankingLocalCache()
 	rankingRepository := repository.NewCachedRankingRepository(rankingCache, rankingLocalCache)
 	rankingService := service.NewBatchRankingService(interactiveService, articleService, rankingRepository)
-	job := ioc.InitRankingJob(rankingService)
+	job := ioc.InitRankingJob(rankingService, logger, cmdable)
 	cron := ioc.InitJobs(logger, job)
 	app := &App{
 		server:    engine,
