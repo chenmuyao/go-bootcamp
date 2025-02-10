@@ -16,6 +16,7 @@ import (
 	"github.com/chenmuyao/go-bootcamp/pkg/ginx"
 	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 	"github.com/gin-gonic/gin"
+	prom "github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
@@ -232,6 +233,15 @@ func TestUserHandler_SignUp(t *testing.T) {
 				codeSvc,
 				jwtHdl,
 			)
+			ginx.InitCounter(prom.CounterOpts{
+				Namespace: "my_company",
+				Subsystem: "wetravel",
+				Name:      "errcode",
+				Help:      "Error code data",
+				ConstLabels: prom.Labels{
+					"instance_id": "instance",
+				},
+			})
 
 			server := gin.Default()
 			hdl.RegisterRoutes(server)
@@ -298,6 +308,15 @@ func TestLoginJWT(t *testing.T) {
 			us, cs, jwtHdl := tc.mock(ctrl)
 			l, _ := zap.NewDevelopment()
 			hdl := NewUserHandler(logger.NewZapLogger(l), us, cs, jwtHdl)
+			ginx.InitCounter(prom.CounterOpts{
+				Namespace: "my_company",
+				Subsystem: "wetravel",
+				Name:      "errcode",
+				Help:      "Error code data",
+				ConstLabels: prom.Labels{
+					"instance_id": "instance",
+				},
+			})
 
 			server := gin.Default()
 			hdl.RegisterRoutes(server)

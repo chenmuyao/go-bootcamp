@@ -16,6 +16,7 @@ import (
 	ijwt "github.com/chenmuyao/go-bootcamp/internal/web/jwt"
 	"github.com/chenmuyao/go-bootcamp/pkg/ginx"
 	"github.com/gin-gonic/gin"
+	prom "github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -46,6 +47,15 @@ func (s *MongoDBArticleHandlerSuite) SetupSuite() {
 	assert.NoError(s.T(), err)
 	hdl := startup.InitArticleHandler(dao.NewMongoDBArticleDAO(s.client, node))
 	hdl.RegisterRoutes(s.server)
+	ginx.InitCounter(prom.CounterOpts{
+		Namespace: "my_company",
+		Subsystem: "wetravel",
+		Name:      "errcode",
+		Help:      "Error code data",
+		ConstLabels: prom.Labels{
+			"instance_id": "instance",
+		},
+	})
 }
 
 func (s *MongoDBArticleHandlerSuite) TearDownTest() {

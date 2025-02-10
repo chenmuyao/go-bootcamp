@@ -18,6 +18,7 @@ import (
 	ijwt "github.com/chenmuyao/go-bootcamp/internal/web/jwt"
 	"github.com/chenmuyao/go-bootcamp/pkg/ginx"
 	"github.com/gin-gonic/gin"
+	prom "github.com/prometheus/client_golang/prometheus"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -48,6 +49,15 @@ func (s *ArticleHandlerSuite) SetupSuite() {
 	hdl := startup.InitArticleHandler(dao.NewArticleDAO(s.db))
 	hdl.RegisterRoutes(s.server)
 	s.rdb = startup.InitRedis()
+	ginx.InitCounter(prom.CounterOpts{
+		Namespace: "my_company",
+		Subsystem: "wetravel",
+		Name:      "errcode",
+		Help:      "Error code data",
+		ConstLabels: prom.Labels{
+			"instance_id": "instance",
+		},
+	})
 }
 
 func (s *ArticleHandlerSuite) TearDownTest() {

@@ -50,7 +50,7 @@ func TestServer(t *testing.T) {
 
 		ginCtx.String(http.StatusOK, "test")
 	})
-	server.Run(":8081")
+	// server.Run(":8081")
 }
 
 func newResource(serviceName, serviceVersion string) (*resource.Resource, error) {

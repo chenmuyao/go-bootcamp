@@ -15,6 +15,7 @@ import (
 	"github.com/chenmuyao/go-bootcamp/pkg/ginx"
 	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 	"github.com/gin-gonic/gin"
+	prom "github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
@@ -123,6 +124,15 @@ func TestArticleHandler_Publish(t *testing.T) {
 			// Prepare
 			articleSvc := tc.mock(ctrl)
 			hdl := NewArticleHandler(logger.NewZapLogger(zap.L()), articleSvc, nil)
+			ginx.InitCounter(prom.CounterOpts{
+				Namespace: "my_company",
+				Subsystem: "wetravel",
+				Name:      "errcode",
+				Help:      "Error code data",
+				ConstLabels: prom.Labels{
+					"instance_id": "instance",
+				},
+			})
 
 			server := gin.Default()
 			server.Use(func(ctx *gin.Context) {
