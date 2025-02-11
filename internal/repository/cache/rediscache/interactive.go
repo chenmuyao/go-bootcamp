@@ -166,6 +166,8 @@ func (i *InteractiveRedisCache) Get(
 	intr.CollectCnt, _ = strconv.ParseInt(res[fieldCollectCnt], 10, 64)
 	intr.LikeCnt, _ = strconv.ParseInt(res[fieldLikeCnt], 10, 64)
 	intr.ReadCnt, _ = strconv.ParseInt(res[fieldReadCnt], 10, 64)
+	intr.Biz = biz
+	intr.BizID = bizID
 	return intr, nil
 }
 
