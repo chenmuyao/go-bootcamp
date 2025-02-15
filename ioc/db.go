@@ -2,6 +2,7 @@ package ioc
 
 import (
 	"github.com/chenmuyao/go-bootcamp/config"
+	daoIntr "github.com/chenmuyao/go-bootcamp/interactive/repository/dao"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
 	"github.com/chenmuyao/go-bootcamp/pkg/gormx"
 	"github.com/chenmuyao/go-bootcamp/pkg/logger"
@@ -65,6 +66,10 @@ func InitDB(l logger.Logger) *gorm.DB {
 	err = dao.InitTable(db)
 	if err != nil {
 		panic("failed to init tables")
+	}
+	err = daoIntr.InitTable(db)
+	if err != nil {
+		panic("failed to init intr tables")
 	}
 	return db
 }

@@ -4,6 +4,11 @@
 package main
 
 import (
+	intrEvents "github.com/chenmuyao/go-bootcamp/interactive/events"
+	intrRepository "github.com/chenmuyao/go-bootcamp/interactive/repository"
+	intrRediscache "github.com/chenmuyao/go-bootcamp/interactive/repository/cache/rediscache"
+	intrDao "github.com/chenmuyao/go-bootcamp/interactive/repository/dao"
+	intrService "github.com/chenmuyao/go-bootcamp/interactive/service"
 	"github.com/chenmuyao/go-bootcamp/internal/events/article"
 	"github.com/chenmuyao/go-bootcamp/internal/job"
 	"github.com/chenmuyao/go-bootcamp/internal/repository"
@@ -25,10 +30,10 @@ var thirdPartySet = wire.NewSet(
 )
 
 var interactiveSvcSet = wire.NewSet(
-	dao.NewGORMInteractiveDAO,
-	rediscache.NewInteractiveRedisCache,
-	repository.NewCachedInteractiveRepository,
-	service.NewInteractiveService,
+	intrDao.NewGORMInteractiveDAO,
+	intrRediscache.NewInteractiveRedisCache,
+	intrRepository.NewCachedInteractiveRepository,
+	intrService.NewInteractiveService,
 )
 
 var rankingSvcSet = wire.NewSet(
@@ -44,25 +49,19 @@ var jobProviderSet = wire.NewSet(
 	dao.NewGORMJobDAO,
 )
 
-func InitInteractiveRepo() repository.InteractiveRepository {
+func InitInteractiveRepo() intrRepository.InteractiveRepository {
 	wire.Build(
 		thirdPartySet,
 
-		rediscache.NewUserRedisCache,
-		rediscache.NewArticleRedisCache,
 		ioc.InitTopArticlesCache,
 
-		dao.NewUserDAO,
-		dao.NewArticleDAO,
-		dao.NewGORMInteractiveDAO,
+		intrDao.NewGORMInteractiveDAO,
 
-		rediscache.NewInteractiveRedisCache,
+		intrRediscache.NewInteractiveRedisCache,
 
-		repository.NewUserRepository,
-		repository.NewArticleRepository,
-		repository.NewCachedInteractiveRepository,
+		intrRepository.NewCachedInteractiveRepository,
 	)
-	return &repository.CachedInteractiveRepository{}
+	return &intrRepository.CachedInteractiveRepository{}
 }
 
 func InitWebServer() *App {
@@ -76,7 +75,7 @@ func InitWebServer() *App {
 		ioc.InitRankingJob,
 
 		article.NewSaramaSyncProducer,
-		article.NewInteractiveReadEventConsumer,
+		intrEvents.NewInteractiveReadEventConsumer,
 		ioc.InitConsumers,
 
 		// DAO

@@ -8,7 +8,9 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-//go:generate mockgen -source=./interactive.go -package=daomocks -destination=./mocks/interactive.mock.go
+var ErrRecordNotFound = gorm.ErrRecordNotFound
+
+//go:generate mockgen -source=./interactive.go -package=intrdaomocks -destination=./mocks/interactive.mock.go
 type InteractiveDAO interface {
 	IncrReadCnt(ctx context.Context, biz string, bizID int64) error
 	BatchIncrReadCnt(ctx context.Context, bizs []string, bizIDs []int64) error

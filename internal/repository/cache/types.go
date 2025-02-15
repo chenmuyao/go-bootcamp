@@ -49,27 +49,6 @@ type ArticleCache interface {
 	BatchSetPub(ctx context.Context, articles []domain.Article) error
 }
 
-type InteractiveCache interface {
-	IncrReadCntIfPresent(ctx context.Context, biz string, bizID int64) error
-	IncrLikeCntIfPresent(ctx context.Context, biz string, bizID int64) error
-	DecrLikeCntIfPresent(ctx context.Context, biz string, bizID int64) error
-	IncrCollectCntIfPresent(ctx context.Context, biz string, bizID int64) error
-	DecrCollectCntIfPresent(ctx context.Context, biz string, bizID int64) error
-	Get(ctx context.Context, biz string, bizID int64) (domain.Interactive, error)
-	Set(ctx context.Context, biz string, bizID int64, intr domain.Interactive) error
-	MustBatchGet(ctx context.Context, biz string, bizIDs []int64) ([]domain.Interactive, error)
-	BatchSet(ctx context.Context, biz string, bizIDs []int64, intr []domain.Interactive) error
-	GetTopLikedIDs(ctx context.Context, biz string, limit int64) ([]int64, error)
-	SetLikeToZSET(ctx context.Context, biz string, bizId int64, likeCnt int64) error
-	IncrLikeRank(ctx context.Context, biz string, bizID int64) error
-	DecrLikeRank(ctx context.Context, biz string, bizID int64) error
-}
-
-type TopArticlesCache interface {
-	SetTopLikedArticles(ctx context.Context, articles []int64) error
-	GetTopLikedArticles(ctx context.Context) ([]int64, error)
-}
-
 type RankingCache interface {
 	Set(ctx context.Context, arts []domain.Article) error
 	Get(ctx context.Context) ([]domain.Article, error)

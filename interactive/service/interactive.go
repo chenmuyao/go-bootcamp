@@ -3,12 +3,12 @@ package service
 import (
 	"context"
 
-	"github.com/chenmuyao/go-bootcamp/internal/domain"
-	"github.com/chenmuyao/go-bootcamp/internal/repository"
+	"github.com/chenmuyao/go-bootcamp/interactive/domain"
+	"github.com/chenmuyao/go-bootcamp/interactive/repository"
 	"golang.org/x/sync/errgroup"
 )
 
-//go:generate mockgen -source=./interactive.go -package=svcmocks -destination=./mocks/interactive.mock.go
+//go:generate mockgen -source=./interactive.go -package=intrsvcmocks -destination=./mocks/interactive.mock.go
 type InteractiveService interface {
 	IncrReadCnt(ctx context.Context, biz string, bizID int64) error
 	Like(ctx context.Context, biz string, id int64, uid int64) error

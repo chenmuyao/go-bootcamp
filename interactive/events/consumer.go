@@ -1,20 +1,28 @@
-package article
+package events
 
 import (
 	"context"
 	"time"
 
 	"github.com/IBM/sarama"
-	"github.com/chenmuyao/go-bootcamp/internal/repository"
+	"github.com/chenmuyao/go-bootcamp/interactive/repository"
 	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 	"github.com/chenmuyao/go-bootcamp/pkg/saramax"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+const TopicReadEvent = "article_read"
+
 const consumeTimeout = time.Second
+
+type ReadEvent struct {
+	Aid int64
+	Uid int64
+}
 
 type Consumer interface {
 	Consume(msg *sarama.ConsumerMessage, event ReadEvent) error
+	Start() error
 }
 
 type InteractiveReadEventConsumer struct {

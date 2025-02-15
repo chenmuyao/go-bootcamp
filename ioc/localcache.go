@@ -3,6 +3,8 @@ package ioc
 import (
 	"time"
 
+	intrCache "github.com/chenmuyao/go-bootcamp/interactive/repository/cache"
+	intrLocalcache "github.com/chenmuyao/go-bootcamp/interactive/repository/cache/localcache"
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/cache"
 	"github.com/chenmuyao/go-bootcamp/internal/repository/cache/localcache"
@@ -33,7 +35,7 @@ func InitCodeLocalCache() cache.CodeCache {
 	return localcache.NewCodeLocalCache(code, cnt, timeout)
 }
 
-func InitTopArticlesCache() cache.TopArticlesCache {
+func InitTopArticlesCache() intrCache.TopArticlesCache {
 	timeout := 15 * time.Second
 	cc := ttlcache.New(
 		ttlcache.WithTTL[string, []int64](timeout),
@@ -41,7 +43,7 @@ func InitTopArticlesCache() cache.TopArticlesCache {
 	)
 	go cc.Start()
 
-	return localcache.NewTopArticlesLocalCache(cc)
+	return intrLocalcache.NewTopArticlesLocalCache(cc)
 }
 
 func InitRankingLocalCache() *localcache.RankingLocalCache {

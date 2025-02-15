@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/chenmuyao/go-bootcamp/internal/repository/cache"
+	"github.com/chenmuyao/go-bootcamp/interactive/repository/cache"
 	"github.com/jellydator/ttlcache/v3"
 )
 
@@ -18,7 +18,7 @@ func (t *TopArticlesLocalCache) GetTopLikedArticles(
 ) ([]int64, error) {
 	res := t.cache.Get(t.key())
 	if res == nil {
-		return nil, errors.New("No data")
+		return nil, errors.New("no data")
 	}
 	return res.Value(), nil
 }

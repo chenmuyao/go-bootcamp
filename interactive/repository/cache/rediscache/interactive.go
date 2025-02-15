@@ -10,8 +10,8 @@ import (
 	_ "embed"
 
 	"github.com/chenmuyao/generique/gslice"
-	"github.com/chenmuyao/go-bootcamp/internal/domain"
-	"github.com/chenmuyao/go-bootcamp/internal/repository/cache"
+	"github.com/chenmuyao/go-bootcamp/interactive/domain"
+	"github.com/chenmuyao/go-bootcamp/interactive/repository/cache"
 	"github.com/redis/go-redis/v9"
 )
 

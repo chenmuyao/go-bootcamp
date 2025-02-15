@@ -7,11 +7,16 @@
 package main
 
 import (
+	"github.com/chenmuyao/go-bootcamp/interactive/events"
+	"github.com/chenmuyao/go-bootcamp/interactive/repository"
+	"github.com/chenmuyao/go-bootcamp/interactive/repository/cache/rediscache"
+	"github.com/chenmuyao/go-bootcamp/interactive/repository/dao"
+	service2 "github.com/chenmuyao/go-bootcamp/interactive/service"
 	"github.com/chenmuyao/go-bootcamp/internal/events/article"
 	"github.com/chenmuyao/go-bootcamp/internal/job"
-	"github.com/chenmuyao/go-bootcamp/internal/repository"
-	"github.com/chenmuyao/go-bootcamp/internal/repository/cache/rediscache"
-	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
+	repository2 "github.com/chenmuyao/go-bootcamp/internal/repository"
+	rediscache2 "github.com/chenmuyao/go-bootcamp/internal/repository/cache/rediscache"
+	dao2 "github.com/chenmuyao/go-bootcamp/internal/repository/dao"
 	"github.com/chenmuyao/go-bootcamp/internal/service"
 	"github.com/chenmuyao/go-bootcamp/internal/web"
 	"github.com/chenmuyao/go-bootcamp/internal/web/jwt"
@@ -28,13 +33,7 @@ func InitInteractiveRepo() repository.InteractiveRepository {
 	cmdable := ioc.InitRedis()
 	interactiveCache := rediscache.NewInteractiveRedisCache(cmdable)
 	topArticlesCache := ioc.InitTopArticlesCache()
-	articleDAO := dao.NewArticleDAO(db)
-	articleCache := rediscache.NewArticleRedisCache(cmdable)
-	userDAO := dao.NewUserDAO(db)
-	userCache := rediscache.NewUserRedisCache(cmdable)
-	userRepository := repository.NewUserRepository(userDAO, userCache)
-	articleRepository := repository.NewArticleRepository(logger, articleDAO, articleCache, userRepository)
-	interactiveRepository := repository.NewCachedInteractiveRepository(logger, interactiveDAO, interactiveCache, topArticlesCache, articleRepository)
+	interactiveRepository := repository.NewCachedInteractiveRepository(logger, interactiveDAO, interactiveCache, topArticlesCache)
 	return interactiveRepository
 }
 
@@ -44,22 +43,22 @@ func InitWebServer() *App {
 	logger := ioc.InitLogger()
 	v := ioc.InitGinMiddlewares(cmdable, handler, logger)
 	db := ioc.InitDB(logger)
-	userDAO := dao.NewUserDAO(db)
-	userCache := rediscache.NewUserRedisCache(cmdable)
-	userRepository := repository.NewUserRepository(userDAO, userCache)
+	userDAO := dao2.NewUserDAO(db)
+	userCache := rediscache2.NewUserRedisCache(cmdable)
+	userRepository := repository2.NewUserRepository(userDAO, userCache)
 	userService := service.NewUserService(userRepository)
-	codeCache := rediscache.NewCodeRedisCache(cmdable)
-	codeRepository := repository.NewCodeRepository(codeCache)
-	asyncSMSDAO := dao.NewAsyncSMSDAO(db)
-	asyncSMSRepository := repository.NewAsyncSMSRepository(asyncSMSDAO, db)
+	codeCache := rediscache2.NewCodeRedisCache(cmdable)
+	codeRepository := repository2.NewCodeRepository(codeCache)
+	asyncSMSDAO := dao2.NewAsyncSMSDAO(db)
+	asyncSMSRepository := repository2.NewAsyncSMSRepository(asyncSMSDAO, db)
 	smsService := ioc.InitSMSService(cmdable, asyncSMSRepository)
 	codeService := service.NewCodeService(codeRepository, smsService)
 	userHandler := web.NewUserHandler(logger, userService, codeService, handler)
 	giteaService := ioc.InitGiteaService(logger)
 	oAuth2GiteaHandler := web.NewOAuth2GiteaHandler(logger, giteaService, userService, handler)
-	articleDAO := dao.NewArticleDAO(db)
-	articleCache := rediscache.NewArticleRedisCache(cmdable)
-	articleRepository := repository.NewArticleRepository(logger, articleDAO, articleCache, userRepository)
+	articleDAO := dao2.NewArticleDAO(db)
+	articleCache := rediscache2.NewArticleRedisCache(cmdable)
+	articleRepository := repository2.NewArticleRepository(logger, articleDAO, articleCache, userRepository)
 	client := ioc.InitSaramaClient()
 	syncProducer := ioc.InitSyncProducer(client)
 	producer := article.NewSaramaSyncProducer(syncProducer)
@@ -67,15 +66,15 @@ func InitWebServer() *App {
 	interactiveDAO := dao.NewGORMInteractiveDAO(db)
 	interactiveCache := rediscache.NewInteractiveRedisCache(cmdable)
 	topArticlesCache := ioc.InitTopArticlesCache()
-	interactiveRepository := repository.NewCachedInteractiveRepository(logger, interactiveDAO, interactiveCache, topArticlesCache, articleRepository)
-	interactiveService := service.NewInteractiveService(interactiveRepository)
+	interactiveRepository := repository.NewCachedInteractiveRepository(logger, interactiveDAO, interactiveCache, topArticlesCache)
+	interactiveService := service2.NewInteractiveService(interactiveRepository)
 	articleHandler := web.NewArticleHandler(logger, articleService, interactiveService)
 	engine := ioc.InitWebServer(v, userHandler, oAuth2GiteaHandler, articleHandler)
-	interactiveReadEventConsumer := article.NewInteractiveReadEventConsumer(logger, interactiveRepository, client)
+	interactiveReadEventConsumer := events.NewInteractiveReadEventConsumer(logger, interactiveRepository, client)
 	v2 := ioc.InitConsumers(interactiveReadEventConsumer)
-	rankingCache := rediscache.NewRankingRedisCache(cmdable)
+	rankingCache := rediscache2.NewRankingRedisCache(cmdable)
 	rankingLocalCache := ioc.InitRankingLocalCache()
-	rankingRepository := repository.NewCachedRankingRepository(rankingCache, rankingLocalCache)
+	rankingRepository := repository2.NewCachedRankingRepository(rankingCache, rankingLocalCache)
 	rankingService := service.NewBatchRankingService(interactiveService, articleService, rankingRepository)
 	job := ioc.InitRankingJob(rankingService, logger, cmdable)
 	cron := ioc.InitJobs(logger, job)
@@ -90,8 +89,8 @@ func InitWebServer() *App {
 func InitJobScheduler() *job.Scheduler {
 	logger := ioc.InitLogger()
 	db := ioc.InitDB(logger)
-	jobDAO := dao.NewGORMJobDAO(db, logger)
-	jobRepository := repository.NewPreemptJobRepository(jobDAO)
+	jobDAO := dao2.NewGORMJobDAO(db, logger)
+	jobRepository := repository2.NewPreemptJobRepository(jobDAO)
 	jobService := service.NewCronJobService(logger, jobRepository)
 	scheduler := job.NewScheduler(logger, jobService)
 	return scheduler
@@ -101,8 +100,8 @@ func InitJobScheduler() *job.Scheduler {
 
 var thirdPartySet = wire.NewSet(ioc.InitRedis, ioc.InitDB, ioc.InitLogger, ioc.InitSaramaClient, ioc.InitSyncProducer)
 
-var interactiveSvcSet = wire.NewSet(dao.NewGORMInteractiveDAO, rediscache.NewInteractiveRedisCache, repository.NewCachedInteractiveRepository, service.NewInteractiveService)
+var interactiveSvcSet = wire.NewSet(dao.NewGORMInteractiveDAO, rediscache.NewInteractiveRedisCache, repository.NewCachedInteractiveRepository, service2.NewInteractiveService)
 
-var rankingSvcSet = wire.NewSet(ioc.InitRankingLocalCache, rediscache.NewRankingRedisCache, repository.NewCachedRankingRepository, service.NewBatchRankingService)
+var rankingSvcSet = wire.NewSet(ioc.InitRankingLocalCache, rediscache2.NewRankingRedisCache, repository2.NewCachedRankingRepository, service.NewBatchRankingService)
 
-var jobProviderSet = wire.NewSet(service.NewCronJobService, repository.NewPreemptJobRepository, dao.NewGORMJobDAO)
+var jobProviderSet = wire.NewSet(service.NewCronJobService, repository2.NewPreemptJobRepository, dao2.NewGORMJobDAO)

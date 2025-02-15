@@ -7,6 +7,7 @@ import (
 
 	"github.com/chenmuyao/generique/gqueue"
 	"github.com/chenmuyao/generique/gslice"
+	"github.com/chenmuyao/go-bootcamp/interactive/service"
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"github.com/chenmuyao/go-bootcamp/internal/repository"
 )
@@ -17,7 +18,7 @@ type RankingService interface {
 }
 
 type BatchRankingService struct {
-	intrSvc   InteractiveService
+	intrSvc   service.InteractiveService
 	artSvc    ArticleService
 	batchSize int
 	scoreFunc func(likeCnt int64, utime time.Time) float64
@@ -100,7 +101,7 @@ func (b *BatchRankingService) topN(ctx context.Context) ([]domain.Article, error
 }
 
 func NewBatchRankingService(
-	intrSvc InteractiveService,
+	intrSvc service.InteractiveService,
 	artSvc ArticleService,
 	repo repository.RankingRepository,
 ) RankingService {

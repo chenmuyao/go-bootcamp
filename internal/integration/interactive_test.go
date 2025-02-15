@@ -6,11 +6,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/chenmuyao/go-bootcamp/interactive/repository"
+	intrRepository "github.com/chenmuyao/go-bootcamp/interactive/repository"
+	"github.com/chenmuyao/go-bootcamp/interactive/repository/cache/rediscache"
+	"github.com/chenmuyao/go-bootcamp/interactive/repository/dao"
+	"github.com/chenmuyao/go-bootcamp/interactive/service"
+	intrService "github.com/chenmuyao/go-bootcamp/interactive/service"
 	"github.com/chenmuyao/go-bootcamp/internal/integration/startup"
-	"github.com/chenmuyao/go-bootcamp/internal/repository"
-	"github.com/chenmuyao/go-bootcamp/internal/repository/cache/rediscache"
-	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
-	"github.com/chenmuyao/go-bootcamp/internal/service"
 	"github.com/chenmuyao/go-bootcamp/ioc"
 	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 	"github.com/gin-gonic/gin"
@@ -163,14 +165,8 @@ func (s *InteractivceTestSuite) TestIncrReadCnt() {
 			intrDAO := dao.NewGORMInteractiveDAO(s.db)
 			cache := rediscache.NewInteractiveRedisCache(s.rdb)
 			lc := ioc.InitTopArticlesCache()
-			articleDAO := dao.NewArticleDAO(s.db)
-			articleCache := rediscache.NewArticleRedisCache(s.rdb)
-			userDAO := dao.NewUserDAO(s.db)
-			userCache := rediscache.NewUserRedisCache(s.rdb)
-			userRepo := repository.NewUserRepository(userDAO, userCache)
-			articleRepo := repository.NewArticleRepository(l, articleDAO, articleCache, userRepo)
-			repo := repository.NewCachedInteractiveRepository(l, intrDAO, cache, lc, articleRepo)
-			svc := service.NewInteractiveService(repo)
+			repo := intrRepository.NewCachedInteractiveRepository(l, intrDAO, cache, lc)
+			svc := intrService.NewInteractiveService(repo)
 			err := svc.IncrReadCnt(context.Background(), "read", tc.bizID)
 			assert.Equal(t, nil, err)
 		})
@@ -358,13 +354,7 @@ func (s *InteractivceTestSuite) TestLike() {
 			intrDAO := dao.NewGORMInteractiveDAO(s.db)
 			cache := rediscache.NewInteractiveRedisCache(s.rdb)
 			lc := ioc.InitTopArticlesCache()
-			articleDAO := dao.NewArticleDAO(s.db)
-			articleCache := rediscache.NewArticleRedisCache(s.rdb)
-			userDAO := dao.NewUserDAO(s.db)
-			userCache := rediscache.NewUserRedisCache(s.rdb)
-			userRepo := repository.NewUserRepository(userDAO, userCache)
-			articleRepo := repository.NewArticleRepository(l, articleDAO, articleCache, userRepo)
-			repo := repository.NewCachedInteractiveRepository(l, intrDAO, cache, lc, articleRepo)
+			repo := repository.NewCachedInteractiveRepository(l, intrDAO, cache, lc)
 			svc := service.NewInteractiveService(repo)
 			err := svc.Like(context.Background(), "like", tc.bizID, 123)
 			assert.Equal(t, nil, err)
@@ -540,13 +530,7 @@ func (s *InteractivceTestSuite) TestCancelLike() {
 			intrDAO := dao.NewGORMInteractiveDAO(s.db)
 			cache := rediscache.NewInteractiveRedisCache(s.rdb)
 			lc := ioc.InitTopArticlesCache()
-			articleDAO := dao.NewArticleDAO(s.db)
-			articleCache := rediscache.NewArticleRedisCache(s.rdb)
-			userDAO := dao.NewUserDAO(s.db)
-			userCache := rediscache.NewUserRedisCache(s.rdb)
-			userRepo := repository.NewUserRepository(userDAO, userCache)
-			articleRepo := repository.NewArticleRepository(l, articleDAO, articleCache, userRepo)
-			repo := repository.NewCachedInteractiveRepository(l, intrDAO, cache, lc, articleRepo)
+			repo := repository.NewCachedInteractiveRepository(l, intrDAO, cache, lc)
 			svc := service.NewInteractiveService(repo)
 			err := svc.CancelLike(context.Background(), "cancel_like", tc.bizID, 123)
 			assert.Equal(t, nil, err)
@@ -735,13 +719,7 @@ func (s *InteractivceTestSuite) TestCollect() {
 			intrDAO := dao.NewGORMInteractiveDAO(s.db)
 			cache := rediscache.NewInteractiveRedisCache(s.rdb)
 			lc := ioc.InitTopArticlesCache()
-			articleDAO := dao.NewArticleDAO(s.db)
-			articleCache := rediscache.NewArticleRedisCache(s.rdb)
-			userDAO := dao.NewUserDAO(s.db)
-			userCache := rediscache.NewUserRedisCache(s.rdb)
-			userRepo := repository.NewUserRepository(userDAO, userCache)
-			articleRepo := repository.NewArticleRepository(l, articleDAO, articleCache, userRepo)
-			repo := repository.NewCachedInteractiveRepository(l, intrDAO, cache, lc, articleRepo)
+			repo := repository.NewCachedInteractiveRepository(l, intrDAO, cache, lc)
 			svc := service.NewInteractiveService(repo)
 			err := svc.Collect(context.Background(), "collect", tc.bizID, 1, 123)
 			assert.Equal(t, nil, err)
@@ -893,13 +871,7 @@ func (s *InteractivceTestSuite) TestCancelCollect() {
 			intrDAO := dao.NewGORMInteractiveDAO(s.db)
 			cache := rediscache.NewInteractiveRedisCache(s.rdb)
 			lc := ioc.InitTopArticlesCache()
-			articleDAO := dao.NewArticleDAO(s.db)
-			articleCache := rediscache.NewArticleRedisCache(s.rdb)
-			userDAO := dao.NewUserDAO(s.db)
-			userCache := rediscache.NewUserRedisCache(s.rdb)
-			userRepo := repository.NewUserRepository(userDAO, userCache)
-			articleRepo := repository.NewArticleRepository(l, articleDAO, articleCache, userRepo)
-			repo := repository.NewCachedInteractiveRepository(l, intrDAO, cache, lc, articleRepo)
+			repo := repository.NewCachedInteractiveRepository(l, intrDAO, cache, lc)
 			svc := service.NewInteractiveService(repo)
 			err := svc.CancelCollect(context.Background(), "cancel_collect", tc.bizID, 1, 123)
 			assert.Equal(t, nil, err)

@@ -16,7 +16,7 @@ func TestCronExpr(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log("task", id)
 	expr.Start()
-	time.Sleep(10 * time.Second)
+	time.Sleep(1 * time.Second)
 	ctx := expr.Stop() // stop running new tasks
 	t.Log("send stop signal")
 	<-ctx.Done() // wait for the last task to finish

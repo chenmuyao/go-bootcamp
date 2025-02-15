@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/chenmuyao/generique/gslice"
+	intrDomain "github.com/chenmuyao/go-bootcamp/interactive/domain"
+	intrService "github.com/chenmuyao/go-bootcamp/interactive/service"
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"github.com/chenmuyao/go-bootcamp/internal/service"
 	ijwt "github.com/chenmuyao/go-bootcamp/internal/web/jwt"
@@ -30,14 +32,14 @@ import (
 type ArticleHandler struct {
 	l       logger.Logger
 	svc     service.ArticleService
-	intrSvc service.InteractiveService
+	intrSvc intrService.InteractiveService
 	biz     string
 }
 
 func NewArticleHandler(
 	l logger.Logger,
 	svc service.ArticleService,
-	intrSvc service.InteractiveService,
+	intrSvc intrService.InteractiveService,
 ) *ArticleHandler {
 	return &ArticleHandler{
 		l:       l,
@@ -249,7 +251,7 @@ func (h *ArticleHandler) PubDetail(
 	var (
 		eg      errgroup.Group
 		article domain.Article
-		intr    domain.Interactive
+		intr    intrDomain.Interactive
 	)
 
 	eg.Go(func() error {

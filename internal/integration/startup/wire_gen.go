@@ -7,6 +7,10 @@
 package startup
 
 import (
+	repository2 "github.com/chenmuyao/go-bootcamp/interactive/repository"
+	rediscache2 "github.com/chenmuyao/go-bootcamp/interactive/repository/cache/rediscache"
+	dao2 "github.com/chenmuyao/go-bootcamp/interactive/repository/dao"
+	service2 "github.com/chenmuyao/go-bootcamp/interactive/service"
 	"github.com/chenmuyao/go-bootcamp/internal/events/article"
 	"github.com/chenmuyao/go-bootcamp/internal/job"
 	"github.com/chenmuyao/go-bootcamp/internal/repository"
@@ -47,11 +51,11 @@ func InitWebServer() *gin.Engine {
 	syncProducer := InitSyncProducer(client)
 	producer := article.NewSaramaSyncProducer(syncProducer)
 	articleService := service.NewArticleService(articleRepository, producer)
-	interactiveDAO := dao.NewGORMInteractiveDAO(db)
-	interactiveCache := rediscache.NewInteractiveRedisCache(cmdable)
+	interactiveDAO := dao2.NewGORMInteractiveDAO(db)
+	interactiveCache := rediscache2.NewInteractiveRedisCache(cmdable)
 	topArticlesCache := ioc.InitTopArticlesCache()
-	interactiveRepository := repository.NewCachedInteractiveRepository(logger, interactiveDAO, interactiveCache, topArticlesCache, articleRepository)
-	interactiveService := service.NewInteractiveService(interactiveRepository)
+	interactiveRepository := repository2.NewCachedInteractiveRepository(logger, interactiveDAO, interactiveCache, topArticlesCache)
+	interactiveService := service2.NewInteractiveService(interactiveRepository)
 	articleHandler := web.NewArticleHandler(logger, articleService, interactiveService)
 	engine := ioc.InitWebServer(v, userHandler, oAuth2GiteaHandler, articleHandler)
 	return engine
@@ -70,11 +74,11 @@ func InitArticleHandler(articleDAO dao.ArticleDAO) *web.ArticleHandler {
 	syncProducer := InitSyncProducer(client)
 	producer := article.NewSaramaSyncProducer(syncProducer)
 	articleService := service.NewArticleService(articleRepository, producer)
-	interactiveDAO := dao.NewGORMInteractiveDAO(db)
-	interactiveCache := rediscache.NewInteractiveRedisCache(cmdable)
+	interactiveDAO := dao2.NewGORMInteractiveDAO(db)
+	interactiveCache := rediscache2.NewInteractiveRedisCache(cmdable)
 	topArticlesCache := ioc.InitTopArticlesCache()
-	interactiveRepository := repository.NewCachedInteractiveRepository(logger, interactiveDAO, interactiveCache, topArticlesCache, articleRepository)
-	interactiveService := service.NewInteractiveService(interactiveRepository)
+	interactiveRepository := repository2.NewCachedInteractiveRepository(logger, interactiveDAO, interactiveCache, topArticlesCache)
+	interactiveService := service2.NewInteractiveService(interactiveRepository)
 	articleHandler := web.NewArticleHandler(logger, articleService, interactiveService)
 	return articleHandler
 }
@@ -99,6 +103,6 @@ var thirdPartySet = wire.NewSet(
 	InitSyncProducer,
 )
 
-var interactiveSvcSet = wire.NewSet(dao.NewGORMInteractiveDAO, rediscache.NewInteractiveRedisCache, ioc.InitTopArticlesCache, repository.NewCachedInteractiveRepository, service.NewInteractiveService)
+var interactiveSvcSet = wire.NewSet(dao2.NewGORMInteractiveDAO, rediscache2.NewInteractiveRedisCache, ioc.InitTopArticlesCache, repository2.NewCachedInteractiveRepository, service2.NewInteractiveService)
 
 var jobProviderSet = wire.NewSet(service.NewCronJobService, repository.NewPreemptJobRepository, dao.NewGORMJobDAO)

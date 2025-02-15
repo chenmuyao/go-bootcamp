@@ -7,14 +7,14 @@ import (
 	"time"
 
 	"github.com/chenmuyao/generique/gslice"
-	"github.com/chenmuyao/go-bootcamp/internal/domain"
-	"github.com/chenmuyao/go-bootcamp/internal/repository/cache"
-	"github.com/chenmuyao/go-bootcamp/internal/repository/dao"
+	"github.com/chenmuyao/go-bootcamp/interactive/domain"
+	"github.com/chenmuyao/go-bootcamp/interactive/repository/cache"
+	"github.com/chenmuyao/go-bootcamp/interactive/repository/dao"
 	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 	"golang.org/x/sync/errgroup"
 )
 
-//go:generate mockgen -source=./interactive.go -package=repomocks -destination=./mocks/interactive.mock.go
+//go:generate mockgen -source=./interactive.go -package=intrrepomocks -destination=./mocks/interactive.mock.go
 type InteractiveRepository interface {
 	IncrReadCnt(ctx context.Context, biz string, bizID int64) error
 	BatchIncrReadCnt(ctx context.Context, bizs []string, bizIDs []int64) error
@@ -36,7 +36,6 @@ type CachedInteractiveRepository struct {
 	dao                  dao.InteractiveDAO
 	cache                cache.InteractiveCache
 	topCache             cache.TopArticlesCache
-	articleRepo          ArticleRepository
 	defaultTopLikedLimit int64
 }
 
@@ -375,14 +374,12 @@ func NewCachedInteractiveRepository(
 	dao dao.InteractiveDAO,
 	cache cache.InteractiveCache,
 	topCache cache.TopArticlesCache,
-	articleRepo ArticleRepository,
 ) InteractiveRepository {
 	return &CachedInteractiveRepository{
 		l:                    l,
 		dao:                  dao,
 		cache:                cache,
 		topCache:             topCache,
-		articleRepo:          articleRepo,
 		defaultTopLikedLimit: 10,
 	}
 }

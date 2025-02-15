@@ -4,6 +4,10 @@
 package startup
 
 import (
+	intrRepository "github.com/chenmuyao/go-bootcamp/interactive/repository"
+	intrRediscache "github.com/chenmuyao/go-bootcamp/interactive/repository/cache/rediscache"
+	intrDao "github.com/chenmuyao/go-bootcamp/interactive/repository/dao"
+	intrService "github.com/chenmuyao/go-bootcamp/interactive/service"
 	"github.com/chenmuyao/go-bootcamp/internal/events/article"
 	"github.com/chenmuyao/go-bootcamp/internal/job"
 	"github.com/chenmuyao/go-bootcamp/internal/repository"
@@ -26,11 +30,11 @@ var thirdPartySet = wire.NewSet(
 )
 
 var interactiveSvcSet = wire.NewSet(
-	dao.NewGORMInteractiveDAO,
-	rediscache.NewInteractiveRedisCache,
+	intrDao.NewGORMInteractiveDAO,
+	intrRediscache.NewInteractiveRedisCache,
 	ioc.InitTopArticlesCache,
-	repository.NewCachedInteractiveRepository,
-	service.NewInteractiveService,
+	intrRepository.NewCachedInteractiveRepository,
+	intrService.NewInteractiveService,
 )
 
 var jobProviderSet = wire.NewSet(
