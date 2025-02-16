@@ -38,7 +38,7 @@ type InteractiveServiceClient interface {
 	Like(ctx context.Context, in *LikeRequest, opts ...grpc.CallOption) (*LikeResponse, error)
 	CancelLike(ctx context.Context, in *CancelLikeRequest, opts ...grpc.CallOption) (*CancelLikeResponse, error)
 	Collect(ctx context.Context, in *CollectRequest, opts ...grpc.CallOption) (*CollectResponse, error)
-	CancelCollect(ctx context.Context, in *CancelLikeRequest, opts ...grpc.CallOption) (*CancelLikeResponse, error)
+	CancelCollect(ctx context.Context, in *CancelCollectRequest, opts ...grpc.CallOption) (*CancelCollectResponse, error)
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
 	MustBatchGet(ctx context.Context, in *MustBatchGetRequest, opts ...grpc.CallOption) (*MustBatchGetResponse, error)
 	GetByIDs(ctx context.Context, in *GetByIDsRequest, opts ...grpc.CallOption) (*GetByIDsResponse, error)
@@ -93,9 +93,9 @@ func (c *interactiveServiceClient) Collect(ctx context.Context, in *CollectReque
 	return out, nil
 }
 
-func (c *interactiveServiceClient) CancelCollect(ctx context.Context, in *CancelLikeRequest, opts ...grpc.CallOption) (*CancelLikeResponse, error) {
+func (c *interactiveServiceClient) CancelCollect(ctx context.Context, in *CancelCollectRequest, opts ...grpc.CallOption) (*CancelCollectResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CancelLikeResponse)
+	out := new(CancelCollectResponse)
 	err := c.cc.Invoke(ctx, InteractiveService_CancelCollect_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -151,7 +151,7 @@ type InteractiveServiceServer interface {
 	Like(context.Context, *LikeRequest) (*LikeResponse, error)
 	CancelLike(context.Context, *CancelLikeRequest) (*CancelLikeResponse, error)
 	Collect(context.Context, *CollectRequest) (*CollectResponse, error)
-	CancelCollect(context.Context, *CancelLikeRequest) (*CancelLikeResponse, error)
+	CancelCollect(context.Context, *CancelCollectRequest) (*CancelCollectResponse, error)
 	Get(context.Context, *GetRequest) (*GetResponse, error)
 	MustBatchGet(context.Context, *MustBatchGetRequest) (*MustBatchGetResponse, error)
 	GetByIDs(context.Context, *GetByIDsRequest) (*GetByIDsResponse, error)
@@ -178,7 +178,7 @@ func (UnimplementedInteractiveServiceServer) CancelLike(context.Context, *Cancel
 func (UnimplementedInteractiveServiceServer) Collect(context.Context, *CollectRequest) (*CollectResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Collect not implemented")
 }
-func (UnimplementedInteractiveServiceServer) CancelCollect(context.Context, *CancelLikeRequest) (*CancelLikeResponse, error) {
+func (UnimplementedInteractiveServiceServer) CancelCollect(context.Context, *CancelCollectRequest) (*CancelCollectResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CancelCollect not implemented")
 }
 func (UnimplementedInteractiveServiceServer) Get(context.Context, *GetRequest) (*GetResponse, error) {
@@ -287,7 +287,7 @@ func _InteractiveService_Collect_Handler(srv interface{}, ctx context.Context, d
 }
 
 func _InteractiveService_CancelCollect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CancelLikeRequest)
+	in := new(CancelCollectRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -299,7 +299,7 @@ func _InteractiveService_CancelCollect_Handler(srv interface{}, ctx context.Cont
 		FullMethod: InteractiveService_CancelCollect_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(InteractiveServiceServer).CancelCollect(ctx, req.(*CancelLikeRequest))
+		return srv.(InteractiveServiceServer).CancelCollect(ctx, req.(*CancelCollectRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
