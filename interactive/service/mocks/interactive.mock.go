@@ -157,16 +157,16 @@ func (mr *MockInteractiveServiceMockRecorder) Like(ctx, biz, id, uid any) *gomoc
 }
 
 // MustBatchGet mocks base method.
-func (m *MockInteractiveService) MustBatchGet(ctx context.Context, biz string, id []int64) ([]domain.Interactive, error) {
+func (m *MockInteractiveService) MustBatchGet(ctx context.Context, biz string, ids []int64) ([]domain.Interactive, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MustBatchGet", ctx, biz, id)
+	ret := m.ctrl.Call(m, "MustBatchGet", ctx, biz, ids)
 	ret0, _ := ret[0].([]domain.Interactive)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // MustBatchGet indicates an expected call of MustBatchGet.
-func (mr *MockInteractiveServiceMockRecorder) MustBatchGet(ctx, biz, id any) *gomock.Call {
+func (mr *MockInteractiveServiceMockRecorder) MustBatchGet(ctx, biz, ids any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MustBatchGet", reflect.TypeOf((*MockInteractiveService)(nil).MustBatchGet), ctx, biz, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MustBatchGet", reflect.TypeOf((*MockInteractiveService)(nil).MustBatchGet), ctx, biz, ids)
 }

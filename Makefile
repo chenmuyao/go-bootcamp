@@ -27,6 +27,7 @@ mock:
 	@go generate ./...
 	@mockgen -package=redismock -destination=./internal/repository/cache/rediscache/mocks/redismock.mock.go github.com/redis/go-redis/v9 Cmdable
 	@cd ./internal/integration/startup/ && wire && cd -
+	@cd ./interactive/integration/startup/ && wire && cd -
 
 .PHONY: test
 test: mock
