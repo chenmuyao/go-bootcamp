@@ -17,7 +17,7 @@ type InteractiveService interface {
 	CancelCollect(ctx context.Context, biz string, id int64, cid int64, uid int64) error
 	Get(ctx context.Context, biz string, id int64, uid int64) (domain.Interactive, error)
 	// NOTE: Intr must exist
-	MustBatchGet(ctx context.Context, biz string, id []int64) ([]domain.Interactive, error)
+	MustBatchGet(ctx context.Context, biz string, ids []int64) ([]domain.Interactive, error)
 	GetByIDs(ctx context.Context, biz string, ids []int64) (map[int64]domain.Interactive, error)
 	GetTopLike(ctx context.Context, biz string, limit int) ([]int64, error)
 }
@@ -62,9 +62,9 @@ func (i *interactiveService) GetTopLike(
 func (i *interactiveService) MustBatchGet(
 	ctx context.Context,
 	biz string,
-	id []int64,
+	ids []int64,
 ) ([]domain.Interactive, error) {
-	return i.repo.MustBatchGet(ctx, biz, id)
+	return i.repo.MustBatchGet(ctx, biz, ids)
 }
 
 // Get implements InteractiveService.

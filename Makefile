@@ -4,6 +4,8 @@
 # docker
 # mockgen
 #
+# buf -- to handle protobuf
+#
 # NOTE: firefox can only be run on local machine. Need other commands to run
 # on a CI pipeline
 # gocov
@@ -45,3 +47,7 @@ docker:
 	@GOOS=linux GOARCH=arm go build -o wetravel .
 	@docker rmi -f vinchent123/wetravel:v0.0.1
 	@docker build -t vinchent123/wetravel:v0.0.1 .
+
+.PHONY: grpc
+grpc:
+	@npx buf generate api/proto/
