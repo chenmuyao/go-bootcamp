@@ -7,6 +7,7 @@
 package startup
 
 import (
+	"github.com/chenmuyao/go-bootcamp/interactive/grpc"
 	"github.com/chenmuyao/go-bootcamp/interactive/repository"
 	"github.com/chenmuyao/go-bootcamp/interactive/repository/cache/rediscache"
 	"github.com/chenmuyao/go-bootcamp/interactive/repository/dao"
@@ -17,7 +18,7 @@ import (
 
 // Injectors from wire.go:
 
-func InitInteractiveService() service.InteractiveService {
+func InitInteractiveService() *grpc.InteractiveServiceServer {
 	logger := InitLogger()
 	db := InitDB()
 	interactiveDAO := dao.NewGORMInteractiveDAO(db)
@@ -26,7 +27,8 @@ func InitInteractiveService() service.InteractiveService {
 	topArticlesCache := ioc.InitTopArticlesCache()
 	interactiveRepository := repository.NewCachedInteractiveRepository(logger, interactiveDAO, interactiveCache, topArticlesCache)
 	interactiveService := service.NewInteractiveService(interactiveRepository)
-	return interactiveService
+	interactiveServiceServer := grpc.NewInteractiveServiceServer(interactiveService)
+	return interactiveServiceServer
 }
 
 // wire.go:

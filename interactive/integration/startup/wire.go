@@ -4,6 +4,7 @@
 package startup
 
 import (
+	"github.com/chenmuyao/go-bootcamp/interactive/grpc"
 	intrRepository "github.com/chenmuyao/go-bootcamp/interactive/repository"
 	intrRediscache "github.com/chenmuyao/go-bootcamp/interactive/repository/cache/rediscache"
 	intrDao "github.com/chenmuyao/go-bootcamp/interactive/repository/dao"
@@ -27,7 +28,7 @@ var interactiveSvcSet = wire.NewSet(
 	intrService.NewInteractiveService,
 )
 
-func InitInteractiveService() intrService.InteractiveService {
-	wire.Build(thirdPartySet, interactiveSvcSet)
-	return intrService.NewInteractiveService(nil)
+func InitInteractiveService() *grpc.InteractiveServiceServer {
+	wire.Build(thirdPartySet, interactiveSvcSet, grpc.NewInteractiveServiceServer)
+	return &grpc.InteractiveServiceServer{}
 }

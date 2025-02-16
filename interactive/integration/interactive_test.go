@@ -6,15 +6,9 @@ import (
 	"testing"
 	"time"
 
+	intrv1 "github.com/chenmuyao/go-bootcamp/api/proto/gen/intr/v1"
 	"github.com/chenmuyao/go-bootcamp/interactive/integration/startup"
-	"github.com/chenmuyao/go-bootcamp/interactive/repository"
-	intrRepository "github.com/chenmuyao/go-bootcamp/interactive/repository"
-	"github.com/chenmuyao/go-bootcamp/interactive/repository/cache/rediscache"
 	"github.com/chenmuyao/go-bootcamp/interactive/repository/dao"
-	"github.com/chenmuyao/go-bootcamp/interactive/service"
-	intrService "github.com/chenmuyao/go-bootcamp/interactive/service"
-	"github.com/chenmuyao/go-bootcamp/ioc"
-	"github.com/chenmuyao/go-bootcamp/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
@@ -43,10 +37,11 @@ func (s *InteractivceTestSuite) TearDownTest() {
 func (s *InteractivceTestSuite) TestIncrReadCnt() {
 	t := s.T()
 	testCases := []struct {
-		name   string
-		before func(t *testing.T)
-		after  func(t *testing.T)
-		bizID  int64
+		name     string
+		before   func(t *testing.T)
+		after    func(t *testing.T)
+		bizID    int64
+		wantResp *intrv1.IncrReadCntResponse
 	}{
 		{
 			name: "read count incr when both db and cache empty",
@@ -74,7 +69,8 @@ func (s *InteractivceTestSuite) TestIncrReadCnt() {
 				err = s.rdb.Del(ctx, "interactive:read:1").Err()
 				assert.NoError(t, err)
 			},
-			bizID: 1,
+			bizID:    1,
+			wantResp: &intrv1.IncrReadCntResponse{},
 		},
 		{
 			name: "read count incr when cache is absent",
@@ -111,7 +107,8 @@ func (s *InteractivceTestSuite) TestIncrReadCnt() {
 				err = s.rdb.Del(ctx, "interactive:read:2").Err()
 				assert.NoError(t, err)
 			},
-			bizID: 2,
+			bizID:    2,
+			wantResp: &intrv1.IncrReadCntResponse{},
 		},
 		{
 			name: "increment read count from db and redis",
@@ -152,7 +149,8 @@ func (s *InteractivceTestSuite) TestIncrReadCnt() {
 				assert.Equal(t, 4, res)
 				s.rdb.Del(ctx, "interactive:read:3").Err()
 			},
-			bizID: 3,
+			bizID:    3,
+			wantResp: &intrv1.IncrReadCntResponse{},
 		},
 	}
 
@@ -161,13 +159,12 @@ func (s *InteractivceTestSuite) TestIncrReadCnt() {
 			tc.before(t)
 			defer tc.after(t)
 
-			l := logger.NewNopLogger()
-			intrDAO := dao.NewGORMInteractiveDAO(s.db)
-			cache := rediscache.NewInteractiveRedisCache(s.rdb)
-			lc := ioc.InitTopArticlesCache()
-			repo := intrRepository.NewCachedInteractiveRepository(l, intrDAO, cache, lc)
-			svc := intrService.NewInteractiveService(repo)
-			err := svc.IncrReadCnt(context.Background(), "read", tc.bizID)
+			svc := startup.InitInteractiveService()
+			resp, err := svc.IncrReadCnt(
+				context.Background(),
+				&intrv1.IncrReadCntRequest{Biz: "read", BizId: tc.bizID},
+			)
+			assert.Equal(t, tc.wantResp, resp)
 			assert.Equal(t, nil, err)
 		})
 	}
@@ -176,10 +173,11 @@ func (s *InteractivceTestSuite) TestIncrReadCnt() {
 func (s *InteractivceTestSuite) TestLike() {
 	t := s.T()
 	testCases := []struct {
-		name   string
-		before func(t *testing.T)
-		after  func(t *testing.T)
-		bizID  int64
+		name     string
+		before   func(t *testing.T)
+		after    func(t *testing.T)
+		bizID    int64
+		wantResp *intrv1.LikeResponse
 	}{
 		{
 			name: "like count incr when both db and cache empty",
@@ -227,7 +225,8 @@ func (s *InteractivceTestSuite) TestLike() {
 				err = s.rdb.Del(ctx, "interactive:like:1").Err()
 				assert.NoError(t, err)
 			},
-			bizID: 1,
+			bizID:    1,
+			wantResp: &intrv1.LikeResponse{},
 		},
 		{
 			name: "like count incr when cache is absent",
@@ -282,7 +281,8 @@ func (s *InteractivceTestSuite) TestLike() {
 				err = s.rdb.Del(ctx, "interactive:like:22").Err()
 				assert.NoError(t, err)
 			},
-			bizID: 2,
+			bizID:    2,
+			wantResp: &intrv1.LikeResponse{},
 		},
 		{
 			name: "increment like count from db and redis",
@@ -341,7 +341,8 @@ func (s *InteractivceTestSuite) TestLike() {
 				assert.Equal(t, 4, res)
 				s.rdb.Del(ctx, "interactive:like:3").Err()
 			},
-			bizID: 3,
+			bizID:    3,
+			wantResp: &intrv1.LikeResponse{},
 		},
 	}
 
@@ -350,13 +351,13 @@ func (s *InteractivceTestSuite) TestLike() {
 			tc.before(t)
 			defer tc.after(t)
 
-			l := logger.NewNopLogger()
-			intrDAO := dao.NewGORMInteractiveDAO(s.db)
-			cache := rediscache.NewInteractiveRedisCache(s.rdb)
-			lc := ioc.InitTopArticlesCache()
-			repo := repository.NewCachedInteractiveRepository(l, intrDAO, cache, lc)
-			svc := service.NewInteractiveService(repo)
-			err := svc.Like(context.Background(), "like", tc.bizID, 123)
+			svc := startup.InitInteractiveService()
+			resp, err := svc.Like(context.Background(), &intrv1.LikeRequest{
+				Biz:   "like",
+				BizId: tc.bizID,
+				Uid:   123,
+			})
+			assert.Equal(t, tc.wantResp, resp)
 			assert.Equal(t, nil, err)
 		})
 	}
@@ -365,10 +366,11 @@ func (s *InteractivceTestSuite) TestLike() {
 func (s *InteractivceTestSuite) TestCancelLike() {
 	t := s.T()
 	testCases := []struct {
-		name   string
-		before func(t *testing.T)
-		after  func(t *testing.T)
-		bizID  int64
+		name     string
+		before   func(t *testing.T)
+		after    func(t *testing.T)
+		bizID    int64
+		wantResp *intrv1.CancelLikeResponse
 	}{
 		{
 			// We don't expected any error, nothing should happen.
@@ -383,7 +385,8 @@ func (s *InteractivceTestSuite) TestCancelLike() {
 				err = s.db.First(&likeBiz).Error
 				assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 			},
-			bizID: 1,
+			bizID:    1,
+			wantResp: &intrv1.CancelLikeResponse{},
 		},
 		{
 			name: "decr like count incr when cache is absent",
@@ -448,7 +451,8 @@ func (s *InteractivceTestSuite) TestCancelLike() {
 				err = s.rdb.Del(ctx, "interactive:cancel_like:2").Err()
 				assert.NoError(t, err)
 			},
-			bizID: 2,
+			bizID:    2,
+			wantResp: &intrv1.CancelLikeResponse{},
 		},
 		{
 			name: "decr like count from db and redis",
@@ -517,7 +521,8 @@ func (s *InteractivceTestSuite) TestCancelLike() {
 				assert.Equal(t, 2, res)
 				s.rdb.Del(ctx, "interactive:cancel_like:3").Err()
 			},
-			bizID: 3,
+			bizID:    3,
+			wantResp: &intrv1.CancelLikeResponse{},
 		},
 	}
 
@@ -526,13 +531,13 @@ func (s *InteractivceTestSuite) TestCancelLike() {
 			tc.before(t)
 			defer tc.after(t)
 
-			l := logger.NewNopLogger()
-			intrDAO := dao.NewGORMInteractiveDAO(s.db)
-			cache := rediscache.NewInteractiveRedisCache(s.rdb)
-			lc := ioc.InitTopArticlesCache()
-			repo := repository.NewCachedInteractiveRepository(l, intrDAO, cache, lc)
-			svc := service.NewInteractiveService(repo)
-			err := svc.CancelLike(context.Background(), "cancel_like", tc.bizID, 123)
+			svc := startup.InitInteractiveService()
+			resp, err := svc.CancelLike(context.Background(), &intrv1.CancelLikeRequest{
+				Biz:   "cancel_like",
+				BizId: tc.bizID,
+				Uid:   123,
+			})
+			assert.Equal(t, tc.wantResp, resp)
 			assert.Equal(t, nil, err)
 		})
 	}
@@ -715,13 +720,13 @@ func (s *InteractivceTestSuite) TestCollect() {
 			tc.before(t)
 			defer tc.after(t)
 
-			l := logger.NewNopLogger()
-			intrDAO := dao.NewGORMInteractiveDAO(s.db)
-			cache := rediscache.NewInteractiveRedisCache(s.rdb)
-			lc := ioc.InitTopArticlesCache()
-			repo := repository.NewCachedInteractiveRepository(l, intrDAO, cache, lc)
-			svc := service.NewInteractiveService(repo)
-			err := svc.Collect(context.Background(), "collect", tc.bizID, 1, 123)
+			svc := startup.InitInteractiveService()
+			_, err := svc.Collect(context.Background(), &intrv1.CollectRequest{
+				Biz: "collect",
+				Id:  tc.bizID,
+				Cid: 1,
+				Uid: 123,
+			})
 			assert.Equal(t, nil, err)
 		})
 	}
@@ -867,13 +872,13 @@ func (s *InteractivceTestSuite) TestCancelCollect() {
 			tc.before(t)
 			defer tc.after(t)
 
-			l := logger.NewNopLogger()
-			intrDAO := dao.NewGORMInteractiveDAO(s.db)
-			cache := rediscache.NewInteractiveRedisCache(s.rdb)
-			lc := ioc.InitTopArticlesCache()
-			repo := repository.NewCachedInteractiveRepository(l, intrDAO, cache, lc)
-			svc := service.NewInteractiveService(repo)
-			err := svc.CancelCollect(context.Background(), "cancel_collect", tc.bizID, 1, 123)
+			svc := startup.InitInteractiveService()
+			_, err := svc.CancelCollect(context.Background(), &intrv1.CancelCollectRequest{
+				Biz: "cancel_collect",
+				Id:  tc.bizID,
+				Cid: 1,
+				Uid: 123,
+			})
 			assert.Equal(t, nil, err)
 		})
 	}
