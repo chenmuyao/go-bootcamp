@@ -6,12 +6,18 @@ import (
 	"github.com/chenmuyao/generique/gslice"
 	intrv1 "github.com/chenmuyao/go-bootcamp/api/proto/gen/intr/v1"
 	"github.com/chenmuyao/go-bootcamp/interactive/domain"
+
 	"github.com/chenmuyao/go-bootcamp/interactive/service"
+	"google.golang.org/grpc"
 )
 
 type InteractiveServiceServer struct {
 	intrv1.UnimplementedInteractiveServiceServer
 	svc service.InteractiveService
+}
+
+func (i *InteractiveServiceServer) Register(s *grpc.Server) {
+	intrv1.RegisterInteractiveServiceServer(s, i)
 }
 
 // CancelCollect implements intrv1.InteractiveServiceServer.

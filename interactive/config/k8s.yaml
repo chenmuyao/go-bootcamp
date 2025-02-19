@@ -1,0 +1,5 @@
+redis:
+  addr: wetravel-redis:6380
+
+db:
+  dsn: root:root@tcp(wetravel-mysql:3308)/wetravel?charset=utf8mb4&parseTime=True&loc=Local
