@@ -26,6 +26,7 @@ cover:
 mock:
 	@go generate ./...
 	@mockgen -package=redismock -destination=./internal/repository/cache/rediscache/mocks/redismock.mock.go github.com/redis/go-redis/v9 Cmdable
+	@mockgen -package=intrv1mock -source=./api/proto/gen/intr/v1/interactive_grpc.pb.go -destination=./api/proto/gen/intr/v1/mock/intrv1mock.mock.go
 	@cd ./internal/integration/startup/ && wire && cd -
 	@cd ./interactive/integration/startup/ && wire && cd -
 

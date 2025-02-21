@@ -33,6 +33,12 @@ type SaramaConfig struct {
 	Addr []string `yaml:"addr"`
 }
 
+type IntrConfig struct {
+	Threshold int32 `yaml:"threshold"`
+}
+
 type GRPCConfig struct {
-	Addr string `yaml:"addr"`
+	Addr   string     `yaml:"addr"`
+	Secure bool       `yaml:"secure"`
+	Intr   IntrConfig `yaml:"intr"`
 }

@@ -70,6 +70,7 @@ func InitWebServer() *App {
 		thirdPartySet,
 
 		interactiveSvcSet,
+		ioc.InitIntrClient,
 		rankingSvcSet,
 		ioc.InitJobs,
 		ioc.InitRankingJob,

@@ -12,6 +12,7 @@ func InitConfig(defaultRelConfigPath string) {
 	cfile := pflag.String("config", defaultRelConfigPath, "config file path")
 	pflag.Parse()
 	viper.SetConfigFile(*cfile)
+	viper.WatchConfig()
 	err := viper.ReadInConfig()
 	if err != nil {
 		panic(err)

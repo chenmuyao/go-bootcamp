@@ -56,7 +56,8 @@ func InitWebServer() *gin.Engine {
 	topArticlesCache := ioc.InitTopArticlesCache()
 	interactiveRepository := repository2.NewCachedInteractiveRepository(logger, interactiveDAO, interactiveCache, topArticlesCache)
 	interactiveService := service2.NewInteractiveService(interactiveRepository)
-	articleHandler := web.NewArticleHandler(logger, articleService, interactiveService)
+	interactiveServiceClient := ioc.InitIntrClient(interactiveService)
+	articleHandler := web.NewArticleHandler(logger, articleService, interactiveServiceClient)
 	engine := ioc.InitWebServer(v, userHandler, oAuth2GiteaHandler, articleHandler)
 	return engine
 }
@@ -79,7 +80,8 @@ func InitArticleHandler(articleDAO dao.ArticleDAO) *web.ArticleHandler {
 	topArticlesCache := ioc.InitTopArticlesCache()
 	interactiveRepository := repository2.NewCachedInteractiveRepository(logger, interactiveDAO, interactiveCache, topArticlesCache)
 	interactiveService := service2.NewInteractiveService(interactiveRepository)
-	articleHandler := web.NewArticleHandler(logger, articleService, interactiveService)
+	interactiveServiceClient := ioc.InitIntrClient(interactiveService)
+	articleHandler := web.NewArticleHandler(logger, articleService, interactiveServiceClient)
 	return articleHandler
 }
 

@@ -5,9 +5,8 @@ import (
 	"testing"
 	"time"
 
-	intrDomain "github.com/chenmuyao/go-bootcamp/interactive/domain"
-	"github.com/chenmuyao/go-bootcamp/interactive/service"
-	intrsvcmocks "github.com/chenmuyao/go-bootcamp/interactive/service/mocks"
+	intrv1 "github.com/chenmuyao/go-bootcamp/api/proto/gen/intr/v1"
+	intrv1mock "github.com/chenmuyao/go-bootcamp/api/proto/gen/intr/v1/mock"
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	svcmocks "github.com/chenmuyao/go-bootcamp/internal/service/mocks"
 	"github.com/stretchr/testify/assert"
@@ -20,15 +19,15 @@ func TestBatchRankingService_TopN(t *testing.T) {
 	testCases := []struct {
 		name string
 
-		mock func(ctrl *gomock.Controller) (service.InteractiveService, ArticleService)
+		mock func(ctrl *gomock.Controller) (intrv1.InteractiveServiceClient, ArticleService)
 
 		wantArts []domain.Article
 		wantErr  error
 	}{
 		{
 			name: "success",
-			mock: func(ctrl *gomock.Controller) (service.InteractiveService, ArticleService) {
-				intrSvc := intrsvcmocks.NewMockInteractiveService(ctrl)
+			mock: func(ctrl *gomock.Controller) (intrv1.InteractiveServiceClient, ArticleService) {
+				intrSvc := intrv1mock.NewMockInteractiveServiceClient(ctrl)
 				artSvc := svcmocks.NewMockArticleService(ctrl)
 
 				// 1st batch
@@ -37,10 +36,15 @@ func TestBatchRankingService_TopN(t *testing.T) {
 					{ID: 2, Utime: now},
 				}, nil)
 				intrSvc.EXPECT().
-					GetByIDs(gomock.Any(), "article", []int64{1, 2}).
-					Return(map[int64]intrDomain.Interactive{
-						1: {LikeCnt: 1},
-						2: {LikeCnt: 2},
+					GetByIDs(gomock.Any(), &intrv1.GetByIDsRequest{
+						Biz: "article",
+						Ids: []int64{1, 2},
+					}).
+					Return(&intrv1.GetByIDsResponse{
+						Intrs: map[int64]*intrv1.Interactive{
+							1: {LikeCnt: 1},
+							2: {LikeCnt: 2},
+						},
 					}, nil)
 
 				// 2nd batch
@@ -49,10 +53,15 @@ func TestBatchRankingService_TopN(t *testing.T) {
 					{ID: 4, Utime: now},
 				}, nil)
 				intrSvc.EXPECT().
-					GetByIDs(gomock.Any(), "article", []int64{3, 4}).
-					Return(map[int64]intrDomain.Interactive{
-						3: {LikeCnt: 3},
-						4: {LikeCnt: 4},
+					GetByIDs(gomock.Any(), &intrv1.GetByIDsRequest{
+						Biz: "article",
+						Ids: []int64{3, 4},
+					}).
+					Return(&intrv1.GetByIDsResponse{
+						Intrs: map[int64]*intrv1.Interactive{
+							3: {LikeCnt: 3},
+							4: {LikeCnt: 4},
+						},
 					}, nil)
 
 				// 3rd batch

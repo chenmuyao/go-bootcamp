@@ -7,8 +7,7 @@ import (
 	"time"
 
 	"github.com/chenmuyao/generique/gslice"
-	intrDomain "github.com/chenmuyao/go-bootcamp/interactive/domain"
-	intrService "github.com/chenmuyao/go-bootcamp/interactive/service"
+	intrv1 "github.com/chenmuyao/go-bootcamp/api/proto/gen/intr/v1"
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"github.com/chenmuyao/go-bootcamp/internal/service"
 	ijwt "github.com/chenmuyao/go-bootcamp/internal/web/jwt"
@@ -32,14 +31,14 @@ import (
 type ArticleHandler struct {
 	l       logger.Logger
 	svc     service.ArticleService
-	intrSvc intrService.InteractiveService
+	intrSvc intrv1.InteractiveServiceClient
 	biz     string
 }
 
 func NewArticleHandler(
 	l logger.Logger,
 	svc service.ArticleService,
-	intrSvc intrService.InteractiveService,
+	intrSvc intrv1.InteractiveServiceClient,
 ) *ArticleHandler {
 	return &ArticleHandler{
 		l:       l,
@@ -251,7 +250,7 @@ func (h *ArticleHandler) PubDetail(
 	var (
 		eg      errgroup.Group
 		article domain.Article
-		intr    intrDomain.Interactive
+		intr    *intrv1.GetResponse
 	)
 
 	eg.Go(func() error {
@@ -262,8 +261,8 @@ func (h *ArticleHandler) PubDetail(
 
 	eg.Go(func() error {
 		var er error
-		intr, er = h.intrSvc.Get(ctx, h.biz, id, uc.UID)
-		h.l.Debug("intr", logger.Field{Key: "intr", Value: intr}, logger.Error(er))
+		intr, er = h.intrSvc.Get(ctx, &intrv1.GetRequest{Biz: h.biz, Id: id, Uid: uc.UID})
+		h.l.Debug("intr", logger.Error(er))
 
 		return er
 	})
@@ -280,7 +279,10 @@ func (h *ArticleHandler) PubDetail(
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
-		er := h.intrSvc.IncrReadCnt(ctx, h.biz, article.ID)
+		_, er := h.intrSvc.IncrReadCnt(ctx, &intrv1.IncrReadCntRequest{
+			Biz:   h.biz,
+			BizId: article.ID,
+		})
 		if er != nil {
 			h.l.Error(
 				"failed to update read count",
@@ -304,11 +306,11 @@ func (h *ArticleHandler) PubDetail(
 			Ctime:      article.Ctime.Format(time.DateTime),
 			Utime:      article.Ctime.Format(time.DateTime),
 
-			ReadCnt:    intr.ReadCnt,
-			LikeCnt:    intr.LikeCnt,
-			CollectCnt: intr.CollectCnt,
-			Liked:      intr.Liked,
-			Collected:  intr.Collected,
+			ReadCnt:    intr.Intr.ReadCnt,
+			LikeCnt:    intr.Intr.LikeCnt,
+			CollectCnt: intr.Intr.CollectCnt,
+			Liked:      intr.Intr.Liked,
+			Collected:  intr.Intr.Collected,
 		},
 	}, nil
 }
@@ -321,7 +323,10 @@ func (h *ArticleHandler) TopLike(ctx *gin.Context) (ginx.Result, error) {
 		limit = res
 	}
 
-	articleIDs, err := h.intrSvc.GetTopLike(ctx, h.biz, limit)
+	articleIDs, err := h.intrSvc.GetTopLike(ctx, &intrv1.GetTopLikeRequest{
+		Biz:   h.biz,
+		Limit: int32(limit),
+	})
 	if err != nil {
 		return ginx.InternalServerErrorResult, logger.LError(
 			"failed to get top like",
@@ -329,7 +334,7 @@ func (h *ArticleHandler) TopLike(ctx *gin.Context) (ginx.Result, error) {
 		)
 	}
 
-	articles, err := h.svc.BatchGetPubByIDs(ctx, articleIDs)
+	articles, err := h.svc.BatchGetPubByIDs(ctx, articleIDs.Ids)
 	if err != nil {
 		return ginx.InternalServerErrorResult, logger.LError(
 			"failed to get articles",
@@ -338,7 +343,10 @@ func (h *ArticleHandler) TopLike(ctx *gin.Context) (ginx.Result, error) {
 		)
 	}
 
-	intrs, err := h.intrSvc.MustBatchGet(ctx, h.biz, articleIDs)
+	intrs, err := h.intrSvc.MustBatchGet(ctx, &intrv1.MustBatchGetRequest{
+		Biz: h.biz,
+		Ids: articleIDs.Ids,
+	})
 	if err != nil {
 		return ginx.InternalServerErrorResult, logger.LError(
 			"failed to get interactives",
@@ -356,7 +364,7 @@ func (h *ArticleHandler) TopLike(ctx *gin.Context) (ginx.Result, error) {
 			AuthorName: src.Author.Name,
 			Ctime:      src.Ctime.Format(time.DateTime),
 			Utime:      src.Ctime.Format(time.DateTime),
-			LikeCnt:    intrs[id].LikeCnt,
+			LikeCnt:    intrs.Intrs[id].LikeCnt,
 		}
 	})
 	return ginx.Result{
@@ -368,9 +376,17 @@ func (h *ArticleHandler) TopLike(ctx *gin.Context) (ginx.Result, error) {
 func (h *ArticleHandler) Like(ctx *gin.Context, req Like, uc ijwt.UserClaims) (ginx.Result, error) {
 	var err error
 	if req.Like {
-		err = h.intrSvc.Like(ctx, h.biz, req.ID, uc.UID)
+		_, err = h.intrSvc.Like(ctx, &intrv1.LikeRequest{
+			Biz:   h.biz,
+			BizId: req.ID,
+			Uid:   uc.UID,
+		})
 	} else {
-		err = h.intrSvc.CancelLike(ctx, h.biz, req.ID, uc.UID)
+		_, err = h.intrSvc.CancelLike(ctx, &intrv1.CancelLikeRequest{
+			Biz:   h.biz,
+			BizId: req.ID,
+			Uid:   uc.UID,
+		})
 	}
 	if err != nil {
 		return ginx.InternalServerErrorResult, logger.LError(
@@ -392,9 +408,19 @@ func (h *ArticleHandler) Collect(
 ) (ginx.Result, error) {
 	var err error
 	if req.Collected {
-		err = h.intrSvc.Collect(ctx, h.biz, req.ID, req.CID, uc.UID)
+		_, err = h.intrSvc.Collect(ctx, &intrv1.CollectRequest{
+			Biz: h.biz,
+			Id:  req.ID,
+			Cid: req.CID,
+			Uid: uc.UID,
+		})
 	} else {
-		err = h.intrSvc.CancelCollect(ctx, h.biz, req.ID, req.CID, uc.UID)
+		_, err = h.intrSvc.CancelCollect(ctx, &intrv1.CancelCollectRequest{
+			Biz: h.biz,
+			Id:  req.ID,
+			Cid: req.CID,
+			Uid: uc.UID,
+		})
 	}
 	if err != nil {
 		return ginx.InternalServerErrorResult, logger.LError(

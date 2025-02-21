@@ -49,6 +49,7 @@ func InitWebServer() *gin.Engine {
 		thirdPartySet,
 
 		interactiveSvcSet,
+		ioc.InitIntrClient,
 
 		// DAO
 		dao.NewUserDAO,
@@ -94,6 +95,7 @@ func InitArticleHandler(articleDAO dao.ArticleDAO) *web.ArticleHandler {
 		thirdPartySet,
 		rediscache.NewArticleRedisCache,
 		interactiveSvcSet,
+		ioc.InitIntrClient,
 
 		rediscache.NewUserRedisCache,
 		dao.NewUserDAO,

@@ -7,7 +7,7 @@ import (
 
 	"github.com/chenmuyao/generique/gqueue"
 	"github.com/chenmuyao/generique/gslice"
-	"github.com/chenmuyao/go-bootcamp/interactive/service"
+	intrv1 "github.com/chenmuyao/go-bootcamp/api/proto/gen/intr/v1"
 	"github.com/chenmuyao/go-bootcamp/internal/domain"
 	"github.com/chenmuyao/go-bootcamp/internal/repository"
 )
@@ -18,7 +18,7 @@ type RankingService interface {
 }
 
 type BatchRankingService struct {
-	intrSvc   service.InteractiveService
+	intrSvc   intrv1.InteractiveServiceClient
 	artSvc    ArticleService
 	batchSize int
 	scoreFunc func(likeCnt int64, utime time.Time) float64
@@ -68,10 +68,13 @@ func (b *BatchRankingService) topN(ctx context.Context) ([]domain.Article, error
 		ids := gslice.Map(arts, func(id int, src domain.Article) int64 {
 			return src.ID
 		})
-		intrMap, err := b.intrSvc.GetByIDs(ctx, "article", ids)
+		intrMap, err := b.intrSvc.GetByIDs(ctx, &intrv1.GetByIDsRequest{
+			Biz: "article",
+			Ids: ids,
+		})
 
 		for _, art := range arts {
-			intr := intrMap[art.ID]
+			intr := intrMap.Intrs[art.ID]
 			score := b.scoreFunc(intr.LikeCnt, art.Utime)
 			topN.Enqueue(Score{
 				score: score,
@@ -101,7 +104,7 @@ func (b *BatchRankingService) topN(ctx context.Context) ([]domain.Article, error
 }
 
 func NewBatchRankingService(
-	intrSvc service.InteractiveService,
+	intrSvc intrv1.InteractiveServiceClient,
 	artSvc ArticleService,
 	repo repository.RankingRepository,
 ) RankingService {
