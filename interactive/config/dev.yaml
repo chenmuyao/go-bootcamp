@@ -10,6 +10,3 @@ sarama:
 
 grpc:
   addr: localhost:8090
-  secure: false
-  intr:
-    threshold: 0

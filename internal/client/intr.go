@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"log/slog"
 	"math/rand/v2"
 	"sync/atomic"
 
@@ -101,8 +102,10 @@ func (i *InteractiveClient) selectClient() intrv1.InteractiveServiceClient {
 	// [0, 100)
 	num := rand.Int32N(100)
 	if num < i.threshold.Load() {
+		slog.Info("remote")
 		return i.remote
 	}
+	slog.Info("local")
 	return i.local
 }
 

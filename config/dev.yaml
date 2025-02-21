@@ -11,3 +11,9 @@ db:
 
 sarama:
   addr: localhost:9094
+
+grpc:
+  addr: localhost:8090
+  secure: false
+  intr:
+    threshold: 100

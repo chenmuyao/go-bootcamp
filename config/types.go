@@ -6,6 +6,7 @@ type Config struct {
 	DB     DBConfig           `yaml:"db"`
 	Redis  RedisConfig        `yaml:"redis"`
 	Sarama SaramaConfig       `yaml:"sarama"`
+	GRPC   GRPCConfig         `yaml:"grpc"`
 }
 
 type RemoteConfigCenter struct {
@@ -30,4 +31,14 @@ type GiteaOauth2Config struct {
 
 type SaramaConfig struct {
 	Addr []string `yaml:"addr"`
+}
+
+type IntrConfig struct {
+	Threshold int32 `yaml:"threshold"`
+}
+
+type GRPCConfig struct {
+	Addr   string     `yaml:"addr"`
+	Secure bool       `yaml:"secure"`
+	Intr   IntrConfig `yaml:"intr"`
 }

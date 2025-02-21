@@ -12,6 +12,6 @@ func NewGrpcxServer(intrSvc *grpcIntr.InteractiveServiceServer) *grpcx.Server {
 	intrSvc.Register(s)
 	return &grpcx.Server{
 		Server: s,
-		Addr:   viper.GetString("grpc.server.addr"),
+		Addr:   viper.GetString("grpc.addr"),
 	}
 }
