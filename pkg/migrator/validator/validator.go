@@ -72,6 +72,9 @@ func (v *Validator[T]) ValidateBaseToTarget(ctx context.Context) error {
 	offset := 0
 	for {
 		src, err := v.fromBase(ctx, offset)
+		if err == context.DeadlineExceeded || err == context.Canceled {
+			return nil
+		}
 		if err == gorm.ErrRecordNotFound {
 			if v.sleepInterval <= 0 {
 				return nil
@@ -120,6 +123,9 @@ func (v *Validator[T]) ValidateTargetToBase(ctx context.Context) error {
 			Limit(v.batchSize).
 			Find(&ts).
 			Error
+		if err == context.DeadlineExceeded || err == context.Canceled {
+			return nil
+		}
 		if err == gorm.ErrRecordNotFound || len(ts) == 0 {
 			if v.sleepInterval <= 0 {
 				return nil
