@@ -19,6 +19,42 @@ type Validator[T migrator.Entity] struct {
 	producer  events.Producer
 	direction string
 	batchSize int
+
+	utime    int64
+	fromBase func(ctx context.Context, offset int) (T, error)
+
+	sleepInterval time.Duration
+}
+
+func (v *Validator[T]) Full() *Validator[T] {
+	v.fromBase = v.fullFromBase
+	return v
+}
+
+func (v *Validator[T]) Incr() *Validator[T] {
+	v.fromBase = v.incrFromBase
+	return v
+}
+
+func (v *Validator[T]) fullFromBase(ctx context.Context, offset int) (T, error) {
+	dbCtx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+	var src T
+	err := v.base.WithContext(dbCtx).Order("id").Offset(offset).First(&src).Error
+	return src, err
+}
+
+func (v *Validator[T]) incrFromBase(ctx context.Context, offset int) (T, error) {
+	dbCtx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+	var src T
+	err := v.base.WithContext(dbCtx).
+		Where("utime > ?", v.utime).
+		Order("utime").
+		Offset(offset).
+		First(&src).
+		Error
+	return src, err
 }
 
 func (v *Validator[T]) Validate(ctx context.Context) error {
@@ -33,18 +69,20 @@ func (v *Validator[T]) Validate(ctx context.Context) error {
 }
 
 func (v *Validator[T]) ValidateBaseToTarget(ctx context.Context) error {
-	offset := -1
+	offset := 0
 	for {
-		offset++
-		var src T
-		err := v.base.WithContext(ctx).Order("id").First(&src).Error
+		src, err := v.fromBase(ctx, offset)
 		if err == gorm.ErrRecordNotFound {
-			// finished
-			return nil
+			if v.sleepInterval <= 0 {
+				return nil
+			}
+			time.Sleep(v.sleepInterval)
+			continue
 		}
 		if err != nil {
 			// error
 			v.l.Error("base -> target failed to query base", logger.Error(err))
+			offset++
 			continue
 		}
 
@@ -67,13 +105,13 @@ func (v *Validator[T]) ValidateBaseToTarget(ctx context.Context) error {
 				logger.Error(err),
 			)
 		}
+		offset++
 	}
 }
 
 func (v *Validator[T]) ValidateTargetToBase(ctx context.Context) error {
-	offset := -v.batchSize
+	offset := 0
 	for {
-		offset += v.batchSize
 		var ts []T
 		err := v.target.WithContext(ctx).
 			Select("id").
@@ -83,10 +121,16 @@ func (v *Validator[T]) ValidateTargetToBase(ctx context.Context) error {
 			Find(&ts).
 			Error
 		if err == gorm.ErrRecordNotFound || len(ts) == 0 {
-			return nil
+			if v.sleepInterval <= 0 {
+				return nil
+			}
+			time.Sleep(v.sleepInterval)
+			continue
 		}
 		if err != nil {
 			v.l.Error("target -> base faield to query target", logger.Error(err))
+			offset += len(ts)
+			continue
 		}
 		var srcTs []T
 		ids := gslice.Map(ts, func(id int, src T) int64 {
@@ -96,10 +140,12 @@ func (v *Validator[T]) ValidateTargetToBase(ctx context.Context) error {
 		if err == gorm.ErrRecordNotFound || len(ts) == 0 {
 			// no data at all
 			v.notifyBaseMissing(ts)
+			offset += len(ts)
 			continue
 		}
 		if err != nil {
 			v.l.Error("target -> base failed to query base", logger.Error(err))
+			offset += len(ts)
 			continue
 		}
 
@@ -110,8 +156,13 @@ func (v *Validator[T]) ValidateTargetToBase(ctx context.Context) error {
 		v.notifyBaseMissing(diff)
 
 		if len(ts) < v.batchSize {
-			return nil
+			if v.sleepInterval <= 0 {
+				return nil
+			}
+			time.Sleep(v.sleepInterval)
+			continue
 		}
+		offset += len(ts)
 	}
 }
 
