@@ -87,8 +87,8 @@ github.com/cespare/xxhash/v2 v2.1.2/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XL
 github.com/cespare/xxhash/v2 v2.2.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
 github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
-github.com/chenmuyao/generique v0.0.0-20250206220710-0888e544bdc9 h1:7RTHYXVI1K1Tgomu63euwEaXbT8dSpgjp3KcQDT76Qg=
-github.com/chenmuyao/generique v0.0.0-20250206220710-0888e544bdc9/go.mod h1:kUUW98Exv10Z/wqYaRUXQOhoLFXXAzvDc4Tlgbjmkt8=
+github.com/chenmuyao/generique v0.0.0-20250222095826-f30b17c57d6a h1:APmjo/hnC2nF0yUx21JM5S7TgVrx2BlZc3NGc6XQg6o=
+github.com/chenmuyao/generique v0.0.0-20250222095826-f30b17c57d6a/go.mod h1:kUUW98Exv10Z/wqYaRUXQOhoLFXXAzvDc4Tlgbjmkt8=
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
 github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5PlCu98SY8svDHJxuZscDgtXS6KTTbou5AhLI=
 github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1/go.mod h1:Q3SI9o4m/ZMnBNeIyt5eFwwo7qiLfzFZmjNmxjkiQlU=

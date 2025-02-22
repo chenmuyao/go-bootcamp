@@ -7,7 +7,7 @@ require (
 	github.com/IBM/sarama v1.45.0
 	github.com/bsm/redislock v0.9.4
 	github.com/bwmarrin/snowflake v0.3.0
-	github.com/chenmuyao/generique v0.0.0-20250206220710-0888e544bdc9
+	github.com/chenmuyao/generique v0.0.0-20250222095826-f30b17c57d6a
 	github.com/dlclark/regexp2 v1.11.4
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/gin-contrib/cors v1.7.3
