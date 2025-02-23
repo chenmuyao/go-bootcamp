@@ -9,4 +9,6 @@ sarama:
     - localhost:9094
 
 grpc:
-  addr: localhost:8090
+  port: 8090
+  etcdAddr: localhost:12379
+  serviceName: interactive

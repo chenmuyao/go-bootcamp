@@ -3,7 +3,6 @@ package ioc
 import (
 	"github.com/IBM/sarama"
 	"github.com/chenmuyao/go-bootcamp/config"
-	intrEvents "github.com/chenmuyao/go-bootcamp/interactive/events"
 	"github.com/chenmuyao/go-bootcamp/internal/events"
 )
 
@@ -25,6 +24,9 @@ func InitSyncProducer(c sarama.Client) sarama.SyncProducer {
 	return p
 }
 
-func InitConsumers(c1 *intrEvents.InteractiveReadEventConsumer) []events.Consumer {
-	return []events.Consumer{c1}
+//	func InitConsumers(c1 *intrEvents.InteractiveReadEventConsumer) []events.Consumer {
+//		return []events.Consumer{c1}
+//	}
+func InitConsumers() []events.Consumer {
+	return []events.Consumer{}
 }

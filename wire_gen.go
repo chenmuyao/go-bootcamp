@@ -7,7 +7,6 @@
 package main
 
 import (
-	"github.com/chenmuyao/go-bootcamp/interactive/events"
 	"github.com/chenmuyao/go-bootcamp/interactive/repository"
 	"github.com/chenmuyao/go-bootcamp/interactive/repository/cache/rediscache"
 	"github.com/chenmuyao/go-bootcamp/interactive/repository/dao"
@@ -63,16 +62,11 @@ func InitWebServer() *App {
 	syncProducer := ioc.InitSyncProducer(client)
 	producer := article.NewSaramaSyncProducer(syncProducer)
 	articleService := service.NewArticleService(articleRepository, producer)
-	interactiveDAO := dao.NewGORMInteractiveDAO(db)
-	interactiveCache := rediscache.NewInteractiveRedisCache(cmdable)
-	topArticlesCache := ioc.InitTopArticlesCache()
-	interactiveRepository := repository.NewCachedInteractiveRepository(logger, interactiveDAO, interactiveCache, topArticlesCache)
-	interactiveService := service2.NewInteractiveService(interactiveRepository)
-	interactiveServiceClient := ioc.InitIntrClient(interactiveService)
+	clientv3Client := ioc.InitEtcd()
+	interactiveServiceClient := ioc.InitIntrClientEtcd(clientv3Client)
 	articleHandler := web.NewArticleHandler(logger, articleService, interactiveServiceClient)
 	engine := ioc.InitWebServer(v, userHandler, oAuth2GiteaHandler, articleHandler)
-	interactiveReadEventConsumer := events.NewInteractiveReadEventConsumer(logger, interactiveRepository, client)
-	v2 := ioc.InitConsumers(interactiveReadEventConsumer)
+	v2 := ioc.InitConsumers()
 	rankingCache := rediscache2.NewRankingRedisCache(cmdable)
 	rankingLocalCache := ioc.InitRankingLocalCache()
 	rankingRepository := repository2.NewCachedRankingRepository(rankingCache, rankingLocalCache)
@@ -99,7 +93,7 @@ func InitJobScheduler() *job.Scheduler {
 
 // wire.go:
 
-var thirdPartySet = wire.NewSet(ioc.InitRedis, ioc.InitDB, ioc.InitLogger, ioc.InitSaramaClient, ioc.InitSyncProducer)
+var thirdPartySet = wire.NewSet(ioc.InitRedis, ioc.InitDB, ioc.InitLogger, ioc.InitSaramaClient, ioc.InitSyncProducer, ioc.InitEtcd)
 
 var interactiveSvcSet = wire.NewSet(dao.NewGORMInteractiveDAO, rediscache.NewInteractiveRedisCache, repository.NewCachedInteractiveRepository, service2.NewInteractiveService)
 

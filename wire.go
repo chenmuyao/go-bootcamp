@@ -4,7 +4,6 @@
 package main
 
 import (
-	intrEvents "github.com/chenmuyao/go-bootcamp/interactive/events"
 	intrRepository "github.com/chenmuyao/go-bootcamp/interactive/repository"
 	intrRediscache "github.com/chenmuyao/go-bootcamp/interactive/repository/cache/rediscache"
 	intrDao "github.com/chenmuyao/go-bootcamp/interactive/repository/dao"
@@ -27,6 +26,7 @@ var thirdPartySet = wire.NewSet(
 	ioc.InitLogger,
 	ioc.InitSaramaClient,
 	ioc.InitSyncProducer,
+	ioc.InitEtcd,
 )
 
 var interactiveSvcSet = wire.NewSet(
@@ -69,14 +69,15 @@ func InitWebServer() *App {
 		// third-party dependencies
 		thirdPartySet,
 
-		interactiveSvcSet,
-		ioc.InitIntrClient,
+		// interactiveSvcSet,
+		// ioc.InitIntrClient,
+		ioc.InitIntrClientEtcd,
 		rankingSvcSet,
 		ioc.InitJobs,
 		ioc.InitRankingJob,
 
 		article.NewSaramaSyncProducer,
-		intrEvents.NewInteractiveReadEventConsumer,
+		// intrEvents.NewInteractiveReadEventConsumer,
 		ioc.InitConsumers,
 
 		// DAO
@@ -90,7 +91,7 @@ func InitWebServer() *App {
 		rediscache.NewArticleRedisCache,
 		// ioc.InitCodeLocalCache,
 		// ioc.InitUserLocalCache,
-		ioc.InitTopArticlesCache,
+		// ioc.InitTopArticlesCache,
 
 		// Repo
 		repository.NewUserRepository,

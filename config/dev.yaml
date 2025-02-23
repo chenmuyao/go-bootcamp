@@ -13,7 +13,11 @@ sarama:
   addr: localhost:9094
 
 grpc:
-  addr: localhost:8090
   secure: false
   intr:
+    # addr: "localhost:8090"
+    addr: "etcd:///service/interactive"
     threshold: 100
+
+etcd:
+  addrs: localhost:12379
