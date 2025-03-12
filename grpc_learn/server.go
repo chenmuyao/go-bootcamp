@@ -4,6 +4,7 @@ import "context"
 
 type Server struct {
 	UnimplementedUserServiceServer
+	Name string
 }
 
 // GetByID implements UserServiceServer.
@@ -11,7 +12,7 @@ func (s *Server) GetByID(context.Context, *GetByIDRequest) (*GetByIDResponse, er
 	return &GetByIDResponse{
 		User: &User{
 			Id:   123,
-			Name: "my name",
+			Name: "name:" + s.Name,
 		},
 	}, nil
 }
