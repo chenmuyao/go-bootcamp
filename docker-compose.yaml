@@ -77,3 +77,8 @@ services:
     image: grafana/grafana
     ports:
       - 3000:3000
+
+  consul:
+    image: hashicorp/consul
+    ports:
+      - 8500:8500
